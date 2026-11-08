@@ -44,7 +44,7 @@ python -m factory run --spec "预测信用卡客户下月违约概率，处理�
 1. 验证「能力抽取 — 能力复刻 — 能力验证 — 能力沉淀」核心闭环，而非仅做一次性代码生成；
 2. 让知识图谱**真实参与**检索、规划、生成与验证，而非静态展示；
 3. 让验证结果**驱动**定向修复，并让失败经验**回写**后可在下一轮被检索命中；
-4. 在断网、无大模型、无 GPU 的本地环境中完整复现端到端运行。
+4. 在断网、无本地大模型、无 GPU、无 API key 的环境中完整复现端到端运行（默认 `MockLLM` + 脱敏 cassette 回放）。
 
 **场景选择**：信用卡客户下月违约预测。原题第 12 行的场景列表为开放式举例（「例如……等」），本场景合规。选它的原因是业务约束丰富（成本矩阵、合规、群体稳定性、公平性）、指标族完整、数据集自带真实数据质量陷阱，可产生无需人为埋 bug 的真实失败修复轨迹。
 
@@ -57,10 +57,11 @@ python -m factory run --spec "预测信用卡客户下月违约概率，处理�
 | L0 契约 | `contracts/` | `CapabilitySpec`、`CandidatePlan`、`ValidationReport`（Pydantic），全系统唯一数据协议 |
 | L1 知识 | `knowledge/` | Schema、抽取器、NetworkX 图 + SQLite 持久化、混合检索器、PyVis 可视化 |
 | L2 Agent | `agents/`、`workflow/` | 8 个角色、LangGraph 状态机、Beam Search、修复策略表 |
+| L2 支撑 | `llm/` | `BaseLLM` 抽象与三个实现：`MockLLM`（默认）、`OpenAICompatLLM`（DeepSeek API）、`RecordedLLM`（cassette 回放） |
 | L3 执行 | `runtime/` | 子进程沙箱、AST 静态检查、超时 / 内存限制、错误分类器 |
 | L4 验证 | `validation/` | 四层检查器、指标插件注册、报告生成 |
 | L5 接入 | `cli/`、`api/`、`ui/` | Typer CLI、FastAPI、Streamlit |
-| L6 资产 | `assets/` | 数据、6 份业务材料、模板、示例与报告样例 |
+| L6 资产 | `assets/` | 数据、6 份业务材料、模板、示例、报告样例与 LLM cassette |
 
 **设计原则**：契约先行（所有模块只依赖 Pydantic 数据类）、LLM 可替换（抽象 `BaseLLM`）、验证与场景解耦（换 yaml 即换任务类型）、执行与验证隔离（生成代码只在子进程沙箱内运行）。
 
@@ -68,7 +69,7 @@ python -m factory run --spec "预测信用卡客户下月违约概率，处理�
 
 | 组件 | 选择 | 理由 |
 |---|---|---|
-| LLM | `OpenAICompatLLM`（Ollama / Qwen 本地或兼容 API）+ `MockLLM` | 离线默认可跑是复现得分关键，原题允许 mock；一行配置切换 |
+| LLM | `BaseLLM` 抽象：`MockLLM` / `OpenAICompatLLM`（DeepSeek OpenAI 兼容接口）/ `RecordedLLM`（cassette 回放） | 默认 mock 保证断网复现；本地 CPU 跑开源模型过慢，按开发要求 g 的「API 调用方式」接 DeepSeek 满足任务 1；真实响应脱敏录制后可在无 key 环境回放，三种实现只切 `llm.provider` |
 | 编排 | LangGraph | 修复循环本质是带状态的有向循环图，条件边 / checkpoint / 循环上限原生支持 |
 | 知识图谱 | NetworkX（GraphML）+ SQLite | 零部署、可直接交付 GraphML / CSV；不选 Neo4j 以避免 Docker 依赖 |
 | 检索 | BM25 / 关键词 + 图邻域扩展 + 元信息打分 | 无需向量库即可离线，排序可解释 |
@@ -89,7 +90,8 @@ algo-capability-factory/
 │   ├── data/UCI_Credit_Card.csv
 │   ├── docs/{data_dictionary.md, risk_policy.md, expert_rules.md,
 │   │         experiment_log.md, failure_review.md, test_report.md}
-│   └── legacy/legacy_default_model.py
+│   ├── legacy/legacy_default_model.py
+│   └── llm_cassettes/          # 脱敏后的真实 LLM 对话与响应，入库
 ├── factory/
 │   ├── __init__.py  __main__.py
 │   └── contracts/{__init__.py, models.py}
@@ -213,7 +215,7 @@ python -m venv .venv
 pip install -r requirements.txt
 
 # 2) 可选：配置真实 LLM（不配置则使用 --mock 离线运行）
-cp .env.example .env            # 填写 LLM_BASE_URL / LLM_API_KEY / LLM_MODEL
+cp .env.example .env            # 只需填 LLM_API_KEY；端点与模型已有默认值
 
 # 3) 可选：重新拉取数据（仓库已内置，断网可跳过）
 python scripts/download_data.py
@@ -229,7 +231,9 @@ pytest -q                      # 测试用例
 
 **最小依赖**：核心闭环只需 `pydantic`、`PyYAML`、`pandas`、`scikit-learn`、`networkx`；若只需验证数据契约与配置，可先 `pip install pydantic PyYAML` 再运行 `python -m unittest discover -s tests -v`。完整接入层（LangGraph / FastAPI / Streamlit）才需要全量 `requirements.txt`。
 
-**关于 LLM**：`--mock` 为默认路径，对应开发要求 g「若无法部署大模型」—— 本项目在本地无 GPU、无外网额度的环境跑通闭环。真实 LLM 并非未接入：`configs/default.yaml` 的 `llm.provider` 切到 `openai_compat`、按 `.env.example` 填写 `.env` 即可切换；P3 起会落盘 prompt 模板、输出 schema 与调用 trace 作为证据（当前为规划阶段，尚未产出）。
+**关于 LLM**：默认 `--mock` 使用规则模板，不依赖任何 LLM 服务，保证断网一键复现。本地部署模型在本项目不可行（CPU 推理过慢），因此按开发要求 g 的「API 调用方式」接入 **DeepSeek 的 OpenAI 兼容接口**：把 `configs/default.yaml` 的 `llm.provider` 切到 `openai_compat`，按 `.env.example` 把 `LLM_API_KEY` 填进 `.env` 或设为环境变量即可。官方端点 `https://api.deepseek.com`、当前示例模型 `deepseek-flash`；`deepseek-chat` / `deepseek-reasoner` 为旧名。任务 1 要求的「可调用的 LLM 接口」由这条真实路径满足。
+
+**凭据与录制回放**：`LLM_API_KEY` 只从环境变量 / `.env` 读取，`.gitignore` 已排除 `.env` 与 `.env.*`；任何 key、token、Authorization header 都不会写入仓库文件、日志或 cassette。真实调用产生的对话正文与响应脱敏后落盘 `assets/llm_cassettes/` 作为交付证据；把 `llm.provider` 设为 `cassette` 即可在**无 key、断网**环境原样回放同一输出。回放未命中时按 `cassette.on_miss` 显式报错或回退 `MockLLM`，不静默造假。凡引用回放结果的报告段落均标注「离线回放」，与实时调用区分。真实 API 演示与预设的三条修复轨迹分两次运行、分开写入报告（当前为规划阶段，cassette 尚未录制）。
 
 **主要产物**
 
@@ -238,7 +242,8 @@ pytest -q                      # 测试用例
 | `outputs/generated/candidate_*.py` | 生成 / 修复后的算法代码 |
 | `outputs/reports/run_*.md` | 四层验证报告、候选排名、修复轨迹、设计依据 |
 | `outputs/kg/graph.graphml`、`kg.html` | 回写后的能力图谱与可视化 |
-| `outputs/runs/trace_*.json` | 七步流程可回放轨迹 |
+| `outputs/runs/trace_*.json` | 七步流程可回放轨迹（运行时临时产物，不入库） |
+| `assets/llm_cassettes/*.json` | 脱敏后的真实 LLM 对话与响应，供离线回放（入库） |
 
 **配置说明**：`configs/verify_credit.yaml` 定义主场景的划分策略、指标门槛与成本比；`verify_regression.yaml`、`verify_text.yaml` 用于验证「不同任务类型的验证配置」与跨场景迁移，切换配置文件不改核心代码。
 
@@ -401,7 +406,7 @@ def build_pipeline(config: dict):
 
 - [ ] 顶部「当前仓库状态」改为实际完成阶段
 - [ ] 第 5 节命令与 `requirements.txt` 对齐
-- [ ] 第 5 节补真实 LLM 调用 trace 与 prompt 模板落盘证据（P3/P5 末）
+- [ ] 用 DeepSeek API 录制一次真实调用，补齐 cassette 与 prompt 模板 / 输出 schema 证据（P3 末，需 key）
 - [ ] 第 7 节替换为 `outputs/generated/` 中的真实生成代码与修复 diff
 - [ ] 第 8 节所有 `<实测后填充>` 替换为实测指标，附上真实报告文件与图谱 diff
 - [ ] 第 9 节补记实现过程中新遇到的挑战
