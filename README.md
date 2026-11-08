@@ -246,7 +246,7 @@ python -m factory --check
 
 **最小依赖**：核心闭环需 `pydantic`、`PyYAML`、`pandas`、`scikit-learn`、`networkx`、`langgraph`、`rank-bm25`、`markdown-it-py`、`psutil`、`structlog`（全部为现成库，`requirements.txt` 已锁版本区间）；若只需验证数据契约与配置，可先 `pip install pydantic PyYAML` 再运行 `python -m unittest discover -s tests -v`。`pyvis`、`Jinja2`、`Typer`、`openai` 按入口加载，全量清单见 `requirements.txt`。
 
-**关于 LLM**：默认 `--mock` 使用规则模板，不依赖任何 LLM 服务，保证断网一键复现。本地部署模型在本项目不可行（CPU 推理过慢），因此按开发要求 g 的「API 调用方式」接入 **DeepSeek 的 OpenAI 兼容接口**：把 `configs/default.yaml` 的 `llm.provider` 切到 `openai_compat`，按 `.env.example` 把 `LLM_API_KEY` 填进 `.env` 或设为环境变量即可。官方端点 `https://api.deepseek.com`、当前示例模型 `deepseek-flash`；`deepseek-chat` / `deepseek-reasoner` 为旧名。任务 1 要求的「可调用的 LLM 接口」由这条真实路径满足。
+**关于 LLM**：默认配置是「`Interpreter` 走 `cassette`（真实 DeepSeek 录制响应），其余角色走规则模板」—— 即**能力理解这一环由真实 LLM 驱动**，其余环节保持确定性。`llm.role_providers` 控制按角色路由，`--mock` 会关闭路由、强制全链路规则模板。本地部署模型在本项目不可行（CPU 推理过慢），因此按开发要求 g 的「API 调用方式」接入 **DeepSeek 的 OpenAI 兼容接口**：把 `llm.provider` 切到 `openai_compat`，按 `.env.example` 把 `LLM_API_KEY` 填进 `.env` 或设为环境变量即可。官方端点 `https://api.deepseek.com`、当前示例模型 `deepseek-flash`。真实响应的解析结构（`target.name`、`data_split`、`threshold_selection`、`feature_constraints`、`evaluation`）会被映射进 `CapabilitySpec`，端到端报告里的 `能力理解来源=cassette` 就是这条证据。
 
 **凭据与录制回放**：`LLM_API_KEY` 只从环境变量 / `.env` 读取，`.gitignore` 已排除 `.env` 与 `.env.*`；任何 key、token、Authorization header 都不会写入仓库文件、日志或 cassette。真实调用产生的对话正文与响应脱敏后落盘 `assets/llm_cassettes/` 作为交付证据；把 `llm.provider` 设为 `cassette` 即可在**无 key、断网**环境原样回放同一输出。回放未命中时按 `cassette.on_miss` 显式报错或回退 `MockLLM`，不静默造假。凡引用回放结果的报告段落均标注「离线回放」，与实时调用区分。已录制 2 条真实 DeepSeek 调用（均为 Interpreter 环节，产物见 `assets/llm_cassettes/deepseek_deepseek-flash.json`），回放一致性由 `tests/test_cassette_replay.py` 在不联网条件下逐条校验。**真实出站调用共 2 次**：首次录制，以及替换现成库后用不同 prompt 做的实时链路复测（`scripts/record_llm.py --recheck`，新增第 2 条 entry、不覆盖首次证据）；两条都可断网回放。此外 `tests/test_realtime_llm.py` 以模拟 HTTP 层做零费用回归（请求参数、响应解析、脱敏录制、回放全链路），不发请求、不改写交付 cassette。离线回放与实时调用在报告中始终区分。真实 API 演示与预设的修复轨迹分两次运行、分开写入报告。
 
@@ -353,7 +353,7 @@ def build_pipeline(config):
 |---|---|
 | 七步流程 | a–g 全部执行完成，CLI 退出码 0 |
 | 候选方案 | 3 个（Beam Top-3），AUC 0.72061 / 0.72063 / 0.72064 |
-| 修复轨迹 | 第 1 轮 `KeyError: PAY_1` → 列名映射为 `PAY_0`，修复后沙箱通过 |
+| 修复轨迹 | 默认（有 KG）首轮即避开 T1、修复 3 轮；无 KG 时复现 `KeyError: PAY_1` → 列名映射为 `PAY_0`、修复 4 轮（见下方消融） |
 | 四层结论 | 接口 / 功能 / 稳定性 PASS；指标层 FAIL（AUC 0.7206 < 0.78、F1 < 0.45） |
 | 图谱沉淀 | `outputs/kg/capabilities_after_run.json`，新增 ValidationRun / FailureCase / 能力 v2 节点 |
 
@@ -368,10 +368,14 @@ def build_pipeline(config):
 
 **可复现的真实修复轨迹（实测）**
 
+无 KG 对照组（`scripts/run_ablation.py` 的 `without_kg` 组，图谱不含历史经验）：
+
 | 轮次 | 错误签名 | 定向修复 | 结果 |
 |---|---|---|---|
 | 1 | `KeyError: PAY_1` | 按 `Dataset` 列名映射改为 `PAY_0` | 沙箱从 FAIL 恢复为 PASS |
 | 2 | `MetricBelowThreshold` | 策略表命中「切换模型族 / 按成本比调阈值」，当前 Mock 模板无可执行动作 | 如实标记 `no_change`，停止盲目重试 |
+
+有 KG 默认路径：`Interpreter` 走真实录制、图谱含首轮 `FailureCase`，Coder 首轮即用 `PAY_0`，`KeyError` 不再出现，修复轮次降为 3；差异见下方消融表。
 
 > 说明：指标层未达标是 baseline 级候选的真实表现，不是流程失败；达到 `verify_credit.yaml` 门槛需要后续引入 WOE 分箱、采样与成本最优阈值。
 

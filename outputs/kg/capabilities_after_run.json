@@ -2456,128 +2456,6 @@
       ]
     },
     {
-      "node_id": "run.demo.01",
-      "node_type": "ValidationRun",
-      "name": "验证运行 run.demo.01",
-      "version": "v1",
-      "task_type": "tabular_binary_classification",
-      "status": "active",
-      "attributes": {
-        "metrics": {
-          "auc": 0.7206124391247685,
-          "ks": 0.3925920845051101,
-          "pr_auc": 0.5055017147063443,
-          "f1": 0.3467843631778058,
-          "cost_weighted_loss": 0.8026666666666666,
-          "psi": 0.0489035188420989,
-          "grouped_auc_gap": 0.05875830231396728
-        },
-        "passed": false,
-        "duration_seconds": 1.921
-      },
-      "evidence": []
-    },
-    {
-      "node_id": "run.demo.02",
-      "node_type": "ValidationRun",
-      "name": "验证运行 run.demo.02",
-      "version": "v1",
-      "task_type": "tabular_binary_classification",
-      "status": "active",
-      "attributes": {
-        "metrics": {
-          "auc": 0.7206289011592016,
-          "ks": 0.3927841415734961,
-          "pr_auc": 0.5054747154304732,
-          "f1": 0.3467843631778058,
-          "cost_weighted_loss": 0.8026666666666666,
-          "psi": 0.04680283687829093,
-          "grouped_auc_gap": 0.058616072130054264
-        },
-        "passed": false,
-        "duration_seconds": 1.937
-      },
-      "evidence": []
-    },
-    {
-      "node_id": "run.demo.03",
-      "node_type": "ValidationRun",
-      "name": "验证运行 run.demo.03",
-      "version": "v1",
-      "task_type": "tabular_binary_classification",
-      "status": "active",
-      "attributes": {
-        "metrics": {
-          "auc": 0.7206354173811648,
-          "ks": 0.39260923245764456,
-          "pr_auc": 0.5054708851781025,
-          "f1": 0.3467843631778058,
-          "cost_weighted_loss": 0.8026666666666666,
-          "psi": 0.04680283687829093,
-          "grouped_auc_gap": 0.05856070671880376
-        },
-        "passed": false,
-        "duration_seconds": 1.906
-      },
-      "evidence": []
-    },
-    {
-      "node_id": "failure.demo.01",
-      "node_type": "FailureCase",
-      "name": "失败案例 KeyError: PAY_1",
-      "version": "v1",
-      "task_type": "tabular_binary_classification",
-      "status": "active",
-      "attributes": {
-        "error_signature": "KeyError: PAY_1",
-        "fix_strategy": "按 Dataset 列名映射把 PAY_1 改为 PAY_0（T1 陷阱）",
-        "repair_round": 1
-      },
-      "evidence": []
-    },
-    {
-      "node_id": "failure.demo.02",
-      "node_type": "FailureCase",
-      "name": "失败案例 MetricBelowThreshold",
-      "version": "v1",
-      "task_type": "tabular_binary_classification",
-      "status": "active",
-      "attributes": {
-        "error_signature": "MetricBelowThreshold",
-        "fix_strategy": "检索历史高分方案，切换模型族或按成本比调阈值",
-        "repair_round": 2
-      },
-      "evidence": []
-    },
-    {
-      "node_id": "failure.demo.03",
-      "node_type": "FailureCase",
-      "name": "失败案例 MetricBelowThreshold",
-      "version": "v1",
-      "task_type": "tabular_binary_classification",
-      "status": "active",
-      "attributes": {
-        "error_signature": "MetricBelowThreshold",
-        "fix_strategy": "检索历史高分方案，切换模型族或按成本比调阈值",
-        "repair_round": 1
-      },
-      "evidence": []
-    },
-    {
-      "node_id": "failure.demo.04",
-      "node_type": "FailureCase",
-      "name": "失败案例 MetricBelowThreshold",
-      "version": "v1",
-      "task_type": "tabular_binary_classification",
-      "status": "active",
-      "attributes": {
-        "error_signature": "MetricBelowThreshold",
-        "fix_strategy": "检索历史高分方案，切换模型族或按成本比调阈值",
-        "repair_round": 1
-      },
-      "evidence": []
-    },
-    {
       "node_id": "run.ablation.with_kg.01",
       "node_type": "ValidationRun",
       "name": "验证运行 run.ablation.with_kg.01",
@@ -2673,6 +2551,114 @@
     },
     {
       "node_id": "failure.ablation.with_kg.03",
+      "node_type": "FailureCase",
+      "name": "失败案例 MetricBelowThreshold",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "error_signature": "MetricBelowThreshold",
+        "fix_strategy": "检索历史高分方案，切换模型族或按成本比调阈值",
+        "repair_round": 1
+      },
+      "evidence": []
+    },
+    {
+      "node_id": "run.demo.01",
+      "node_type": "ValidationRun",
+      "name": "验证运行 run.demo.01",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "metrics": {
+          "auc": 0.7206124391247685,
+          "ks": 0.3925920845051101,
+          "pr_auc": 0.5055017147063443,
+          "f1": 0.3467843631778058,
+          "cost_weighted_loss": 0.8026666666666666,
+          "psi": 0.0489035188420989,
+          "grouped_auc_gap": 0.05875830231396728
+        },
+        "passed": false,
+        "duration_seconds": 1.953
+      },
+      "evidence": []
+    },
+    {
+      "node_id": "run.demo.02",
+      "node_type": "ValidationRun",
+      "name": "验证运行 run.demo.02",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "metrics": {
+          "auc": 0.7206289011592016,
+          "ks": 0.3927841415734961,
+          "pr_auc": 0.5054747154304732,
+          "f1": 0.3467843631778058,
+          "cost_weighted_loss": 0.8026666666666666,
+          "psi": 0.04680283687829093,
+          "grouped_auc_gap": 0.058616072130054264
+        },
+        "passed": false,
+        "duration_seconds": 2.031
+      },
+      "evidence": []
+    },
+    {
+      "node_id": "run.demo.03",
+      "node_type": "ValidationRun",
+      "name": "验证运行 run.demo.03",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "metrics": {
+          "auc": 0.7206354173811648,
+          "ks": 0.39260923245764456,
+          "pr_auc": 0.5054708851781025,
+          "f1": 0.3467843631778058,
+          "cost_weighted_loss": 0.8026666666666666,
+          "psi": 0.04680283687829093,
+          "grouped_auc_gap": 0.05856070671880376
+        },
+        "passed": false,
+        "duration_seconds": 2.0
+      },
+      "evidence": []
+    },
+    {
+      "node_id": "failure.demo.01",
+      "node_type": "FailureCase",
+      "name": "失败案例 MetricBelowThreshold",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "error_signature": "MetricBelowThreshold",
+        "fix_strategy": "检索历史高分方案，切换模型族或按成本比调阈值",
+        "repair_round": 1
+      },
+      "evidence": []
+    },
+    {
+      "node_id": "failure.demo.02",
+      "node_type": "FailureCase",
+      "name": "失败案例 MetricBelowThreshold",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "error_signature": "MetricBelowThreshold",
+        "fix_strategy": "检索历史高分方案，切换模型族或按成本比调阈值",
+        "repair_round": 1
+      },
+      "evidence": []
+    },
+    {
+      "node_id": "failure.demo.03",
       "node_type": "FailureCase",
       "name": "失败案例 MetricBelowThreshold",
       "version": "v1",
@@ -4267,48 +4253,6 @@
     },
     {
       "source": "cap.data_dictionary.T1",
-      "target": "run.demo.01",
-      "edge_type": "HAS_RUN",
-      "attributes": {}
-    },
-    {
-      "source": "cap.data_dictionary.T1",
-      "target": "run.demo.02",
-      "edge_type": "HAS_RUN",
-      "attributes": {}
-    },
-    {
-      "source": "cap.data_dictionary.T1",
-      "target": "run.demo.03",
-      "edge_type": "HAS_RUN",
-      "attributes": {}
-    },
-    {
-      "source": "cap.data_dictionary.T1",
-      "target": "failure.demo.01",
-      "edge_type": "RESULTED_IN",
-      "attributes": {}
-    },
-    {
-      "source": "cap.data_dictionary.T1",
-      "target": "failure.demo.02",
-      "edge_type": "RESULTED_IN",
-      "attributes": {}
-    },
-    {
-      "source": "cap.data_dictionary.T1",
-      "target": "failure.demo.03",
-      "edge_type": "RESULTED_IN",
-      "attributes": {}
-    },
-    {
-      "source": "cap.data_dictionary.T1",
-      "target": "failure.demo.04",
-      "edge_type": "RESULTED_IN",
-      "attributes": {}
-    },
-    {
-      "source": "cap.data_dictionary.T1",
       "target": "run.ablation.with_kg.01",
       "edge_type": "HAS_RUN",
       "attributes": {}
@@ -4344,13 +4288,49 @@
       "attributes": {}
     },
     {
+      "source": "cap.data_dictionary.T1",
+      "target": "run.demo.01",
+      "edge_type": "HAS_RUN",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T1",
+      "target": "run.demo.02",
+      "edge_type": "HAS_RUN",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T1",
+      "target": "run.demo.03",
+      "edge_type": "HAS_RUN",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T1",
+      "target": "failure.demo.01",
+      "edge_type": "RESULTED_IN",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T1",
+      "target": "failure.demo.02",
+      "edge_type": "RESULTED_IN",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T1",
+      "target": "failure.demo.03",
+      "edge_type": "RESULTED_IN",
+      "attributes": {}
+    },
+    {
       "source": "cap.data_dictionary.T1.v2",
       "target": "cap.data_dictionary.T1",
       "edge_type": "DERIVED_FROM",
       "attributes": {}
     },
     {
-      "source": "failure.ablation.with_kg.03",
+      "source": "failure.demo.03",
       "target": "cap.data_dictionary.T1.v2",
       "edge_type": "FIXED_BY",
       "attributes": {}
@@ -4365,5 +4345,5 @@
     "assets/docs/test_report.md",
     "assets/legacy/legacy_default_model.py"
   ],
-  "content_sha256": "b860babe8219851e89a33d815709840c2fefc6114b8a9e12f6eaf9fc4ce387f4"
+  "content_sha256": "62c7d62139f8ccdb9c141f81c6701a6d04cd02e7beba9ba4112ec3a7e075e94d"
 }
