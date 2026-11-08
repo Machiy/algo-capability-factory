@@ -32,6 +32,9 @@ assets/data/raw/
 outputs/runs/
 *.log
 
+# 可由 scripts/build_kg.py 重建的二进制运行产物，不入库
+outputs/kg/*.db
+
 # 编辑器与系统
 .idea/
 .vscode/

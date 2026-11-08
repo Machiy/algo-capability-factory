@@ -98,7 +98,7 @@ def _ensure_raw(offline: bool, expected_md5: str | None) -> None:
         RAW_PATH.write_bytes(_download(ARFF_URL))
         print(f"      已保存 {RAW_PATH.stat().st_size:,} 字节")
 
-    digest = hashlib.md5(RAW_PATH.read_bytes()).hexdigest()  # noqa: S324 - 仅为完整性校验
+    digest = hashlib.md5(RAW_PATH.read_bytes()).hexdigest()
     reference = (expected_md5 or EXPECTED_MD5).lower()
     print(f"[2/4] 原始文件 md5 = {digest}")
     if digest != reference:

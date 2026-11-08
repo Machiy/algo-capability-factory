@@ -87,4 +87,4 @@ class ValidationReport(_StrictModel):
         return [name for group in groups for name, ok in group.items() if not ok]
 
 
-__all__ = ["TaskType", "CapabilitySpec", "CandidatePlan", "ValidationReport"]
+__all__ = ["CandidatePlan", "CapabilitySpec", "TaskType", "ValidationReport"]
