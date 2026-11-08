@@ -1,8 +1,8 @@
 """子进程沙箱：临时目录、超时、内存上限与最小环境变量隔离。
 
 POSIX 通过 ``resource.RLIMIT_AS`` 硬限制子进程地址空间；Windows 无该接口，
-改为父进程轮询工作集并在超限时终止。是否真正生效会如实写入
-``SandboxResult.memory_limit_applied``，不谎报已强制。
+父进程用 ``psutil`` 跨平台轮询子进程内存并在超限时终止。是否真正生效会
+如实写入 ``SandboxResult.memory_limit_applied``，不谎报已强制。
 """
 
 from __future__ import annotations
@@ -17,6 +17,8 @@ import threading
 import time
 from pathlib import Path
 from typing import Any
+
+import psutil
 
 from factory.config import RuntimeSettings
 from factory.contracts.validation import SandboxResult, StaticCheckResult
@@ -83,41 +85,11 @@ except Exception:
 '''
 
 
-def _windows_peak_bytes(proc: subprocess.Popen[str]) -> int | None:
-    """读取子进程工作集内存（仅 Windows）；接口不可用时返回 ``None``。"""
+def process_memory_bytes(proc: subprocess.Popen[str]) -> int | None:
+    """用 psutil 跨平台读取子进程常驻内存；已退出或不可访问时返回 ``None``。"""
     try:
-        import ctypes
-        from ctypes import wintypes
-
-        class Counters(ctypes.Structure):
-            _fields_ = [
-                ("cb", wintypes.DWORD),
-                ("PageFaultCount", wintypes.DWORD),
-                ("PeakWorkingSetSize", ctypes.c_size_t),
-                ("WorkingSetSize", ctypes.c_size_t),
-                ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
-                ("QuotaPagedPoolUsage", ctypes.c_size_t),
-                ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
-                ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
-                ("PagefileUsage", ctypes.c_size_t),
-                ("PeakPagefileUsage", ctypes.c_size_t),
-            ]
-
-        counters = Counters()
-        counters.cb = ctypes.sizeof(Counters)
-        handle = getattr(proc, "_handle", None)
-        if handle is None:
-            return None
-        psapi = ctypes.WinDLL("psapi.dll")
-        psapi.GetProcessMemoryInfo.argtypes = [
-            wintypes.HANDLE, ctypes.POINTER(Counters), wintypes.DWORD
-        ]
-        psapi.GetProcessMemoryInfo.restype = wintypes.BOOL
-        ok = psapi.GetProcessMemoryInfo(
-            wintypes.HANDLE(int(handle)), ctypes.byref(counters), counters.cb
-        )
-        return int(counters.WorkingSetSize) if ok else None
-    except (AttributeError, ImportError, OSError, ValueError):
+        return int(psutil.Process(proc.pid).memory_info().rss)
+    except psutil.Error:
         return None
 
 
@@ -213,7 +185,7 @@ class SubprocessSandbox:
     def _watch_memory(self, proc: subprocess.Popen[str], state: dict[str, Any]) -> None:
         limit_bytes = self.runtime.memory_limit_mb * 1024 * 1024
         while proc.poll() is None:
-            usage = _windows_peak_bytes(proc)
+            usage = process_memory_bytes(proc)
             if usage:
                 state["peak"] = max(int(state["peak"]), usage)
                 if usage > limit_bytes:
@@ -223,4 +195,4 @@ class SubprocessSandbox:
             time.sleep(0.05)
 
 
-__all__ = ["SubprocessSandbox"]
+__all__ = ["SubprocessSandbox", "process_memory_bytes", "sandbox_env"]

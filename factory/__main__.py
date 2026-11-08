@@ -1,18 +1,22 @@
-"""AlgoCap Factory CLI 入口。
+"""AlgoCap Factory CLI 入口（Typer）。
 
 ``--version`` / ``--check`` 保持零第三方依赖；重依赖只在 ``run`` 分支延迟导入。
 """
 
 from __future__ import annotations
 
-import argparse
 import importlib.util
 from pathlib import Path
+
+import typer
 
 from factory import __version__
 
 CORE_DEPENDENCIES = ["pydantic", "yaml", "pandas", "sklearn", "networkx"]
 ROOT = Path(__file__).resolve().parents[1]
+
+app = typer.Typer(help="AlgoCap Factory · 基于 AI Agent 的算法能力工厂",
+                  add_completion=False)
 
 
 def check_dependencies() -> int:
@@ -27,28 +31,31 @@ def check_dependencies() -> int:
     return 0
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(
-        prog="factory", description="AlgoCap Factory · 基于 AI Agent 的算法能力工厂"
-    )
-    parser.add_argument("command", nargs="?", help="子命令：run")
-    parser.add_argument("--version", action="version", version=f"factory {__version__}")
-    parser.add_argument("--check", action="store_true", help="检查核心依赖是否安装")
-    parser.add_argument("--spec", help="自然语言能力描述")
-    parser.add_argument("--mock", action="store_true", help="强制使用离线 MockLLM")
-    args = parser.parse_args()
+def _version_callback(value: bool) -> None:
+    if value:
+        print(f"factory {__version__}")
+        raise typer.Exit()
 
-    if args.check:
-        raise SystemExit(check_dependencies())
-    if args.command == "run":
-        if not args.spec:
-            parser.error("run 需要 --spec \"能力描述\"")
-        from factory.workflow import run_from_cli
-        raise SystemExit(run_from_cli(args.spec, args.mock, ROOT))
-    if args.spec:
-        parser.error("请使用 python -m factory run --spec \"能力描述\"")
-    parser.print_help()
+
+@app.callback(invoke_without_command=True)
+def main(
+    version: bool = typer.Option(False, "--version", callback=_version_callback,
+                                 is_eager=True, help="显示版本号"),
+    check: bool = typer.Option(False, "--check", help="检查核心依赖是否安装"),
+) -> None:
+    if check:
+        raise typer.Exit(check_dependencies())
+
+
+@app.command()
+def run(
+    spec: str = typer.Option(..., "--spec", help="自然语言能力描述"),
+    mock: bool = typer.Option(False, "--mock", help="强制使用离线 MockLLM"),
+) -> None:
+    """跑通 a–g 七步闭环。"""
+    from factory.workflow import run_from_cli
+    raise typer.Exit(run_from_cli(spec, mock, ROOT))
 
 
 if __name__ == "__main__":
-    main()
+    app()

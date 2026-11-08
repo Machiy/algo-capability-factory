@@ -1,13 +1,16 @@
-"""混合检索器：约束匹配 + 历史指标 + 证据新鲜度 − 失败惩罚。
+"""混合检索器：BM25 相关性 + 历史指标 + 证据新鲜度 − 失败惩罚。
 
-权重来自 ``configs/default.yaml``；排序带 node_id 作为次级键，保证同 query
-多次调用结果完全一致，满足「检索 Top-K 稳定可解释」的 M1 验收。
+相关性打分直接调用 ``rank_bm25.BM25Okapi``，不再自研词元计数；权重来自
+``configs/default.yaml``，排序带 node_id 作为次级键，保证同 query 多次调用
+结果完全一致，满足「检索 Top-K 稳定可解释」的 M1 验收。
 """
 
 from __future__ import annotations
 
 import logging
 import re
+
+from rank_bm25 import BM25Okapi
 
 from factory.contracts.knowledge import (
     Evidence,
@@ -39,6 +42,18 @@ def _searchable_text(node: KGNode) -> str:
     return " ".join(parts).lower()
 
 
+def _bm25_scores(query_tokens: set[str], texts: list[str]) -> list[float]:
+    """用现成 BM25 计算相关性，并归一化到 [0, 1] 以匹配配置权重口径。"""
+    corpus = [_TOKEN_RE.findall(text) for text in texts]
+    if not query_tokens or not any(corpus):
+        return [0.0] * len(texts)
+    raw = BM25Okapi(corpus).get_scores(sorted(query_tokens))
+    peak = float(max(raw)) if len(raw) else 0.0
+    if peak <= 0:
+        return [0.0] * len(texts)
+    return [min(1.0, max(0.0, float(score) / peak)) for score in raw]
+
+
 def _historical_metric(node: KGNode) -> float:
     """历史验证数值越高越值得复用；无指标的节点记 0。"""
     metrics = node.attributes.get("metrics")
@@ -66,14 +81,13 @@ class HybridRetriever:
     def retrieve(self, query: str, top_k: int | None = None) -> RetrievalResult:
         limit = top_k if top_k is not None else self.top_k
         tokens = _tokens(query)
+        nodes = [node for node in self.graph.nodes
+                 if node.node_type is not NodeType.EVIDENCE]
+        relevance = _bm25_scores(tokens, [_searchable_text(node) for node in nodes])
         hits: list[RetrievalHit] = []
-        for node in self.graph.nodes:
-            if node.node_type is NodeType.EVIDENCE:
-                continue
-            text = _searchable_text(node)
-            matched = sum(1 for token in tokens if token in text)
+        for node, constraint in zip(nodes, relevance):
             reasons: dict[str, float] = {
-                "constraint_match": matched / len(tokens) if tokens else 0.0,
+                "constraint_match": constraint,
                 "historical_metric": _historical_metric(node),
                 "evidence_freshness": min(1.0, len(node.evidence) / 2),
                 "failure_penalty": _failure_flag(node),

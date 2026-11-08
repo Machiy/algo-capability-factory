@@ -15,16 +15,19 @@ imbalanced-learn>=0.12,<0.14
 # ---- 知识图谱与检索 ----
 networkx>=3.3,<4
 pyvis>=0.3.2,<0.4
+rank-bm25>=0.2.2,<0.3
 
-# ---- Agent 编排 ----
-# 修复循环只有「验证失败 → 定向修复 → 重新生成」一条条件边，状态规模小，
-# 采用自研轻量状态机（factory/workflow/），去掉一组重依赖以提升干净环境复现。
-# 恢复图编排时再启用：
-# langgraph>=0.2,<0.4
-# langchain-core>=0.3,<0.4
+# ---- Agent 编排（现成框架，不自研状态机）----
+langgraph>=0.2,<0.4
+langchain-core>=0.3,<0.4
 
-# ---- 报告与接入层 ----
+# ---- 运行时、日志与报告 ----
+psutil>=6,<8
+structlog>=24,<26
+markdown-it-py>=3,<5
 jinja2>=3.1,<4
+
+# ---- 接入层 ----
 typer>=0.12,<0.16
 fastapi>=0.112,<0.116
 uvicorn[standard]>=0.30,<0.35

@@ -1,7 +1,8 @@
 """带真实数据集的子进程沙箱：生成代码在此 fit / predict，错误真实发生。
 
-复用 P2 的超时与内存监控口径；列名不存在、禁入模字段等数据陷阱会在子进程
-内抛出真实异常，供 Repairer 按错误签名定向修复。
+超时与内存监控复用 P2 的 ``sandbox_env`` / ``process_memory_bytes``（psutil）；
+列名不存在、禁入模字段等数据陷阱会在子进程内抛出真实异常，供 Repairer
+按错误签名定向修复。
 """
 
 from __future__ import annotations
@@ -20,7 +21,7 @@ from typing import Any
 from factory.config import RuntimeSettings, SplitSpec
 from factory.contracts.validation import SandboxResult
 from factory.contracts.workflow import DatasetRunResult
-from factory.runtime.sandbox import _windows_peak_bytes, sandbox_env
+from factory.runtime.sandbox import process_memory_bytes, sandbox_env
 
 logger = logging.getLogger(__name__)
 
@@ -158,7 +159,7 @@ class DatasetSandbox:
     def _watch(self, proc: subprocess.Popen[str], state: dict[str, Any]) -> None:
         limit = self.runtime.memory_limit_mb * 1024 * 1024
         while proc.poll() is None:
-            usage = _windows_peak_bytes(proc)
+            usage = process_memory_bytes(proc)
             if usage:
                 state["peak"] = max(int(state["peak"]), usage)
                 if usage > limit:
