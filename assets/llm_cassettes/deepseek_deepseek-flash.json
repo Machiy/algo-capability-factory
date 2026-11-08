@@ -1,0 +1,89 @@
+{
+  "cassette_version": 1,
+  "entries": [
+    {
+      "key": "b2a7c5f420a01ceb96b2c2b83bb9a1c8a80c515fac9c12b70df4cf9a6df132c8",
+      "model": "deepseek-flash",
+      "prompt_sha256": "dd1c6252a76604f0df54808e4ba51c3691d681a1dd4e1235544330c0bb1845a7",
+      "request": {
+        "context_budget_tokens": 32000,
+        "max_tokens": 8192,
+        "model": "deepseek-flash",
+        "reasoning_effort": "high",
+        "role": "Interpreter",
+        "system": "你是算法能力工厂的 Interpreter，把自然语言能力描述解析为结构化 JSON。",
+        "temperature": 0.0,
+        "thinking": "enabled",
+        "user": "预测信用卡客户下月违约概率，时间外划分，按 5:1 成本比选阈值，禁止 ID 入模。"
+      },
+      "response": {
+        "parsed": {
+          "capability_name": "信用卡客户下月违约概率预测",
+          "data_split": {
+            "description": "按时间外划分训练集、验证集和测试集",
+            "strategy": "out_of_time",
+            "time_based": true
+          },
+          "entity": "信用卡客户",
+          "evaluation": {
+            "notes": "在时间外测试集上评估概率排序能力与成本最优阈值表现",
+            "primary_metrics": [
+              "AUC",
+              "KS",
+              "cost_sensitive_threshold_metric"
+            ],
+            "threshold_metric": "cost"
+          },
+          "feature_constraints": {
+            "description": "禁止 ID 类字段入模",
+            "exclude_identifier_columns": true,
+            "forbidden_features": [
+              "id"
+            ]
+          },
+          "objective": "预测信用卡客户在下个月发生违约的概率",
+          "output": {
+            "field": "default_probability",
+            "range": [
+              0,
+              1
+            ],
+            "type": "probability"
+          },
+          "prediction_horizon": "next_month",
+          "problem_type": "probability_estimation",
+          "target": {
+            "definition": "客户下月是否违约",
+            "name": "next_month_default",
+            "negative_class": "non_default",
+            "positive_class": "default"
+          },
+          "task_type": "binary_classification",
+          "threshold_selection": {
+            "assumed_cost_ratio_interpretation": "false_negative:false_positive = 5:1",
+            "cost_ratio": "5:1",
+            "description": "按 5:1 成本比选择分类阈值",
+            "method": "cost_sensitive_threshold_selection"
+          }
+        },
+        "raw": "{\n  \"capability_name\": \"信用卡客户下月违约概率预测\",\n  \"task_type\": \"binary_classification\",\n  \"problem_type\": \"probability_estimation\",\n  \"objective\": \"预测信用卡客户在下个月发生违约的概率\",\n  \"entity\": \"信用卡客户\",\n  \"target\": {\n    \"name\": \"next_month_default\",\n    \"definition\": \"客户下月是否违约\",\n    \"positive_class\": \"default\",\n    \"negative_class\": \"non_default\"\n  },\n  \"prediction_horizon\": \"next_month\",\n  \"output\": {\n    \"type\": \"probability\",\n    \"field\": \"default_probability\",\n    \"range\": [0, 1]\n  },\n  \"data_split\": {\n    \"strategy\": \"out_of_time\",\n    \"description\": \"按时间外划分训练集、验证集和测试集\",\n    \"time_based\": true\n  },\n  \"threshold_selection\": {\n    \"method\": \"cost_sensitive_threshold_selection\",\n    \"cost_ratio\": \"5:1\",\n    \"assumed_cost_ratio_interpretation\": \"false_negative:false_positive = 5:1\",\n    \"description\": \"按 5:1 成本比选择分类阈值\"\n  },\n  \"feature_constraints\": {\n    \"forbidden_features\": [\"id\"],\n    \"exclude_identifier_columns\": true,\n    \"description\": \"禁止 ID 类字段入模\"\n  },\n  \"evaluation\": {\n    \"primary_metrics\": [\"AUC\", \"KS\", \"cost_sensitive_threshold_metric\"],\n    \"threshold_metric\": \"cost\",\n    \"notes\": \"在时间外测试集上评估概率排序能力与成本最优阈值表现\"\n  }\n}",
+        "usage": {
+          "completion_tokens": 961,
+          "prompt_tokens": 77,
+          "total_tokens": 1038
+        }
+      },
+      "role": "Interpreter"
+    }
+  ],
+  "model": "deepseek-flash",
+  "params": {
+    "max_tokens": 8192,
+    "reasoning_effort": "high",
+    "temperature": 0.0,
+    "thinking": "enabled"
+  },
+  "provider": "deepseek",
+  "recorded_at": "2026-11-09T01:58:52",
+  "source": "deepseek_api"
+}

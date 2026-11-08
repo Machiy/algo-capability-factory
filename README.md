@@ -233,7 +233,7 @@ pytest -q                      # 测试用例
 
 **关于 LLM**：默认 `--mock` 使用规则模板，不依赖任何 LLM 服务，保证断网一键复现。本地部署模型在本项目不可行（CPU 推理过慢），因此按开发要求 g 的「API 调用方式」接入 **DeepSeek 的 OpenAI 兼容接口**：把 `configs/default.yaml` 的 `llm.provider` 切到 `openai_compat`，按 `.env.example` 把 `LLM_API_KEY` 填进 `.env` 或设为环境变量即可。官方端点 `https://api.deepseek.com`、当前示例模型 `deepseek-flash`；`deepseek-chat` / `deepseek-reasoner` 为旧名。任务 1 要求的「可调用的 LLM 接口」由这条真实路径满足。
 
-**凭据与录制回放**：`LLM_API_KEY` 只从环境变量 / `.env` 读取，`.gitignore` 已排除 `.env` 与 `.env.*`；任何 key、token、Authorization header 都不会写入仓库文件、日志或 cassette。真实调用产生的对话正文与响应脱敏后落盘 `assets/llm_cassettes/` 作为交付证据；把 `llm.provider` 设为 `cassette` 即可在**无 key、断网**环境原样回放同一输出。回放未命中时按 `cassette.on_miss` 显式报错或回退 `MockLLM`，不静默造假。凡引用回放结果的报告段落均标注「离线回放」，与实时调用区分。真实 API 演示与预设的三条修复轨迹分两次运行、分开写入报告（当前为规划阶段，cassette 尚未录制）。
+**凭据与录制回放**：`LLM_API_KEY` 只从环境变量 / `.env` 读取，`.gitignore` 已排除 `.env` 与 `.env.*`；任何 key、token、Authorization header 都不会写入仓库文件、日志或 cassette。真实调用产生的对话正文与响应脱敏后落盘 `assets/llm_cassettes/` 作为交付证据；把 `llm.provider` 设为 `cassette` 即可在**无 key、断网**环境原样回放同一输出。回放未命中时按 `cassette.on_miss` 显式报错或回退 `MockLLM`，不静默造假。凡引用回放结果的报告段落均标注「离线回放」，与实时调用区分。已录制 1 条真实 DeepSeek 调用（Interpreter 环节，产物见 `assets/llm_cassettes/deepseek_deepseek-flash.json`），回放一致性由 `tests/test_cassette_replay.py` 在不联网条件下自动校验。真实 API 演示与预设的三条修复轨迹分两次运行、分开写入报告。
 
 **主要产物**
 
@@ -406,7 +406,7 @@ def build_pipeline(config: dict):
 
 - [ ] 顶部「当前仓库状态」改为实际完成阶段
 - [ ] 第 5 节命令与 `requirements.txt` 对齐
-- [ ] 用 DeepSeek API 录制一次真实调用，补齐 cassette 与 prompt 模板 / 输出 schema 证据（P3 末，需 key）
+- [x] 用 DeepSeek API 录制真实调用并补齐 cassette 证据（prompt 模板见 `factory/llm/demo.py`）
 - [ ] 第 7 节替换为 `outputs/generated/` 中的真实生成代码与修复 diff
 - [ ] 第 8 节所有 `<实测后填充>` 替换为实测指标，附上真实报告文件与图谱 diff
 - [ ] 第 9 节补记实现过程中新遇到的挑战
