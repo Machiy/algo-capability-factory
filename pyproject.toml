@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "algocap-factory"
+version = "0.1.0"
+description = "基于 AI Agent 的算法能力工厂原型：信用卡违约预测"
+readme = "README.md"
+requires-python = ">=3.11"
+# 依赖统一由 requirements.txt 管理，便于笔试环境一键复现
+dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["factory*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

@@ -1,0 +1,69 @@
+# 全局默认配置；任务级配置见 verify_*.yaml
+project:
+  name: algocap-factory
+  version: 0.1.0
+  seed: 42
+  log_level: INFO
+
+llm:
+  # mock 为默认路径，保证断网环境可完整复现
+  provider: mock                # mock | openai_compat
+  model: qwen2.5:7b
+  base_url: http://localhost:11434/v1
+  temperature: 0.0
+  max_tokens: 4096
+  timeout_seconds: 60
+
+knowledge:
+  graph_path: outputs/kg/graph.graphml
+  sqlite_path: outputs/kg/capabilities.db
+  extraction_results:
+    - outputs/kg/capabilities.json
+    - outputs/kg/capabilities.csv
+  retrieval:
+    top_k: 5
+    weights:
+      constraint_match: 0.40
+      historical_metric: 0.30
+      evidence_freshness: 0.15
+      failure_penalty: 0.15
+
+workflow:
+  beam_width: 3
+  max_repair_rounds: 3
+  roles:
+    - Interpreter
+    - Retriever
+    - Planner
+    - Coder
+    - Reviewer
+    - Verifier
+    - Repairer
+    - Curator
+
+runtime:
+  timeout_seconds: 60
+  memory_limit_mb: 2048
+  allowed_imports:
+    - numpy
+    - pandas
+    - sklearn
+    - imblearn
+    - math
+    - typing
+    - dataclasses
+  forbidden_patterns:
+    - os.system
+    - subprocess
+    - socket
+    - requests
+    - open
+
+paths:
+  data: assets/data/UCI_Credit_Card.csv
+  docs: assets/docs
+  legacy: assets/legacy
+  generated: outputs/generated
+  reports: outputs/reports
+  kg: outputs/kg
+  runs: outputs/runs

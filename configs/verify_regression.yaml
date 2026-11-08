@@ -1,0 +1,30 @@
+# 第二任务类型：回归，用于验证「支持不同任务类型的验证配置」
+# 状态：planned —— 数据包将在 P6 引入，当前仅定义契约，不参与主流程
+status: planned
+task_type: tabular_regression
+capability_id: cap.regression.demand.v1
+
+dataset:
+  path: assets/data/bike_sharing_hour.csv
+  source: UCI Bike Sharing Dataset (CC BY 4.0)
+  # 备选：sklearn.datasets.fetch_california_housing（首次需联网）
+  target: cnt
+  expected_columns: [season, yr, mnth, hr, holiday, weekday, workingday,
+                     weathersit, temp, atemp, hum, windspeed, casual, registered, cnt]
+
+split:
+  strategy: time_series_split
+  n_splits: 5
+  shuffle: false
+
+constraints:
+  non_negative_prediction: true
+  no_future_features: true
+
+metrics:
+  - {name: rmse, direction: minimize, threshold: null, plugin: sklearn_metrics}
+  - {name: mae, direction: minimize, threshold: null, plugin: sklearn_metrics}
+  - {name: r2, direction: maximize, threshold: 0.60, plugin: sklearn_metrics}
+
+baselines:
+  - dummy_mean

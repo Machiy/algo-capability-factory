@@ -1,0 +1,32 @@
+# 第三任务类型：文本分类，用于验证「跨场景迁移」
+# 状态：planned —— 数据包将在 P6-1 引入，当前仅定义契约
+status: planned
+task_type: text_classification
+capability_id: cap.text.sentiment.v1
+
+dataset:
+  path: assets/data/ag_news.csv
+  source: AG News (120000 train / 7600 test) 或 ChnSentiCorp (HF seamew/ChnSentiCorp)
+  text_column: text
+  target: label
+  language: zh_or_en
+
+split:
+  strategy: predefined
+  train_split: train
+  test_split: test
+  random_state: 42
+
+constraints:
+  max_vocab_size: 50000
+  no_test_vocabulary_leakage: true
+
+metrics:
+  - {name: accuracy, direction: maximize, threshold: 0.80, plugin: sklearn_metrics}
+  - {name: macro_f1, direction: maximize, threshold: 0.78, plugin: sklearn_metrics}
+
+vectorizers: [tfidf, count]
+model_families: [logistic_regression, linear_svm, naive_bayes]
+
+baselines:
+  - dummy_most_frequent

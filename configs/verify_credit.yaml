@@ -1,0 +1,85 @@
+# 主任务：信用卡客户下月违约预测
+status: active
+task_type: tabular_binary_classification
+capability_id: cap.credit.default.v1
+
+dataset:
+  path: assets/data/UCI_Credit_Card.csv
+  target: default.payment.next.month
+  id_column: ID
+  forbidden_features:
+    - ID
+    - default.payment.next.month
+  expected_rows: 30000
+  expected_columns:
+    - ID
+    - LIMIT_BAL
+    - SEX
+    - EDUCATION
+    - MARRIAGE
+    - AGE
+    - PAY_0
+    - PAY_2
+    - PAY_3
+    - PAY_4
+    - PAY_5
+    - PAY_6
+    - BILL_AMT1
+    - BILL_AMT2
+    - BILL_AMT3
+    - BILL_AMT4
+    - BILL_AMT5
+    - BILL_AMT6
+    - PAY_AMT1
+    - PAY_AMT2
+    - PAY_AMT3
+    - PAY_AMT4
+    - PAY_AMT5
+    - PAY_AMT6
+    - default.payment.next.month
+  known_issues:
+    - "T1: PAY_1 不存在，列名实为 PAY_0"
+    - "T2: EDUCATION 含 0/5/6，MARRIAGE 含 0，PAY_* 含 -2"
+    - "T3: BILL_AMT* 可为负；账单期与付款期错位"
+    - "T4: 标签为下月违约，随机划分会引入未来信息"
+
+split:
+  strategy: temporal_holdout
+  train_ratio: 0.60
+  valid_ratio: 0.20
+  test_ratio: 0.20
+  stratify: true
+  random_state: 42
+  test_used_once: true
+
+constraints:
+  cost_ratio_fn_fp: 5          # 漏报成本 : 误报成本
+  min_history_months: 6
+  sensitive_features:
+    - SEX
+    - AGE
+    - EDUCATION
+    - MARRIAGE
+  sensitive_features_in_model: false
+  fit_on_train_only: true
+  probability_range: [0.0, 1.0]
+  deterministic: true
+
+metrics:
+  - {name: auc, direction: maximize, threshold: 0.78, plugin: sklearn_metrics}
+  - {name: ks, direction: maximize, threshold: 0.35, plugin: credit_metrics}
+  - {name: pr_auc, direction: maximize, threshold: 0.50, plugin: sklearn_metrics}
+  - {name: f1, direction: maximize, threshold: 0.45, plugin: sklearn_metrics}
+  - {name: cost_weighted_loss, direction: minimize, threshold: null, plugin: credit_metrics}
+  - {name: psi, direction: minimize, threshold: 0.25, plugin: credit_metrics}
+  - {name: grouped_auc_gap, direction: minimize, threshold: 0.10, plugin: fairness_metrics}
+
+baselines:
+  - dummy_stratified
+  - logistic_regression_default
+
+candidates:
+  model_families: [logistic_regression, random_forest, hist_gradient_boosting]
+  binnings: [none, woe]
+  samplers: [none, smote, class_weight]
+  thresholds: [0.30, 0.50, cost_optimal]
