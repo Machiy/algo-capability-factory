@@ -4,8 +4,9 @@
 的调用链仍完整：``configure_logging`` → ``OpenAICompatLLM.complete`` → 请求参数
 组装 → 响应解析 → 脱敏录制 → ``RecordedLLM`` 回放。
 
-本测试不产生 API 费用，也不写入 ``assets/llm_cassettes/`` 的真实交付文件；
-真实调用证据仍只有 ``deepseek_deepseek-flash.json`` 中那 1 次录制，二者不可混淆。
+本测试不产生 API 费用，也不写入 ``assets/llm_cassettes/`` 的真实交付文件。
+交付 cassette 中的 2 条真实录制（首次 + 替换后复测）由
+``tests/test_cassette_replay.py`` 单独做断网回放验收，二者不可混淆。
 """
 
 from __future__ import annotations
@@ -19,7 +20,7 @@ from unittest.mock import MagicMock, patch
 
 from factory.config import load_settings
 from factory.llm.cassette import cassette_path, compute_key, load_cassette
-from factory.llm.demo import build_demo_request
+from factory.llm.demo import RECHECK_USER_PROMPT, build_demo_request
 from factory.llm.openai_compat import OpenAICompatLLM
 from factory.llm.recorded import RecordedLLM
 from factory.logging_setup import configure_logging
@@ -85,7 +86,9 @@ class RealtimePathTests(unittest.TestCase):
             self.assertIsNotNone(cassette)
             self.assertEqual(cassette.source, "deepseek_api")
             key = compute_key(self.request, settings.cassette.key_fields)
-            self.assertIsNotNone(cassette.find(key))
+            entry = cassette.find(key)
+            self.assertIsNotNone(entry)
+            self.assertTrue(entry.recorded_at)
 
             replay_settings = settings.model_copy(update={
                 "provider": "cassette",
@@ -97,15 +100,21 @@ class RealtimePathTests(unittest.TestCase):
             self.assertEqual(replayed.raw, response.raw)
             self.assertEqual(replayed.parsed, response.parsed)
 
-    def test_realtime_path_does_not_touch_delivery_cassette(self) -> None:
-        """交付 cassette 仍只有 1 条真实录制，不被零费用回归改写。"""
+    def test_delivery_cassette_keeps_both_real_recordings(self) -> None:
+        """交付 cassette 保留首次录制与替换后实时复测，不被零费用回归改写。"""
         delivery = (ROOT / self.settings.cassette.dir /
                     "deepseek_deepseek-flash.json")
         if not delivery.is_file():
             self.skipTest("真实 cassette 尚未录制")
         cassette = load_cassette(delivery)
         self.assertEqual(cassette.source, "deepseek_api")
-        self.assertEqual(len(cassette.entries), 1)
+        self.assertGreaterEqual(len(cassette.entries), 2)
+        first = compute_key(build_demo_request(self.settings),
+                            self.settings.cassette.key_fields)
+        recheck = compute_key(build_demo_request(self.settings, RECHECK_USER_PROMPT),
+                              self.settings.cassette.key_fields)
+        self.assertIsNotNone(cassette.find(first))
+        self.assertIsNotNone(cassette.find(recheck))
 
 
 if __name__ == "__main__":

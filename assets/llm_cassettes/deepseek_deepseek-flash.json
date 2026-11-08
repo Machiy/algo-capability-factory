@@ -5,6 +5,7 @@
       "key": "b2a7c5f420a01ceb96b2c2b83bb9a1c8a80c515fac9c12b70df4cf9a6df132c8",
       "model": "deepseek-flash",
       "prompt_sha256": "dd1c6252a76604f0df54808e4ba51c3691d681a1dd4e1235544330c0bb1845a7",
+      "recorded_at": "",
       "request": {
         "context_budget_tokens": 32000,
         "max_tokens": 8192,
@@ -71,6 +72,61 @@
           "completion_tokens": 961,
           "prompt_tokens": 77,
           "total_tokens": 1038
+        }
+      },
+      "role": "Interpreter"
+    },
+    {
+      "key": "2d489fffe09b8281a898def25377187151bdb81ac47af6afb7a43156f3f89e60",
+      "model": "deepseek-flash",
+      "prompt_sha256": "fa0a61880088373331454acffe603bc1c0ee1d7f4cf003918a0d2f9dca71a41c",
+      "recorded_at": "2026-11-09T03:05:32",
+      "request": {
+        "context_budget_tokens": 32000,
+        "max_tokens": 8192,
+        "model": "deepseek-flash",
+        "reasoning_effort": "high",
+        "role": "Interpreter",
+        "system": "你是算法能力工厂的 Interpreter，把自然语言能力描述解析为结构化 JSON。",
+        "temperature": 0.0,
+        "thinking": "enabled",
+        "user": "复测：确认替换现成库后的实时 LLM 链路可用，请把这句能力描述解析为结构化 JSON。"
+      },
+      "response": {
+        "parsed": {
+          "acceptance_criteria": [
+            "实时 LLM 链路可正常调用并完成实时推理或响应"
+          ],
+          "capability": {
+            "action": "复测",
+            "intent": "确认可用性",
+            "name": "实时 LLM 链路替换后复测",
+            "precondition": "替换现成库后",
+            "subject": "实时 LLM 链路",
+            "target_state": "实时 LLM 链路可用",
+            "type": "验证/复测"
+          },
+          "constraints": [
+            "在替换现成库完成后执行"
+          ],
+          "entities": {
+            "change": "替换现成库",
+            "dependency": "现成库",
+            "system": "实时 LLM 链路"
+          },
+          "raw_description": "复测：确认替换现成库后的实时 LLM 链路可用",
+          "schema_version": "1.0",
+          "test": {
+            "expected_result": "链路可用",
+            "mode": "复测",
+            "status": "待执行"
+          }
+        },
+        "raw": "{\n  \"schema_version\": \"1.0\",\n  \"raw_description\": \"复测：确认替换现成库后的实时 LLM 链路可用\",\n  \"capability\": {\n    \"name\": \"实时 LLM 链路替换后复测\",\n    \"type\": \"验证/复测\",\n    \"intent\": \"确认可用性\",\n    \"subject\": \"实时 LLM 链路\",\n    \"action\": \"复测\",\n    \"precondition\": \"替换现成库后\",\n    \"target_state\": \"实时 LLM 链路可用\"\n  },\n  \"entities\": {\n    \"system\": \"实时 LLM 链路\",\n    \"change\": \"替换现成库\",\n    \"dependency\": \"现成库\"\n  },\n  \"constraints\": [\n    \"在替换现成库完成后执行\"\n  ],\n  \"acceptance_criteria\": [\n    \"实时 LLM 链路可正常调用并完成实时推理或响应\"\n  ],\n  \"test\": {\n    \"mode\": \"复测\",\n    \"expected_result\": \"链路可用\",\n    \"status\": \"待执行\"\n  }\n}",
+        "usage": {
+          "completion_tokens": 817,
+          "prompt_tokens": 74,
+          "total_tokens": 891
         }
       },
       "role": "Interpreter"
