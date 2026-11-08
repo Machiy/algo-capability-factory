@@ -45,7 +45,11 @@ class LLMResponse(_StrictModel):
 
 
 class CassetteEntry(_StrictModel):
-    """一条脱敏后的请求/响应；不含 header、完整 endpoint、key/token。"""
+    """一条脱敏后的请求/响应；不含 header、完整 endpoint、key/token。
+
+    ``recorded_at`` 为该条自己的录制时刻；旧版 cassette 无此字段时为空串，
+    保持向后兼容。
+    """
 
     key: str
     role: str
@@ -53,13 +57,15 @@ class CassetteEntry(_StrictModel):
     request: dict[str, Any]
     response: dict[str, Any]
     model: str
+    recorded_at: str = ""
 
 
 class Cassette(_StrictModel):
     """录制文件契约。
 
     ``source`` 取 ``deepseek_api``（真实录制）或 ``test_fixture``（测试夹具），
-    报告与 README 据此标注「离线回放」，不冒充实时调用。
+    报告与 README 据此标注「离线回放」，不冒充实时调用。``recorded_at`` 是
+    **首次**录制时间，后续新增条目的时间由各 ``CassetteEntry.recorded_at`` 记录。
     """
 
     cassette_version: int = 1

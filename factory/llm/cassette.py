@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -76,8 +77,9 @@ def save_cassette(path: Path, cassette: Cassette, settings: CassetteSettings,
 
 
 def make_entry(request: LLMRequest, response: LLMResponse,
-               settings: CassetteSettings, api_key: str | None = None) -> CassetteEntry:
-    """把一次调用转为脱敏后的 cassette 条目。"""
+               settings: CassetteSettings, api_key: str | None = None,
+               recorded_at: str | None = None) -> CassetteEntry:
+    """把一次调用转为脱敏后的 cassette 条目，并记录该条的录制时刻。"""
     prompt = f"{request.system}\n{request.user}".encode()
     request_payload = sanitize(request.model_dump(), settings.strip, api_key)
     response_payload = sanitize({
@@ -92,6 +94,7 @@ def make_entry(request: LLMRequest, response: LLMResponse,
         request=request_payload,
         response=response_payload,
         model=response.model,
+        recorded_at=recorded_at or datetime.now().isoformat(timespec="seconds"),
     )
 
 
