@@ -37,7 +37,12 @@ class CandidateEvaluation(_StrictModel):
 
 
 class RunTrace(_StrictModel):
-    """一次 a–g 七步运行的可回放轨迹。"""
+    """一次 a–g 七步运行的可回放轨迹。
+
+    ``kg_mode`` / ``graph_source`` / ``used_historical_warnings`` 用于证明
+    沉淀闭环：本轮是否使用检索、图谱来自源材料还是上一轮回写、是否命中
+    历史失败经验。
+    """
 
     run_id: str
     spec: str
@@ -49,6 +54,9 @@ class RunTrace(_StrictModel):
     generated_files: list[str] = Field(default_factory=list)
     report_path: str = ""
     passed: bool = False
+    kg_mode: str = "with_kg"
+    graph_source: str = "sources"
+    used_historical_warnings: bool = False
     notes: str = ""
 
 

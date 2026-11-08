@@ -118,7 +118,13 @@ class Coder:
         self.llm = llm
 
     def generate(self, plan: CandidatePlan, retrieval: RetrievalResult,
-                 columns: list[str], induce_t1: bool = False) -> str:
+                 columns: list[str], induce_t1: bool = False,
+                 respect_failures: bool = True) -> str:
+        avoided = (induce_t1 and respect_failures
+                   and any("PAY_1" in warning for warning in retrieval.failure_warnings))
+        if avoided:
+            # 图谱已沉淀 T1 失败经验，首轮即避开直觉命名，不再重复踩坑
+            induce_t1 = False
         rendered = [name.replace("PAY_0", "PAY_1") for name in columns] if induce_t1 \
             else list(columns)
         user = (f"方案：{plan.model_dump_json()}\n"
@@ -199,6 +205,18 @@ class Curator:
         anchor = next(
             (node.node_id for node in nodes if node.node_type is NodeType.CAPABILITY), None
         )
+        upgraded = f"{anchor}.v2" if anchor else None
+        run_prefix = f"run.{trace.run_id}."
+        failure_prefix = f"failure.{trace.run_id}."
+
+        def stale(node_id: str) -> bool:
+            return (node_id.startswith((run_prefix, failure_prefix))
+                    or (upgraded is not None and node_id == upgraded))
+
+        # 同一 run_id 重跑时覆盖旧节点，避免反复运行让图谱无限膨胀
+        nodes = [node for node in nodes if not stale(node.node_id)]
+        edges = [edge for edge in edges
+                 if not (stale(edge.source) or stale(edge.target))]
         for index, report in enumerate(reports, start=1):
             run_id = f"run.{trace.run_id}.{index:02d}"
             nodes.append(KGNode(
@@ -228,8 +246,7 @@ class Curator:
             if anchor:
                 edges.append(KGEdge(source=anchor, target=failure_id,
                                     edge_type=EdgeType.RESULTED_IN))
-        if anchor and failure_ids:
-            upgraded = f"{anchor}.v2"
+        if anchor and failure_ids and upgraded is not None:
             nodes.append(KGNode(
                 node_id=upgraded, node_type=NodeType.CAPABILITY,
                 name="修复后的能力版本", version="v2",

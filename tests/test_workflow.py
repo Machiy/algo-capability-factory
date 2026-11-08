@@ -9,11 +9,13 @@ from pathlib import Path
 
 from factory.agents import Coder, Curator, Planner, Repairer, Reviewer
 from factory.config import load_settings, load_task_settings
-from factory.contracts.knowledge import RetrievalHit, RetrievalResult
+from factory.contracts.knowledge import KGNode, NodeType, RetrievalHit, RetrievalResult
 from factory.contracts.llm import LLMRequest, LLMResponse
 from factory.contracts.models import CandidatePlan, ValidationReport
 from factory.contracts.workflow import RunTrace
 from factory.knowledge import MockExtractor, read_sources
+from factory.knowledge.graph import KnowledgeGraphStore, load_graph
+from factory.knowledge.retrieval import HybridRetriever
 from factory.llm import MockLLM
 from factory.llm.base import BaseLLM
 from factory.runtime import StaticChecker
@@ -38,13 +40,14 @@ class RecordingLLM(BaseLLM):
         return self._delegate.complete(request)
 
 
-def _retrieval() -> RetrievalResult:
+def _retrieval(failure_warnings: list[str] | None = None) -> RetrievalResult:
     return RetrievalResult(
         query="预测信用卡客户下月违约概率",
         top_k=5,
         hits=[RetrievalHit(node_id="cap.risk_policy.C4", name="时间外划分", score=0.5)],
         constraints=["必须时间外划分"],
-        failure_warnings=["KeyError: PAY_1 → 列名映射为 PAY_0"],
+        failure_warnings=(failure_warnings if failure_warnings is not None
+                          else ["KeyError: PAY_1 → 列名映射为 PAY_0"]),
     )
 
 
@@ -82,7 +85,9 @@ class PromptInjectionTests(unittest.TestCase):
 class RepairTests(unittest.TestCase):
     def test_key_error_is_repaired_by_column_mapping(self) -> None:
         llm = RecordingLLM()
-        source = Coder(MockLLM()).generate(_plan(), _retrieval(), COLUMNS, induce_t1=True)
+        source = Coder(MockLLM()).generate(
+            _plan(), _retrieval(failure_warnings=[]), COLUMNS, induce_t1=True
+        )
         self.assertIn('"PAY_1"', source)
         fixed, record = Repairer(llm).repair(source, "KeyError: PAY_1", 1)
         self.assertNotIn('"PAY_1"', fixed)
@@ -119,7 +124,9 @@ class DatasetSandboxTests(unittest.TestCase):
         )
 
     def test_t1_trap_raises_real_key_error(self) -> None:
-        source = Coder(MockLLM()).generate(_plan(), _retrieval(), COLUMNS, induce_t1=True)
+        source = Coder(MockLLM()).generate(
+            _plan(), _retrieval(failure_warnings=[]), COLUMNS, induce_t1=True
+        )
         result = self.sandbox.run(source)
         self.assertFalse(result.sandbox.passed)
         self.assertEqual(result.sandbox.error_signature, "KeyError: PAY_1")
@@ -155,6 +162,64 @@ class CuratorTests(unittest.TestCase):
         self.assertIn("HAS_RUN", edge_types)
         self.assertIn("DERIVED_FROM", edge_types)
         self.assertIn("FIXED_BY", edge_types)
+
+
+class PersistenceTests(unittest.TestCase):
+    """P4：回写图谱能被下一轮读取，历史失败经验改变首轮行为。"""
+
+    def test_coder_avoids_t1_when_history_present(self) -> None:
+        source = Coder(MockLLM()).generate(_plan(), _retrieval(), COLUMNS, induce_t1=True)
+        self.assertNotIn('"PAY_1"', source)
+        self.assertIn('"PAY_0"', source)
+
+    def test_retrieval_prefers_measured_failure_cases(self) -> None:
+        settings = load_settings(CONFIG)
+        sources = read_sources(ROOT, settings.paths.docs, settings.paths.legacy)
+        graph = MockExtractor().extract(sources)
+        measured = KGNode(
+            node_id="failure.unit.01", node_type=NodeType.FAILURE_CASE,
+            name="失败案例 KeyError: PAY_1",
+            attributes={"error_signature": "KeyError: PAY_1",
+                        "fix_strategy": "列名映射为 PAY_0"},
+        )
+        graph = graph.model_copy(update={"nodes": [*graph.nodes, measured]})
+        warnings = HybridRetriever(graph, top_k=5).retrieve(
+            "预测信用卡客户下月违约概率"
+        ).failure_warnings
+        self.assertTrue(any("PAY_1" in item for item in warnings))
+
+    def test_load_graph_roundtrip(self) -> None:
+        settings = load_settings(CONFIG)
+        sources = read_sources(ROOT, settings.paths.docs, settings.paths.legacy)
+        graph = MockExtractor().extract(sources)
+        with tempfile.TemporaryDirectory() as tmp:
+            path = KnowledgeGraphStore(graph).export_json(Path(tmp) / "g.json")
+            loaded = load_graph(path)
+        self.assertIsNotNone(loaded)
+        self.assertEqual(len(loaded.nodes), len(graph.nodes))
+        self.assertEqual(len(loaded.edges), len(graph.edges))
+
+    def test_curator_sink_is_idempotent(self) -> None:
+        settings = load_settings(CONFIG)
+        sources = read_sources(ROOT, settings.paths.docs, settings.paths.legacy)
+        graph = MockExtractor().extract(sources)
+        trace = RunTrace(
+            run_id="unit", spec="测试",
+            repairs=[Repairer(MockLLM()).repair("x", "KeyError: PAY_1", 1)[1]],
+        )
+        reports = [ValidationReport(run_id="unit", plan_id="plan.test",
+                                    passed=False, metric_values={"auc": 0.72})]
+        curator = Curator(graph, MockLLM())
+        with tempfile.TemporaryDirectory() as tmp:
+            first = Path(tmp) / "a.json"
+            curator.sink(trace, reports, first)
+            graph_after_first = load_graph(first)
+            second = Curator(graph_after_first, MockLLM())
+            second_path = Path(tmp) / "b.json"
+            second.sink(trace, reports, second_path)
+            graph_after_second = load_graph(second_path)
+        self.assertEqual(len(graph_after_second.nodes), len(graph_after_first.nodes))
+        self.assertEqual(len(graph_after_second.edges), len(graph_after_first.edges))
 
 
 class TraceContractTests(unittest.TestCase):

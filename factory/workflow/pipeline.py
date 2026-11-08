@@ -32,6 +32,7 @@ from factory.contracts.models import CandidatePlan, CapabilitySpec, ValidationRe
 from factory.contracts.validation import StaticCheckResult
 from factory.contracts.workflow import CandidateEvaluation, RunTrace
 from factory.knowledge import MockExtractor, read_sources
+from factory.knowledge.graph import load_graph
 from factory.llm import build_llm
 from factory.logging_setup import write_trace
 from factory.runtime import StaticChecker
@@ -81,6 +82,8 @@ def render_run_report(trace: RunTrace, reports: list[ValidationReport],
         "> test 集全程未访问。引用 cassette 回放的内容须另标注「离线回放」。",
         "",
         f"- 能力描述：{trace.spec}",
+        f"- 知识图谱：{trace.kg_mode}（图谱来源 {trace.graph_source}）",
+        f"- 历史失败经验命中：{'是' if trace.used_historical_warnings else '否'}",
         f"- 七步流程：执行完成（{' → '.join(SEVEN_STEPS)} 均有产物）",
         f"- 四层全通过：**{'PASS' if trace.passed else 'FAIL'}**",
         f"- 七步轨迹：{' → '.join(trace.steps)}",
@@ -144,12 +147,22 @@ def render_run_report(trace: RunTrace, reports: list[ValidationReport],
 class Workflow:
     """一次端到端运行；LangGraph 图在初始化时编译，节点复用已构造的角色。"""
 
-    def __init__(self, settings: Settings, task: TaskSettings, root: Path) -> None:
+    def __init__(self, settings: Settings, task: TaskSettings, root: Path,
+                 use_knowledge: bool = True) -> None:
         self.settings = settings
         self.task = task
         self.root = root
-        sources = read_sources(root, settings.paths.docs, settings.paths.legacy)
-        graph = MockExtractor().extract(sources)
+        self.use_knowledge = use_knowledge
+        after_run = root / settings.paths.kg / "capabilities_after_run.json"
+        loaded = load_graph(after_run) if use_knowledge else None
+        if loaded is None:
+            sources = read_sources(root, settings.paths.docs, settings.paths.legacy)
+            graph = MockExtractor().extract(sources)
+            self.graph_source = "sources"
+        else:
+            graph = loaded
+            self.graph_source = "after_run"
+            logger.info("加载上一轮回写图谱：%s（%d 节点）", after_run, len(loaded.nodes))
         llm = build_llm(settings.llm, root)
         frame = pd.read_csv(root / settings.paths.data, nrows=1)
         excluded = set(task.dataset.forbidden_features)
@@ -217,9 +230,15 @@ class Workflow:
         return {"spec": spec, "trace": trace}
 
     def _n_retrieve(self, state: _GraphState) -> dict:
-        retrieval = self.retriever.retrieve(state["spec_text"])
+        if self.use_knowledge:
+            retrieval = self.retriever.retrieve(state["spec_text"])
+        else:
+            # 消融对照组：不检索、不注入任何证据
+            retrieval = RetrievalResult(query=state["spec_text"], top_k=0)
         trace = state["trace"]
         trace.retrieval_prompt = retrieval.as_prompt_context()
+        trace.kg_mode = "with_kg" if self.use_knowledge else "without_kg"
+        trace.graph_source = self.graph_source
         trace.steps.append(SEVEN_STEPS[1])
         return {"retrieval": retrieval, "trace": trace}
 
@@ -234,6 +253,9 @@ class Workflow:
         plan = state["plans"][index]
         source = self.coder.generate(plan, state["retrieval"], self.columns, index == 0)
         trace = state["trace"]
+        trace.used_historical_warnings = any(
+            "PAY_1" in warning for warning in state["retrieval"].failure_warnings
+        )
         trace.steps.append(SEVEN_STEPS[3])
         return {
             "plan": plan, "source": source, "static": self.reviewer.review(source),
@@ -303,13 +325,22 @@ class Workflow:
 
     def _n_sink(self, state: _GraphState) -> dict:
         trace = state["trace"]
-        kg_out = self.root / self.settings.paths.kg / "capabilities_after_run.json"
-        trace.kg_diff = self.curator.sink(trace, state["reports"], kg_out)
+        if self.use_knowledge:
+            kg_out = (self.root / self.settings.paths.kg /
+                      "capabilities_after_run.json")
+            trace.kg_diff = self.curator.sink(trace, state["reports"], kg_out)
+        else:
+            # 消融对照组不回写，避免污染实验
+            trace.kg_diff = {}
         trace.steps.append(SEVEN_STEPS[6])
         trace.passed = any(item.passed for item in trace.candidates)
-        trace.notes = (f"候选 {len(state['plans'])} 个；修复 {len(trace.repairs)} 轮；"
-                       f"检索证据 {len(state['retrieval'].hits)} 项已注入 "
-                       "Planner 与 Coder prompt。")
+        trace.notes = (
+            f"模式 {trace.kg_mode}（图谱来源 {trace.graph_source}）；"
+            f"候选 {len(state['plans'])} 个；修复 {len(trace.repairs)} 轮；"
+            f"历史失败经验命中 {'是' if trace.used_historical_warnings else '否'}；"
+            f"检索证据 {len(state['retrieval'].hits)} 项已注入 "
+            "Planner 与 Coder prompt。"
+        )
         trace.report_path = render_run_report(
             trace, state["reports"], self.curator.explain(trace),
             self.root / self.settings.paths.reports / f"run_{trace.run_id}.md",

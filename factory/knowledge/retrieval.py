@@ -128,16 +128,27 @@ class HybridRetriever:
         return items[:limit]
 
     def _failure_warnings(self, limit: int) -> list[str]:
-        """汇总历史失败规避项，供 Coder 主动避开已知错误签名。"""
-        items: list[str] = []
+        """汇总历史失败规避项，本项目实测回写的经验优先于材料里的种子案例。"""
+        measured: list[str] = []
+        seeded: list[str] = []
         for node in self.graph.by_type(NodeType.FAILURE_CASE):
             signature = node.attributes.get("error_signature")
-            fix = (node.attributes.get("修复策略")
+            fix = (node.attributes.get("fix_strategy")
+                   or node.attributes.get("修复策略")
                    or node.attributes.get("定向修复")
                    or node.attributes.get("description"))
-            if signature or fix:
-                items.append(f"{signature or '未知签名'} → {fix}")
-        return items[:limit]
+            if not (signature or fix):
+                continue
+            text = f"{signature or '未知签名'} → {fix}"
+            if node.node_id.startswith("failure."):
+                measured.append(text)
+            else:
+                seeded.append(text)
+        merged: list[str] = []
+        for text in measured + seeded:
+            if text not in merged:
+                merged.append(text)
+        return merged[:limit]
 
 
 __all__ = ["HybridRetriever"]

@@ -39,6 +39,19 @@ def _resolve(root: Path, configured: str) -> Path:
     return path if path.is_absolute() else root / path
 
 
+def load_graph(path: Path) -> KnowledgeGraph | None:
+    """加载回写后的图谱；忽略 ``export_json`` 附加的 ``content_sha256``。
+
+    这是沉淀闭环的读取端：文件不存在时返回 ``None``，调用方回退到从源材料
+    重新抽取，因此首次运行与后续运行可共用同一入口。
+    """
+    if not path.is_file():
+        return None
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload.pop("content_sha256", None)
+    return KnowledgeGraph(**payload)
+
+
 class KnowledgeGraphStore:
     """把 ``KnowledgeGraph`` 契约落盘为多种交付物。"""
 
