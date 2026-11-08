@@ -23,6 +23,27 @@ from factory.contracts.validation import SandboxResult, StaticCheckResult
 
 logger = logging.getLogger(__name__)
 
+_ALLOWED_ENV_KEYS = frozenset({
+    "PATH", "SYSTEMROOT", "WINDIR", "TEMP", "TMP", "USERPROFILE",
+    "COMSPEC", "PATHEXT", "NUMBER_OF_PROCESSORS", "PROCESSOR_ARCHITECTURE",
+    "PYTHONIOENCODING",
+})
+
+
+def sandbox_env() -> dict[str, str]:
+    """白名单式环境隔离：保留 Windows / Python 必需变量，剔除凭据与代理设置。"""
+    env = {
+        key: value for key, value in os.environ.items()
+        if key.upper() in _ALLOWED_ENV_KEYS
+    }
+    env.update({
+        "PYTHONNOUSERSITE": "1",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONHASHSEED": "0",
+    })
+    return env
+
+
 RUNNER_SOURCE = '''\
 import json
 import runpy
@@ -126,12 +147,7 @@ class SubprocessSandbox:
             runner = workdir / "runner.py"
             candidate.write_text(source, encoding="utf-8")
             runner.write_text(RUNNER_SOURCE, encoding="utf-8")
-            env = {
-                "PATH": os.environ.get("PATH", ""),
-                "PYTHONNOUSERSITE": "1",
-                "PYTHONDONTWRITEBYTECODE": "1",
-                "PYTHONHASHSEED": "0",
-            }
+            env = sandbox_env()
             started = time.monotonic()
             proc = subprocess.Popen(
                 [sys.executable, str(runner), str(limit_bytes), str(candidate)],
