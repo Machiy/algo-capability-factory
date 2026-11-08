@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import logging
 import sqlite3
@@ -64,11 +65,20 @@ class KnowledgeGraphStore:
             self.nx_graph.add_edge(edge.source, edge.target, **attributes)
 
     def export_json(self, path: Path) -> Path:
+        """导出不含运行时间的确定性 JSON，便于产物比对与入库。
+
+        ``built_at`` 属于运行时元数据，写入交付物会让每次构建都产生 diff；
+        改用节点与边的内容哈希标识版本。
+        """
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(
-            json.dumps(self.graph.model_dump(mode="json"), ensure_ascii=False, indent=2),
-            encoding="utf-8",
+        payload = self.graph.model_dump(mode="json", exclude={"built_at"})
+        canonical = json.dumps(
+            {"nodes": payload["nodes"], "edges": payload["edges"]},
+            ensure_ascii=False,
+            sort_keys=True,
         )
+        payload["content_sha256"] = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         return path
 
     def export_csv(self, path: Path) -> Path:

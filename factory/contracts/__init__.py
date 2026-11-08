@@ -1,4 +1,4 @@
-"""全系统唯一数据协议：能力描述、候选方案、验证报告、知识图谱。"""
+"""全系统唯一数据协议：能力描述、候选方案、验证报告、知识图谱与执行结论。"""
 
 from factory.contracts.knowledge import (
     EdgeType,
@@ -12,6 +12,7 @@ from factory.contracts.knowledge import (
     SourceDocument,
 )
 from factory.contracts.models import CandidatePlan, CapabilitySpec, TaskType, ValidationReport
+from factory.contracts.validation import SandboxResult, StaticCheckResult
 
 __all__ = [
     "CandidatePlan",
@@ -24,7 +25,9 @@ __all__ = [
     "NodeType",
     "RetrievalHit",
     "RetrievalResult",
+    "SandboxResult",
     "SourceDocument",
+    "StaticCheckResult",
     "TaskType",
     "ValidationReport",
 ]

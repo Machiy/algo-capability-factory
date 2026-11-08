@@ -9,6 +9,7 @@ from __future__ import annotations
 import csv
 import json
 import sqlite3
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -19,6 +20,7 @@ from factory.config import load_settings
 from factory.contracts.knowledge import EdgeType, KGNode, NodeType
 from factory.knowledge import (
     HybridRetriever,
+    KnowledgeGraphStore,
     MockExtractor,
     build_knowledge_graph,
     read_sources,
@@ -123,6 +125,18 @@ class KnowledgeLayerTests(unittest.TestCase):
             count = connection.execute("SELECT COUNT(*) FROM nodes").fetchone()[0]
         self.assertEqual(count, len(self.graph.nodes))
         self.assertTrue((kg_dir / "kg.html").is_file())
+
+    def test_json_export_is_deterministic(self) -> None:
+        """重复构建产物字节一致，避免入库后每次跑测试都产生脏工作区。"""
+        first = MockExtractor().extract(self.sources)
+        second = MockExtractor().extract(self.sources)
+        with tempfile.TemporaryDirectory() as tmp:
+            path_a = KnowledgeGraphStore(first).export_json(Path(tmp) / "a.json")
+            path_b = KnowledgeGraphStore(second).export_json(Path(tmp) / "b.json")
+            self.assertEqual(path_a.read_bytes(), path_b.read_bytes())
+            payload = json.loads(path_a.read_text(encoding="utf-8"))
+            self.assertNotIn("built_at", payload)
+            self.assertEqual(len(payload["content_sha256"]), 64)
 
     def test_settings_come_from_yaml(self) -> None:
         self.assertEqual(self.settings.knowledge.top_k, 5)
