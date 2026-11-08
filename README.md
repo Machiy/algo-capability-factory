@@ -378,7 +378,7 @@ def build_pipeline(config):
 
 ## 9. 遇到的挑战和解决方案
 
-以下为设计阶段已识别的挑战及对应方案，实现过程中的新问题将在 P5 结束后补记。
+以下为设计阶段已识别的挑战、以及实现过程中补记的解决方案；其余实现问题将在 P5 结束后继续补记。
 
 | 挑战 | 解决方案 |
 |---|---|
@@ -392,6 +392,7 @@ def build_pipeline(config):
 | **数据时效与分布漂移** | 用 PSI 指标 + 时间外验证量化漂移，作为「真实行业落地复杂问题」写入报告，不回避 |
 | **小数据下资源分析缺说服力** | 构造 10× 合成扩展集，记录各候选耗时 / 峰值内存 / 推理 P95 |
 | **指标口径不统一** | 成本比、KS 门槛、baseline 定义全部配置化到 `verify_*.yaml`，避免硬编码 |
+| **早期为快速打通闭环写了若干自研轻量件，与开发要求 f「可使用现成工具但需说明选择理由」有张力** | 中途把「复用优先」写进 `.codebuddy/rules/architecture.md` 作为不可裁剪规则，逐项评估现成方案后替换：自研状态机 → LangGraph `StateGraph`、`ctypes` 内存监控 → `psutil`、手写日志格式 → `structlog`、`argparse` → `Typer`、手写 Markdown 正则 → `markdown-it-py`、手写词元计数 → `rank_bm25`；`vcrpy` / `bandit` / CrewAI / LlamaIndex 评估后因粒度或契约冲突未采用，理由逐项写在第 2 节选型表。全部替换以「功能不变」验收：ruff 全绿、83 用例全过、图谱仍 95 节点 / 259 边、端到端 3 候选 AUC 与修复轨迹逐字一致 |
 
 ---
 
@@ -430,7 +431,7 @@ def build_pipeline(config):
 - [x] 用 DeepSeek API 录制真实调用并补齐 cassette 证据（prompt 模板见 `factory/llm/demo.py`）
 - [x] 第 7 节替换为 `outputs/generated/` 中的真实生成代码与修复 diff
 - [x] 第 8 节所有 `<实测后填充>` 替换为实测指标，附上真实报告文件与图谱 diff
-- [ ] 第 9 节补记实现过程中新遇到的挑战（P5 末）
+- [x] 第 9 节补记「复用优先」实现挑战；其余实现挑战待 P5 末
 - [x] 附录 A 保持与最终 README 结构一致
 - [ ] P4 补「有 KG / 无 KG」消融对比与第二轮检索命中首轮经验的证据
 - [ ] P5 补 Web / API 界面与最终验收指标
@@ -444,6 +445,27 @@ License: CC BY 4.0 (UCI) / CC0 Public Domain (OpenML d/43435)
 ```
 
 衍生材料 `assets/docs/` 与 `assets/legacy/` 为本项目构造的模拟业务材料，仅用于演示能力抽取流程。
+
+---
+
+## 附录 D · 实现演进与阶段 ↔ 提交对照
+
+本节如实记录仓库的开发顺序。历史按 P0 → P3 分阶段独立提交（Conventional Commits + body 说明「为什么」），**未改写任何已推送提交**；`.codebuddy/rules/git-commit.md` 明确禁止 force push `main` 与改写已推送提交。
+
+**演进主线**：P0 骨架与规范 → P1 能力图谱与检索 → P2 沙箱与四层验证 → P3 三种 LLM 后端、脱敏 cassette 与 a–g 七步闭环 → 按「复用优先」规则把自研件替换为现成库。最后一阶段不是推翻前期工作，而是在对外契约、产物与测试行为完全不变的前提下换成成熟实现，回归证据见第 8、9 节。
+
+| 阶段 | 代表性提交 | 内容 |
+|---|---|---|
+| P0 骨架与规范 | `7844ad8`、`0cc7f60`、`4c79d44`、`b108259` | 仓库初始化、信用卡违约示例数据、契约骨架、配置与业务材料、项目级 CodeBuddy 规则 |
+| 规范校准 / LLM 路线 | `71b9d75`、`020e665`、`6450a45`、`aa3dacf`、`dc4c148`、`cee2ed0` | 按 `llm_agent.md` 原文区分题目硬要求与设计选择；确定 DeepSeek API + cassette；补齐生成参数与协作约定 |
+| P1 能力图谱 | `3463084`、`4dcff63` | 9 类节点 / 13 类关系、证据哈希、NetworkX + SQLite、JSON/CSV/GraphML、混合检索、PyVis；清理 lint 违规 |
+| P2 验证框架 | `9f7b6c4`、`6625bee`、`d1ce37b`、`1126ee9` | 交付 JSON 去时间戳改用内容哈希、AST 静态检查 + 子进程沙箱、指标插件 / 时间外划分 / 四层检查器 / 报告、冻结验证样例 |
+| 分支与流程调整 | `5f3290b`（PR #1，merge commit）、`20b70ac`、`7fe4f98`、`0b936d8` | 早期按规则采用 feature 分支 + PR，单人开发后改为直推 `main`；两处 merge commit 保留分支节点 |
+| P3 LLM 后端 | `3ceb961`、`ecd9e69`、`1a0148f` | `MockLLM` / `OpenAICompatLLM` / `RecordedLLM`、脱敏 cassette 与断网回放、一次真实 DeepSeek 调用证据 |
+| P3 七步闭环 | `677ab5b`、`4a6e5c6`、`208bbd7` | 8 角色、Beam Top-3、≤3 轮定向修复、Curator 回写、`run --spec` 与端到端产物 |
+| 复用优先整改 | `5f26a87`、`379f7aa`、`f064a1b`、`82f6d4f` | 新增规则；现成库替换基础设施 / 检索 / 解析；LangGraph 替换自研状态机；同步选型理由与产物 |
+
+> 完整历史以 `git --no-pager log` 为准。所有提交时间由 Git 按实际提交时刻记录，未做调整；评审可据此还原 P0 → P3 的演进。
 
 ---
 
