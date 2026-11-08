@@ -1,4 +1,4 @@
-"""配置加载：路径、检索权重、沙箱资源上限一律来自 ``configs/*.yaml``。
+"""配置加载：路径、检索权重、沙箱上限与指标门槛一律来自 ``configs/*.yaml``。
 
 配置模型允许存在未使用的段（llm / workflow / 任务专属字段），因此用
 ``extra="ignore"``；运行时契约则严格 ``extra="forbid"``，两者用途不同。
@@ -7,9 +7,12 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
+
+from factory.contracts.validation import MetricSpec, SplitSpec
 
 
 class _ConfigModel(BaseModel):
@@ -74,10 +77,22 @@ class DatasetSettings(_ConfigModel):
 
 
 class TaskSettings(_ConfigModel):
-    """任务级验证配置的最小子集，门槛与约束不在代码里硬编码。"""
+    """任务级验证配置：换任务只改 ``verify_*.yaml``，不改核心验证器。"""
 
     task_type: str = "tabular_binary_classification"
     dataset: DatasetSettings = Field(default_factory=DatasetSettings)
+    split: SplitSpec = Field(default_factory=SplitSpec)
+    metrics: list[MetricSpec] = Field(default_factory=list)
+    constraints: dict[str, Any] = Field(default_factory=dict)
+
+    @property
+    def sensitive_features(self) -> list[str]:
+        value = self.constraints.get("sensitive_features", [])
+        return list(value) if isinstance(value, list) else []
+
+    @property
+    def cost_ratio_fn_fp(self) -> float:
+        return float(self.constraints.get("cost_ratio_fn_fp", 5.0))
 
 
 class Settings(_ConfigModel):
@@ -111,7 +126,7 @@ def load_settings(config_path: str | Path) -> Settings:
 
 
 def load_task_settings(task_config_path: str | Path) -> TaskSettings:
-    """读取任务级验证配置，供静态检查与指标插件使用。"""
+    """读取任务级验证配置，门槛与约束不在代码里硬编码。"""
     return TaskSettings(**_read_mapping(Path(task_config_path)))
 
 
