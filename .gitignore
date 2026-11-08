@@ -14,6 +14,8 @@ htmlcov/
 
 # 本地环境配置（保留 .env.example）
 .env
+.env.*
+!.env.example
 
 # 内部规划文档：保留在本地工作区，不随仓库提交
 PLAN.md
@@ -25,6 +27,8 @@ _archive/
 assets/data/raw/
 
 # 运行轨迹与日志（报告、生成代码、图谱样例属于交付物，不忽略）
+# outputs/runs/ 是每次运行的临时轨迹；脱敏后的 LLM 对话证据放
+# assets/llm_cassettes/，属交付物，不忽略
 outputs/runs/
 *.log
 

@@ -6,13 +6,26 @@ project:
   log_level: INFO
 
 llm:
-  # mock 为默认路径，保证断网环境可完整复现
-  provider: mock                # mock | openai_compat
-  model: qwen2.5:7b
-  base_url: http://localhost:11434/v1
+  # 默认 mock 保证断网一键复现；真实调用走 DeepSeek 的 OpenAI 兼容接口
+  provider: mock                # mock | openai_compat | cassette
+  base_url: https://api.deepseek.com   # 也接受 https://api.deepseek.com/v1
+  model: deepseek-flash         # 官方当前示例模型；deepseek-chat / deepseek-reasoner 为旧名
   temperature: 0.0
   max_tokens: 4096
   timeout_seconds: 60
+  # 凭据只从环境变量读取（.env 的 LLM_API_KEY），不写入配置文件或 cassette
+  api_key_env: LLM_API_KEY
+
+  # 录制回放：真实 API 响应脱敏后入库，供无 key 环境复现同一输出
+  cassette:
+    dir: assets/llm_cassettes
+    version: 1
+    record: false               # openai_compat 下置 true 时录制真实调用
+    on_miss: error              # error | fallback_mock；禁止静默造假
+    key_fields: [role, system, user, model, temperature, max_tokens]
+    strip: [authorization, api_key, base_url, cookies, set-cookie]
+    # 落盘：request 正文、response 原始文本与解析结果、usage、model、时间戳
+    # 禁止落盘：任何 header、完整 endpoint、key/token（仅保留 provider 名）
 
 knowledge:
   graph_path: outputs/kg/graph.graphml
