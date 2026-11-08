@@ -1,7 +1,7 @@
-"""配置加载：路径、检索权重、沙箱上限与指标门槛一律来自 ``configs/*.yaml``。
+"""配置加载：路径、检索权重、沙箱上限、指标门槛与 LLM 参数一律来自 YAML。
 
-配置模型允许存在未使用的段（llm / workflow / 任务专属字段），因此用
-``extra="ignore"``；运行时契约则严格 ``extra="forbid"``，两者用途不同。
+配置模型允许存在未使用的段，因此用 ``extra="ignore"``；运行时契约则严格
+``extra="forbid"``，两者用途不同。
 """
 
 from __future__ import annotations
@@ -27,11 +27,7 @@ class RetrievalSettings(_ConfigModel):
 
 
 class KnowledgeSettings(_ConfigModel):
-    """``configs/default.yaml`` 的 knowledge 段。
-
-    YAML 中 Top-K 与权重嵌套在 ``retrieval`` 下；``top_k`` / ``weights``
-    作为只读属性提供，避免调用方绕过配置而误用默认值。
-    """
+    """``configs/default.yaml`` 的 knowledge 段。"""
 
     graph_path: str
     sqlite_path: str
@@ -68,6 +64,34 @@ class RuntimeSettings(_ConfigModel):
     forbidden_patterns: list[str] = Field(default_factory=list)
 
 
+class CassetteSettings(_ConfigModel):
+    """``llm.cassette`` 段：录制回放的命中键、脱敏字段与未命中策略。"""
+
+    dir: str = "assets/llm_cassettes"
+    version: int = 1
+    record: bool = False
+    on_miss: str = "error"
+    key_fields: list[str] = Field(default_factory=list)
+    strip: list[str] = Field(default_factory=list)
+
+
+class LLMSettings(_ConfigModel):
+    """``configs/default.yaml`` 的 llm 段；凭据只存环境变量名。"""
+
+    provider: str = "mock"
+    base_url: str = ""
+    model: str = ""
+    temperature: float = 0.0
+    max_tokens: int = 8192
+    context_budget_tokens: int = 32000
+    timeout_seconds: int = 180
+    reasoning_effort: str = "high"
+    thinking: str = "enabled"
+    role_overrides: dict[str, dict[str, str]] = Field(default_factory=dict)
+    api_key_env: str = "LLM_API_KEY"
+    cassette: CassetteSettings = Field(default_factory=CassetteSettings)
+
+
 class DatasetSettings(_ConfigModel):
     """``verify_credit.yaml`` 的 dataset 段：禁入模字段与标签。"""
 
@@ -96,11 +120,12 @@ class TaskSettings(_ConfigModel):
 
 
 class Settings(_ConfigModel):
-    """P1 / P2 阶段需要的配置子集。"""
+    """配置契约的总入口。"""
 
     knowledge: KnowledgeSettings
     paths: PathsSettings
     runtime: RuntimeSettings = Field(default_factory=RuntimeSettings)
+    llm: LLMSettings = Field(default_factory=LLMSettings)
 
 
 def _read_mapping(path: Path) -> dict:
@@ -122,6 +147,7 @@ def load_settings(config_path: str | Path) -> Settings:
         knowledge=KnowledgeSettings(**payload["knowledge"]),
         paths=PathsSettings(**payload["paths"]),
         runtime=RuntimeSettings(**payload.get("runtime", {})),
+        llm=LLMSettings(**payload.get("llm", {})),
     )
 
 
@@ -131,8 +157,10 @@ def load_task_settings(task_config_path: str | Path) -> TaskSettings:
 
 
 __all__ = [
+    "CassetteSettings",
     "DatasetSettings",
     "KnowledgeSettings",
+    "LLMSettings",
     "PathsSettings",
     "RetrievalSettings",
     "RuntimeSettings",
