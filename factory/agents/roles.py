@@ -11,6 +11,7 @@ import json
 import re
 from pathlib import Path
 
+from factory.agents.templates import LOGISTIC_REGRESSION_TEMPLATE, render
 from factory.config import LLMSettings
 from factory.contracts.knowledge import KnowledgeGraph, RetrievalResult
 from factory.contracts.llm import LLMRequest
@@ -44,21 +45,24 @@ REPAIR_STRATEGIES = {
     "LeakageDetected": "强制 sklearn.Pipeline 并改时间外划分",
 }
 
-CODE_TEMPLATE = '''\
-from sklearn.impute import SimpleImputer
-from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
+CODE_TEMPLATE = LOGISTIC_REGRESSION_TEMPLATE
 
-FEATURE_COLUMNS = {columns}
-
-def build_pipeline(config):
-    return Pipeline([
-        ("imputer", SimpleImputer(strategy="median")),
-        ("scaler", StandardScaler()),
-        ("model", LogisticRegression(C={c_value}, max_iter={max_iter}, random_state=42)),
-    ])
-'''
+# 各族候选的默认超参；新增模板时在此登记，避免超参散落在单点。
+HYPERPARAM_PRESETS: dict[str, list[dict[str, float]]] = {
+    "logistic_regression": [
+        {"C": 0.5, "max_iter": 1000},
+        {"C": 1.0, "max_iter": 1000},
+        {"C": 2.0, "max_iter": 1000},
+    ],
+    "hist_gradient_boosting": [
+        {"max_iter": 200, "learning_rate": 0.1},
+        {"max_iter": 300, "learning_rate": 0.05},
+    ],
+    "random_forest": [
+        {"n_estimators": 200, "max_depth": 8},
+        {"n_estimators": 300, "max_depth": 10},
+    ],
+}
 
 
 class Interpreter:
@@ -196,13 +200,17 @@ class Planner:
         raw_plans = parsed.get("candidates", [])
         plans: list[CandidatePlan] = []
         for index, item in enumerate(raw_plans[:3], start=1):
+            family = str(item.get("model_family", "logistic_regression"))
+            presets = HYPERPARAM_PRESETS.get(
+                family, HYPERPARAM_PRESETS["logistic_regression"]
+            )
             plans.append(CandidatePlan(
                 plan_id=f"plan.{index:02d}",
                 spec_id=spec.spec_id,
-                model_family=str(item.get("model_family", "logistic_regression")),
+                model_family=family,
                 operators=list(item.get("operators", [])),
-                hyperparams={"C": [0.5, 1.0, 2.0][index - 1], "max_iter": 1000},
-                rationale=f"检索证据 {len(retrieval.hits)} 项；候选 {index}",
+                hyperparams=dict(presets[(index - 1) % len(presets)]),
+                rationale=f"检索证据 {len(retrieval.hits)} 项；候选 {index}（{family}）",
                 retrieved_evidence=[hit.node_id for hit in retrieval.hits],
             ))
         return plans
@@ -229,11 +237,7 @@ class Coder:
                 f"{retrieval.as_prompt_context()}")
         request = LLMRequest(role="Coder", system=SYSTEM_PROMPTS["Coder"], user=user)
         self.llm.complete(request)
-        return CODE_TEMPLATE.format(
-            columns=json.dumps(rendered, ensure_ascii=False),
-            c_value=plan.hyperparams.get("C", 1.0),
-            max_iter=plan.hyperparams.get("max_iter", 1000),
-        )
+        return render(plan.model_family, rendered, plan.hyperparams)
 
 
 class Reviewer:
