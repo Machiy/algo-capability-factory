@@ -82,6 +82,7 @@ python -m factory run --spec "预测信用卡客户下月违约概率，处理�
 ```
 algo-capability-factory/
 ├── README.md  requirements.txt  .env.example  pyproject.toml  .gitignore
+├── .codebuddy/{CODEBUDDY.md, rules/}
 ├── configs/{default.yaml, verify_credit.yaml, verify_regression.yaml, verify_text.yaml}
 ├── scripts/download_data.py
 ├── assets/

@@ -33,3 +33,6 @@ outputs/runs/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# CodeBuddy 项目级本地个人配置（不提交；其余 .codebuddy 内容随仓库共享）
+.codebuddy/settings.local.json
