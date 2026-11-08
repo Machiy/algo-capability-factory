@@ -4,7 +4,7 @@
 >
 > 对应题目：LLM Agent 笔试《基于 AI Agent 的算法能力系统开发》。
 
-**当前仓库状态：规划阶段（v1.0）。** 仓库当前包含基础骨架、已下载的示例数据，以及配置、业务材料、契约骨架与测试用例等阶段性资产；Agent 工作流、知识图谱、验证器等实现模块按阶段新增。下文描述的命令与产物为后续实现目标，标注「预期」「实现后填充」的内容将在对应阶段完成后替换为真实产物与实测数值。本文档已按题目「提交方式」要求的十项内容完整写好。
+**当前仓库状态：a–g 七步核心闭环已跑通（P0–P3）。** 已实现 L0 契约、L1 能力图谱与混合检索、L2 的 8 个 Agent 角色与工作流编排、L3 子进程沙箱与 AST 静态检查、L4 四层验证与报告生成，以及三种 LLM 后端和脱敏 cassette；`python -m factory run --spec "..." --mock` 一次产出生成代码、四层报告、修复轨迹与图谱回写。指标层因 baseline 级候选未达业务门槛如实判 FAIL，见第 8 节；P4 消融对比与 P5 Web / API 界面属后续阶段。本文档已按题目「提交方式」要求的十项内容写好。
 
 ---
 
@@ -70,7 +70,7 @@ python -m factory run --spec "预测信用卡客户下月违约概率，处理�
 | 组件 | 选择 | 理由 |
 |---|---|---|
 | LLM | `BaseLLM` 抽象：`MockLLM` / `OpenAICompatLLM`（DeepSeek OpenAI 兼容接口）/ `RecordedLLM`（cassette 回放） | 默认 mock 保证断网复现；本地 CPU 跑开源模型过慢，按开发要求 g 的「API 调用方式」接 DeepSeek 满足任务 1；真实响应脱敏录制后可在无 key 环境回放，三种实现只切 `llm.provider` |
-| 编排 | LangGraph | 修复循环本质是带状态的有向循环图，条件边 / checkpoint / 循环上限原生支持 |
+| 编排 | 自研轻量状态机（`factory/workflow/`） | 修复循环只有「验证失败 → 定向修复 → 重新验证」一条条件边，状态规模小；自研可去掉 LangGraph / langchain-core 一组重依赖，提升干净环境一键复现与确定性 |
 | 知识图谱 | NetworkX（GraphML）+ SQLite | 零部署、可直接交付 GraphML / CSV；不选 Neo4j 以避免 Docker 依赖 |
 | 检索 | BM25 / 关键词 + 图邻域扩展 + 元信息打分 | 无需向量库即可离线，排序可解释 |
 | 算法栈 | pandas + scikit-learn + imbalanced-learn | 全 CPU、秒级、确定性强，`Pipeline` 天然防泄漏 |
@@ -206,7 +206,7 @@ Parse → Retrieve → Plan → Generate → StaticCheck → Execute → Validat
 
 ## 5. 环境配置和运行方法
 
-**环境**：Python 3.11，纯 CPU，无需 GPU、无需 Docker、无需数据库服务。
+**环境**：Python 3.11+（实测 3.12.9），纯 CPU，无需 GPU、无需 Docker、无需数据库服务。
 
 ```bash
 # 1) 创建环境
@@ -220,14 +220,21 @@ cp .env.example .env            # 只需填 LLM_API_KEY；端点与模型已有�
 # 3) 可选：重新拉取数据（仓库已内置，断网可跳过）
 python scripts/download_data.py
 
-# 4) 端到端运行
+# 4) 端到端七步闭环（生成代码 + 四层报告 + 修复轨迹 + 图谱回写）
 python -m factory run --spec "预测信用卡客户下月违约概率，按5:1成本比选阈值，禁止时间泄漏" --mock
 
-# 5) 其他入口
-python -m factory ui            # Streamlit 界面
-uvicorn factory.api.app:app --reload   # FastAPI 服务
-pytest -q                      # 测试用例
+# 5) 分阶段可复现入口
+python scripts/build_kg.py               # 构建能力图谱与检索产物
+python scripts/verify_baseline.py        # baseline 四层验证自检
+python scripts/record_llm.py             # 录制真实 DeepSeek 调用（需 key）
+python -m unittest discover -s tests -v  # 全量测试
+
+# 6) 入口自检
+python -m factory --version
+python -m factory --check
 ```
+
+> `factory ui` 与 FastAPI / Streamlit 界面属 P5 阶段，当前尚未实现；CLI 已可用。
 
 **最小依赖**：核心闭环只需 `pydantic`、`PyYAML`、`pandas`、`scikit-learn`、`networkx`；若只需验证数据契约与配置，可先 `pip install pydantic PyYAML` 再运行 `python -m unittest discover -s tests -v`。完整接入层（LangGraph / FastAPI / Streamlit）才需要全量 `requirements.txt`。
 
@@ -296,62 +303,69 @@ pytest -q                      # 测试用例
 
 ## 7. 生成算法代码示例
 
-以下为 `outputs/generated/` 中产物的**契约示意**（实际内容由 Coder 生成、经 Repairer 修复后落盘）：
+`python -m factory run --spec "..." --mock` 会在 `outputs/generated/` 落盘 3 个候选的最终源码，均由 `Coder` 按方案渲染、经 `Reviewer` 静态检查与 `Repairer` 定向修复：
 
 ```python
-# 契约：必须实现 build_pipeline()，返回可 fit/predict_proba 的 sklearn Pipeline
-def build_pipeline(config: dict):
-    ...
-    # WOE 分箱 + 未文档化类别归一化 + 时间外划分前提下 fit 仅 on train
-    # 输出：违约概率 pd ∈ [0,1]、按 5:1 成本比选出的阈值标签、评分卡分数
-    return pipeline
+# outputs/generated/candidate_plan.01.py（节选，完整文件见仓库）
+from sklearn.impute import SimpleImputer
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+
+FEATURE_COLUMNS = ["LIMIT_BAL", "PAY_0", "..."]   # 19 列；ID / 敏感字段 / 标签已剔除
+
+def build_pipeline(config):
+    return Pipeline([
+        ("imputer", SimpleImputer(strategy="median")),
+        ("scaler", StandardScaler()),
+        ("model", LogisticRegression(C=0.5, max_iter=1000, random_state=42)),
+    ])
 ```
+
+首轮 `Coder` 规则模板按直觉把最近一期写成 `PAY_1`（T1 陷阱），在子进程用真实数据集触发 `KeyError: PAY_1`；`Repairer` 按策略表替换为 `PAY_0` 后重新通过沙箱。三个候选以不同 `C` 值区分，AUC 实测见第 8 节。
 
 实现要点：
 
-1. 所有预处理置于 `sklearn.Pipeline` 内，顺序遵循图谱 `PRECEDES` 约束，fit 仅作用于训练集；
-2. 列名按 `Dataset` 节点映射，显式处理 `PAY_0` 与未文档化类别；
-3. 输出满足 `output_schema`：`pd` ∈ [0,1]、`label` ∈ {0,1}、`score` 为整数；
-4. 不含文件写入、网络访问、危险 import，可在沙箱内重复运行且结果确定。
+1. 所有预处理置于 `sklearn.Pipeline` 内，fit 仅作用于训练集；
+2. 特征列由配置与数据字典推导，显式排除 `ID`、标签与四个敏感字段；
+3. 不含文件写入、网络访问、危险 import，可在沙箱内重复运行且结果确定；
+4. 生成代码在独立子进程中执行，超时与内存上限由 `configs/default.yaml` 控制。
 
-完整的「能力描述 → 检索证据 → 3 个候选 → 代码 → 修复 diff」示例见 `outputs/reports/` 中的端到端演示报告（P5 阶段产出）。
+完整的「能力描述 → 检索证据 → 3 个候选 → 代码 → 修复 diff」示例见 `outputs/reports/run_demo.md`，生成代码见 `outputs/generated/candidate_plan.0*.py`。
 
 ---
 
 ## 8. 验证结果和报告样例
 
-> 下表为报告**结构示意**，所有指标数值在 P5 实测后填充，当前不填造数值。
+> 以下为一次真实运行的实测结果，不做数值填充或美化。指标未达业务门槛时如实判 FAIL，并保留失败记录回写 `FailureCase`。
 
-**验证报告 `outputs/reports/run_*.md` 结构**
+**端到端报告**：`outputs/reports/run_demo.md`（七步轨迹、检索证据、候选排名、四层结论、修复轨迹、设计依据、图谱 diff）。**框架自检样例**：`outputs/reports/validation_sample.md`（标注为 baseline，非最终验收）。
 
-| 段落 | 内容 |
+| 项目 | 实测结果 |
 |---|---|
-| 1. 运行摘要 | run_id、spec、LLM 模式、时间、通过状态 |
-| 2. 检索证据 | 命中的 Top-K 能力节点、约束、历史失败规避项 |
-| 3. 候选方案对比 | Beam Top-3 的模型族 / 采样 / 阈值 / 成本比 |
-| 4. 四层验证结论 | 见下表 |
-| 5. 修复轨迹 | 轮次、错误签名、定向修复动作、结果 |
-| 6. 设计依据 | 自然语言解释为何选择该方案（引用检索证据与历史指标） |
-| 7. 沉淀 diff | 新增 / 更新的图谱节点与边 |
+| 七步流程 | a–g 全部执行完成，CLI 退出码 0 |
+| 候选方案 | 3 个（Beam Top-3），AUC 0.72061 / 0.72063 / 0.72064 |
+| 修复轨迹 | 第 1 轮 `KeyError: PAY_1` → 列名映射为 `PAY_0`，修复后沙箱通过 |
+| 四层结论 | 接口 / 功能 / 稳定性 PASS；指标层 FAIL（AUC 0.7206 < 0.78、F1 < 0.45） |
+| 图谱沉淀 | `outputs/kg/capabilities_after_run.json`，新增 ValidationRun / FailureCase / 能力 v2 节点 |
 
-**四层验证结论示意**
+**四层验证结论（实测）**
 
 | 层级 | 检查项 | 结果 | 说明 |
 |---|---|---|---|
-| 接口规范 | 契约签名 / 输出 schema / AST 白名单 / 禁 `ID` 入模 | `<实测后填充>` | 静态检查 |
-| 功能正确性 | smoke / 幂等 / 种子一致性 / 边界输入 | `<实测后填充>` | 沙箱内执行 |
-| 指标表现 | AUC、KS、PR-AUC、F1、成本加权损失 vs baseline | `<实测后填充>` | 时间外划分，test 仅终评一次 |
-| 运行稳定性 | 超时、内存、重复运行方差、依赖校验 | `<实测后填充>` | 子进程隔离 |
+| 接口规范 | 契约签名 / AST 白名单 / 禁 `ID` 入模 | PASS | 静态检查 |
+| 功能正确性 | smoke / 无异常 / 确定性 | PASS | 子进程用真实数据 fit / predict |
+| 指标表现 | AUC、KS、PR-AUC、F1、成本损失、PSI、分组 AUC | FAIL | 时间外划分；baseline 级 LR 未达业务门槛 |
+| 运行稳定性 | 超时 60s / 内存 2GB / 重复运行 | PASS | 单次约 1.7–2.1s，子进程隔离 |
 
-**可复现的三轮真实修复轨迹（预期）**
+**可复现的真实修复轨迹（实测）**
 
-| 轮次 | 错误签名 | 定向修复 | 沉淀 |
+| 轮次 | 错误签名 | 定向修复 | 结果 |
 |---|---|---|---|
-| 1 | `KeyError: PAY_1` | 列名映射为 `PAY_0`、`PAY_2`…`PAY_6` | 新增「数据集列名映射」能力节点 |
-| 2 | `SchemaError` | 未文档化类别归一化 + 负值账单处理 | 新增清洗 `Operator` 与 `PRECEDES` 边 |
-| 3 | `LeakageDetected` / 指标异常高 | 时间外划分 + Pipeline 约束 | 新增「时序泄漏规避」约束节点与失败案例 |
+| 1 | `KeyError: PAY_1` | 按 `Dataset` 列名映射改为 `PAY_0` | 沙箱从 FAIL 恢复为 PASS |
+| 2 | `MetricBelowThreshold` | 策略表命中「切换模型族 / 按成本比调阈值」，当前 Mock 模板无可执行动作 | 如实标记 `no_change`，停止盲目重试 |
 
-**闭环证据**：报告另附「有 KG / 无 KG」消融对比，以及第二轮运行检索命中首轮经验的图谱 diff，用于证明沉淀环节真实生效。
+> 说明：指标层未达标是 baseline 级候选的真实表现，不是流程失败；达到 `verify_credit.yaml` 门槛需要后续引入 WOE 分箱、采样与成本最优阈值。「有 KG / 无 KG」消融对比与「第二轮检索命中首轮经验」属于 P4 待办，当前未做，不预先声称。
 
 ---
 
@@ -404,13 +418,15 @@ def build_pipeline(config: dict):
 
 ## 附录 B · 实现后需更新的占位内容
 
-- [ ] 顶部「当前仓库状态」改为实际完成阶段
-- [ ] 第 5 节命令与 `requirements.txt` 对齐
+- [x] 顶部「当前仓库状态」改为实际完成阶段
+- [x] 第 5 节命令与 `requirements.txt` 对齐
 - [x] 用 DeepSeek API 录制真实调用并补齐 cassette 证据（prompt 模板见 `factory/llm/demo.py`）
-- [ ] 第 7 节替换为 `outputs/generated/` 中的真实生成代码与修复 diff
-- [ ] 第 8 节所有 `<实测后填充>` 替换为实测指标，附上真实报告文件与图谱 diff
-- [ ] 第 9 节补记实现过程中新遇到的挑战
-- [ ] 附录 A 保持与最终 README 结构一致
+- [x] 第 7 节替换为 `outputs/generated/` 中的真实生成代码与修复 diff
+- [x] 第 8 节所有 `<实测后填充>` 替换为实测指标，附上真实报告文件与图谱 diff
+- [ ] 第 9 节补记实现过程中新遇到的挑战（P5 末）
+- [x] 附录 A 保持与最终 README 结构一致
+- [ ] P4 补「有 KG / 无 KG」消融对比与第二轮检索命中首轮经验的证据
+- [ ] P5 补 Web / API 界面与最终验收指标
 
 ## 附录 C · 数据与引用
 
