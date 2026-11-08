@@ -1,0 +1,136 @@
+"""P1 知识层测试：M1 检查点、契约严格性、检索确定性与交付物校验。
+
+依赖 pydantic / PyYAML / networkx / pyvis，均为 requirements.txt 中的包；
+pytest 与 unittest 均可收集本文件。
+"""
+
+from __future__ import annotations
+
+import csv
+import json
+import sqlite3
+import unittest
+from pathlib import Path
+
+import networkx as nx
+from pydantic import ValidationError
+
+from factory.config import load_settings
+from factory.contracts.knowledge import EdgeType, KGNode, NodeType
+from factory.knowledge import (
+    HybridRetriever,
+    MockExtractor,
+    build_knowledge_graph,
+    read_sources,
+)
+from factory.knowledge.extractor import sha256_text
+
+ROOT = Path(__file__).resolve().parents[1]
+CONFIG_PATH = ROOT / "configs/default.yaml"
+QUERY = "预测信用卡客户下月违约概率，时间外划分，成本敏感阈值，禁止数据泄漏"
+
+
+class KnowledgeLayerTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.settings = load_settings(CONFIG_PATH)
+        cls.sources = read_sources(ROOT, cls.settings.paths.docs, cls.settings.paths.legacy)
+        cls.graph = MockExtractor().extract(cls.sources)
+        build_knowledge_graph(cls.settings, ROOT)
+
+    def test_source_materials_complete(self) -> None:
+        self.assertEqual(len(self.sources), 7)
+        self.assertEqual(len({doc.doc_type for doc in self.sources}), 7)
+        for doc in self.sources:
+            with self.subTest(path=doc.path):
+                self.assertTrue(doc.content)
+                self.assertEqual(doc.sha256, sha256_text(doc.content))
+
+    def test_contract_rejects_unknown_fields(self) -> None:
+        with self.assertRaises(ValidationError):
+            KGNode(node_id="x", node_type=NodeType.CAPABILITY, name="x", typo=1)
+
+    def test_graph_reference_integrity(self) -> None:
+        self.assertIsNone(self.graph.validate_references())
+        self.assertEqual(len(self.graph.node_index()), len(self.graph.nodes))
+
+    def test_m1_schema_coverage(self) -> None:
+        self.assertEqual(len(NodeType), 9)
+        self.assertGreaterEqual(len(EdgeType), 12)
+        used = {edge.edge_type for edge in self.graph.edges}
+        self.assertGreaterEqual(len(used), 12)
+
+    def test_m1_extraction_volume(self) -> None:
+        self.assertGreaterEqual(len(self.graph.by_type(NodeType.CAPABILITY)), 15)
+        self.assertGreaterEqual(len(self.graph.edges), 40)
+
+    def test_m1_t1_to_t4_are_nodes(self) -> None:
+        source_ids = {
+            node.attributes.get("source_id")
+            for node in self.graph.by_type(NodeType.CAPABILITY)
+        }
+        for key in ("T1", "T2", "T3", "T4"):
+            with self.subTest(key=key):
+                self.assertIn(key, source_ids)
+
+    def test_m1_evidence_is_verifiable(self) -> None:
+        """每个能力节点都能回溯到原文，且哈希可重算 —— M1 的核心判定。"""
+        contents = {doc.path: doc.content for doc in self.sources}
+        for node in self.graph.by_type(NodeType.CAPABILITY):
+            with self.subTest(node=node.node_id):
+                self.assertTrue(node.evidence)
+                for item in node.evidence:
+                    self.assertEqual(item.sha256, sha256_text(item.excerpt))
+                    self.assertIn(item.excerpt, contents[item.path])
+
+    def test_precedes_order_and_fit_constraint(self) -> None:
+        self.assertGreaterEqual(len(self.graph.edges_of(EdgeType.PRECEDES)), 6)
+        for operator in self.graph.by_type(NodeType.OPERATOR):
+            self.assertTrue(operator.attributes["fit_on_train_only"])
+
+    def test_sensitive_and_id_constraints(self) -> None:
+        datasets = self.graph.by_type(NodeType.DATASET)
+        self.assertEqual(len(datasets), 1)
+        self.assertIn("ID", datasets[0].attributes["forbidden_features"])
+        self.assertIn("SEX", datasets[0].attributes["sensitive_features"])
+
+    def test_retrieval_is_deterministic_and_actionable(self) -> None:
+        retriever = HybridRetriever(self.graph, self.settings.knowledge.top_k,
+                                    self.settings.knowledge.weights)
+        first = retriever.retrieve(QUERY)
+        second = retriever.retrieve(QUERY)
+        self.assertEqual([hit.node_id for hit in first.hits],
+                         [hit.node_id for hit in second.hits])
+        self.assertLessEqual(len(first.hits), first.top_k)
+        self.assertTrue(first.constraints)
+        self.assertTrue(first.failure_warnings)
+        self.assertIn("适用条件", first.as_prompt_context())
+        self.assertIn("历史失败规避项", first.as_prompt_context())
+        for hit in first.hits:
+            self.assertIn("constraint_match", hit.reasons)
+
+    def test_exported_artifacts(self) -> None:
+        kg_dir = ROOT / self.settings.paths.kg
+        payload = json.loads((kg_dir / "capabilities.json").read_text(encoding="utf-8"))
+        self.assertEqual(len(payload["nodes"]), len(self.graph.nodes))
+        self.assertEqual(len(payload["edges"]), len(self.graph.edges))
+        with (kg_dir / "capabilities.csv").open(encoding="utf-8", newline="") as handle:
+            rows = list(csv.DictReader(handle))
+        self.assertEqual(len(rows), len(self.graph.nodes))
+        graphml = nx.read_graphml(str(kg_dir / "graph.graphml"))
+        self.assertEqual(graphml.number_of_nodes(), len(self.graph.nodes))
+        with sqlite3.connect(kg_dir / "capabilities.db") as connection:
+            count = connection.execute("SELECT COUNT(*) FROM nodes").fetchone()[0]
+        self.assertEqual(count, len(self.graph.nodes))
+        self.assertTrue((kg_dir / "kg.html").is_file())
+
+    def test_settings_come_from_yaml(self) -> None:
+        self.assertEqual(self.settings.knowledge.top_k, 5)
+        weights = self.settings.knowledge.weights
+        self.assertTrue(weights)
+        self.assertIn("constraint_match", weights)
+        self.assertAlmostEqual(sum(weights.values()), 1.0)
+
+
+if __name__ == "__main__":
+    unittest.main()
