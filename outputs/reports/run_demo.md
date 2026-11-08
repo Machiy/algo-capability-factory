@@ -17,11 +17,11 @@
 
 ```text
 # 检索证据（query=预测信用卡客户下月违约概率，时间外划分，按5:1成本比选阈值，禁止ID入模）
-- [0.508] [C4] 划分方式 (cap.risk_policy.C4)
-- [0.442] [T1] 最近一期列名是 PAY_0，不存在 PAY_1 (cap.data_dictionary.T1)
-- [0.442] [T4] 标签为「下月」违约 (cap.data_dictionary.T4)
-- [0.442] [K5] 随机划分会造成严重虚高，必须时间外划分 (cap.experiment_log.K5)
-- [0.442] [C5] 敏感字段 (cap.risk_policy.C5)
+- [0.502] [C6] 标识字段 (cap.risk_policy.C6)
+- [0.475] [r04] 禁 ID 入模、禁读标签路径 (metric.test_report.r04)
+- [0.375] [T1] 最近一期列名是 PAY_0，不存在 PAY_1 (cap.data_dictionary.T1)
+- [0.375] [T2] 存在未文档化类别 (cap.data_dictionary.T2)
+- [0.375] [T2b] 还款状态含未文档化值 (cap.data_dictionary.T2b)
 ## 适用条件
 - [C1] 客群范围：仅适用于持有 ≥6 期账单历史的存量客户；新客无 `PAY_*` / `BILL_AMT*` 序列，不在适用范围内
 - [C2] 额度区间：`LIMIT_BAL` 在本样本覆盖区间内；超出区间需人工复核

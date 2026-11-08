@@ -2473,7 +2473,7 @@
           "grouped_auc_gap": 0.05875830231396728
         },
         "passed": false,
-        "duration_seconds": 1.75
+        "duration_seconds": 1.921
       },
       "evidence": []
     },
@@ -2495,7 +2495,7 @@
           "grouped_auc_gap": 0.058616072130054264
         },
         "passed": false,
-        "duration_seconds": 1.766
+        "duration_seconds": 1.937
       },
       "evidence": []
     },
@@ -2517,7 +2517,7 @@
           "grouped_auc_gap": 0.05856070671880376
         },
         "passed": false,
-        "duration_seconds": 1.75
+        "duration_seconds": 1.906
       },
       "evidence": []
     },
@@ -4221,5 +4221,5 @@
     "assets/docs/test_report.md",
     "assets/legacy/legacy_default_model.py"
   ],
-  "content_sha256": "d734fe525e15eee449a4bcfe3c8f39ad720ad381eeed86fa3bf80dd7e809361f"
+  "content_sha256": "c3553bd5f7b9c5778fe0d39ddf868261baa2fc0edef3c289118fc53378e2d7cb"
 }

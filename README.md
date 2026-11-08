@@ -65,18 +65,25 @@ python -m factory run --spec "预测信用卡客户下月违约概率，处理�
 
 **设计原则**：契约先行（所有模块只依赖 Pydantic 数据类）、LLM 可替换（抽象 `BaseLLM`）、验证与场景解耦（换 yaml 即换任务类型）、执行与验证隔离（生成代码只在子进程沙箱内运行）。
 
-**技术选型与理由**
+**技术选型与理由**（对应开发要求 f；末列记录「先查现成库」的评估结论）
 
-| 组件 | 选择 | 理由 |
-|---|---|---|
-| LLM | `BaseLLM` 抽象：`MockLLM` / `OpenAICompatLLM`（DeepSeek OpenAI 兼容接口）/ `RecordedLLM`（cassette 回放） | 默认 mock 保证断网复现；本地 CPU 跑开源模型过慢，按开发要求 g 的「API 调用方式」接 DeepSeek 满足任务 1；真实响应脱敏录制后可在无 key 环境回放，三种实现只切 `llm.provider` |
-| 编排 | 自研轻量状态机（`factory/workflow/`） | 修复循环只有「验证失败 → 定向修复 → 重新验证」一条条件边，状态规模小；自研可去掉 LangGraph / langchain-core 一组重依赖，提升干净环境一键复现与确定性 |
-| 知识图谱 | NetworkX（GraphML）+ SQLite | 零部署、可直接交付 GraphML / CSV；不选 Neo4j 以避免 Docker 依赖 |
-| 检索 | BM25 / 关键词 + 图邻域扩展 + 元信息打分 | 无需向量库即可离线，排序可解释 |
-| 算法栈 | pandas + scikit-learn + imbalanced-learn | 全 CPU、秒级、确定性强，`Pipeline` 天然防泄漏 |
-| 验证 | 自研四层 validator + pytest + 子进程沙箱 | 现成框架无法覆盖接口规范 / 泄漏 / 稳定性检查 |
-| 接入 | Typer CLI + FastAPI + Streamlit | CLI 为端到端演示主力，Web / API 满足进阶要求 |
-| 报告 | Jinja2 Markdown + PyVis HTML | 交付验证报告样例与图谱可视化 |
+| 组件 | 选择 | 理由 | 评估过的现成方案 / 未采用原因 |
+|---|---|---|---|
+| LLM | `BaseLLM` 抽象：`MockLLM` / `OpenAICompatLLM`（DeepSeek OpenAI 兼容接口）/ `RecordedLLM`（cassette 回放） | 默认 mock 保证断网复现；本地 CPU 跑开源模型过慢，按开发要求 g 的「API 调用方式」接 DeepSeek 满足任务 1；真实响应脱敏录制后可在无 key 环境回放，三种实现只切 `llm.provider` | LangChain / LlamaIndex 的 LLM 包装：只需一行配置切换，不必引入整套链路；`openai` SDK 已直接使用 |
+| 编排 | **LangGraph `StateGraph`**（节点 + 条件边表达修复循环与候选循环） | 条件边、状态传递与循环上限由框架提供；8 个角色作为节点动作，`RunTrace` 仍是唯一输出契约 | 曾自研轻量状态机，按「有现成的不要重复造轮子」已替换；AutoGen / CrewAI 评估过：其 `Agent` / `Task` 抽象会接管 LLM 调用链，破坏「检索证据显式进 prompt」与 `MockLLM` 默认路径 |
+| 多智能体角色 | 8 个角色类 + Pydantic IO 契约，由 LangGraph 节点编排 | 角色职责、prompt 与错误签名策略是项目业务规则，框架不提供 | CrewAI / AutoGen：见上，重依赖且接管调用链 |
+| 知识图谱 | NetworkX（GraphML）+ SQLite | 零部署、可直接交付 GraphML / CSV | Neo4j：需 Docker，伤「本地一键复现」 |
+| 检索 | `rank_bm25.BM25Okapi` + 图邻域扩展 + 元信息打分 | BM25 相关性由现成库计算，权重来自 `configs/default.yaml`，排序可解释且确定 | 手写词元计数已替换；LlamaIndex retrievers 需向量库或 LLM，离线复现成本高 |
+| Markdown 解析 | `markdown-it-py` | 章节 / 表格 / 代码块结构由现成解析器识别，原始行仍作证据摘录 | 手写正则已替换；LlamaIndex document loaders 过重且会改变证据哈希口径 |
+| 沙箱资源监控 | `psutil` + 标准库 `subprocess` | 跨平台读取子进程内存；POSIX 另有 `resource.RLIMIT_AS` 硬限制 | `ctypes` 手写 Win32 结构已替换；RestrictedPython / Docker 对本原型过重 |
+| 日志 | `structlog` + 标准库 `logging` | 结构化渲染由现成库完成，模块内仍用 `getLogger(__name__)` | 手写 `basicConfig` 格式已替换 |
+| 静态检查 | 标准库 `ast` + 配置驱动白名单 | 已是现成能力；规则全部来自 `default.yaml` / `verify_credit.yaml` | `bandit` 只查通用安全漏洞，抓不到禁 `ID` 入模、`build_pipeline` 契约签名等项目规则；作为补充也未引入，以免改变 `StaticCheckResult.checks` |
+| cassette 回放 | `RecordedLLM`（`BaseLLM` 层按角色 + prompt 命中） | 无 key、断网可原样回放；未命中显式报错，不静默造假 | `vcrpy` 拦截 HTTP 层，而 `provider=cassette` 根本不构造 `openai` client，无法工作；已录制的脱敏 cassette 也会失效 |
+| 四层验证 | 自研组合器 + `pytest` + 子进程沙箱 | 题目任务 5 要的是「统一验证机制」这一组合，无单一现成库覆盖；指标用 `sklearn.metrics`、报告用 `Jinja2` | 无对应单一库；组合编排属项目职责 |
+| 项目业务规则 | 时间外划分、禁 `ID` / 敏感字段、T1–T4 列名映射、成本比阈值、证据 SHA-256、`verify_*.yaml` 门槛 | 题目场景的合规约束，任何通用库都不会内置，属必须自研部分 | 无对应现成库 |
+| 算法栈 | pandas + scikit-learn + imbalanced-learn | 全 CPU、秒级、确定性强，`Pipeline` 天然防泄漏 | — |
+| 接入 | Typer CLI | 现成 CLI 框架，`--version` / `--check` / `run --spec` 三入口 | `argparse` 已替换；FastAPI / Streamlit 属 P5 |
+| 报告 / 可视化 | Jinja2 Markdown + PyVis HTML | 交付验证报告样例与图谱可视化 | — |
 
 **当前仓库结构**
 
@@ -236,7 +243,7 @@ python -m factory --check
 
 > `factory ui` 与 FastAPI / Streamlit 界面属 P5 阶段，当前尚未实现；CLI 已可用。
 
-**最小依赖**：核心闭环只需 `pydantic`、`PyYAML`、`pandas`、`scikit-learn`、`networkx`；若只需验证数据契约与配置，可先 `pip install pydantic PyYAML` 再运行 `python -m unittest discover -s tests -v`。完整接入层（LangGraph / FastAPI / Streamlit）才需要全量 `requirements.txt`。
+**最小依赖**：核心闭环需 `pydantic`、`PyYAML`、`pandas`、`scikit-learn`、`networkx`、`langgraph`、`rank-bm25`、`markdown-it-py`、`psutil`、`structlog`（全部为现成库，`requirements.txt` 已锁版本区间）；若只需验证数据契约与配置，可先 `pip install pydantic PyYAML` 再运行 `python -m unittest discover -s tests -v`。`pyvis`、`Jinja2`、`Typer`、`openai` 按入口加载，全量清单见 `requirements.txt`。
 
 **关于 LLM**：默认 `--mock` 使用规则模板，不依赖任何 LLM 服务，保证断网一键复现。本地部署模型在本项目不可行（CPU 推理过慢），因此按开发要求 g 的「API 调用方式」接入 **DeepSeek 的 OpenAI 兼容接口**：把 `configs/default.yaml` 的 `llm.provider` 切到 `openai_compat`，按 `.env.example` 把 `LLM_API_KEY` 填进 `.env` 或设为环境变量即可。官方端点 `https://api.deepseek.com`、当前示例模型 `deepseek-flash`；`deepseek-chat` / `deepseek-reasoner` 为旧名。任务 1 要求的「可调用的 LLM 接口」由这条真实路径满足。
 
