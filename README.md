@@ -227,6 +227,10 @@ uvicorn factory.api.app:app --reload   # FastAPI 服务
 pytest -q                      # 测试用例
 ```
 
+**最小依赖**：核心闭环只需 `pydantic`、`PyYAML`、`pandas`、`scikit-learn`、`networkx`；若只需验证数据契约与配置，可先 `pip install pydantic PyYAML` 再运行 `python -m unittest discover -s tests -v`。完整接入层（LangGraph / FastAPI / Streamlit）才需要全量 `requirements.txt`。
+
+**关于 LLM**：`--mock` 为默认路径，对应开发要求 g「若无法部署大模型」—— 本项目在本地无 GPU、无外网额度的环境跑通闭环。真实 LLM 并非未接入：`configs/default.yaml` 的 `llm.provider` 切到 `openai_compat`、按 `.env.example` 填写 `.env` 即可切换；P3 起会落盘 prompt 模板、输出 schema 与调用 trace 作为证据（当前为规划阶段，尚未产出）。
+
 **主要产物**
 
 | 路径 | 内容 |
@@ -373,7 +377,7 @@ def build_pipeline(config: dict):
 4. 从真实业务仓库持续增量抽取，形成能力版本谱系与血缘追踪；
 5. 扩展回归、多标签、时序任务的验证插件，成为多任务能力工厂；
 6. 引入成本敏感多目标优化，同时优化 AUC、成本损失与公平性约束；
-7. 自动生成 OpenAPI 接口文档与部署配置，对接在线评分服务；
+7. 对接在线评分服务的部署配置（OpenAPI 接口文档由 P5 的 FastAPI 自动生成并导出为 `outputs/reports/openapi.json`，属交付物而非后续方向）；
 8. 接入更多真实代码仓库的函数级抽取，提升能力复用率。
 
 ---
@@ -397,6 +401,7 @@ def build_pipeline(config: dict):
 
 - [ ] 顶部「当前仓库状态」改为实际完成阶段
 - [ ] 第 5 节命令与 `requirements.txt` 对齐
+- [ ] 第 5 节补真实 LLM 调用 trace 与 prompt 模板落盘证据（P3/P5 末）
 - [ ] 第 7 节替换为 `outputs/generated/` 中的真实生成代码与修复 diff
 - [ ] 第 8 节所有 `<实测后填充>` 替换为实测指标，附上真实报告文件与图谱 diff
 - [ ] 第 9 节补记实现过程中新遇到的挑战

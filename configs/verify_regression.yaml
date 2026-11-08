@@ -1,5 +1,6 @@
-# 第二任务类型：回归，用于验证「支持不同任务类型的验证配置」
-# 状态：planned —— 数据包将在 P6 引入，当前仅定义契约，不参与主流程
+# 第二任务类型：回归，对应进阶要求「支持不同任务类型的验证配置」
+# 主线 P2/P5 用 sklearn 内置或合成回归数据跑一次最小 smoke，证明不改核心验证器即可切换配置；
+# 下方 path 指向的完整 Bike Sharing 数据包属 P6 可选扩展，故 status 仍为 planned。
 status: planned
 task_type: tabular_regression
 capability_id: cap.regression.demand.v1
