@@ -8,20 +8,23 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
+from factory.config import LLMSettings
 from factory.contracts.knowledge import KnowledgeGraph, RetrievalResult
 from factory.contracts.llm import LLMRequest
-from factory.contracts.models import CandidatePlan, CapabilitySpec, ValidationReport
+from factory.contracts.models import CandidatePlan, CapabilitySpec, TaskType, ValidationReport
 from factory.contracts.validation import MetricResult, StaticCheckResult
 from factory.contracts.workflow import DatasetRunResult, RepairRecord, RunTrace
 from factory.knowledge.retrieval import HybridRetriever
 from factory.llm.base import BaseLLM
+from factory.llm.demo import SYSTEM_PROMPT, build_demo_request
 from factory.runtime import StaticChecker
 from factory.validation import FourLayerValidator
 
 SYSTEM_PROMPTS = {
-    "Interpreter": "把自然语言能力描述解析为 CapabilitySpec 结构化契约。",
+    "Interpreter": SYSTEM_PROMPT,
     "Retriever": "从能力图谱检索约束、历史指标与失败规避项。",
     "Planner": "结合检索证据规划多个候选算法方案。",
     "Coder": "按方案生成实现 build_pipeline() 的可运行代码。",
@@ -59,20 +62,114 @@ def build_pipeline(config):
 
 
 class Interpreter:
-    """a. 理解自然语言能力描述。"""
+    """a. 理解自然语言能力描述。
 
-    def __init__(self, llm: BaseLLM) -> None:
+    兼容两类解析结果：规则模板的扁平 schema，以及真实 LLM 返回的
+    ``capability_name`` / ``problem_type`` / ``feature_constraints`` 结构。
+    后者会把响应里的划分策略、成本比、禁入模字段与指标写进
+    ``CapabilitySpec``，因此能力理解确实由真实 LLM 驱动，而不是只看演示。
+    ``last_source`` 记录本次来源，供 ``RunTrace`` 留证。
+    """
+
+    def __init__(self, llm: BaseLLM, settings: LLMSettings | None = None) -> None:
         self.llm = llm
+        self.settings = settings
+        self.last_source = "mock"
+
+    def _request(self, description: str) -> LLMRequest:
+        """与录制脚本共用同一构造，保证 cassette 命中键一致。"""
+        if self.settings is None:
+            return LLMRequest(role="Interpreter", system=SYSTEM_PROMPT,
+                              user=description)
+        return build_demo_request(self.settings, description)
 
     def parse(self, description: str) -> CapabilitySpec:
-        request = LLMRequest(role="Interpreter", system=SYSTEM_PROMPTS["Interpreter"],
-                             user=description)
-        parsed = self.llm.complete(request).parsed
+        response = self.llm.complete(self._request(description))
+        self.last_source = response.source
+        parsed = response.parsed or {}
+        if "capability_name" in parsed or "task_type" in parsed:
+            return self._from_llm(parsed, description)
+        if isinstance(parsed.get("capability"), dict):
+            return self._from_llm(parsed, description)
         return CapabilitySpec(
             spec_id=str(parsed.get("spec_id", "spec.workflow.v1")),
             description=description,
             constraints=list(parsed.get("constraints", [])),
         )
+
+    @staticmethod
+    def _from_llm(parsed: dict[str, object], description: str) -> CapabilitySpec:
+        constraints: list[str] = []
+        split = parsed.get("data_split")
+        if isinstance(split, dict) and split.get("strategy"):
+            constraints.append(
+                f"划分策略 {split['strategy']}：{split.get('description', '')}"
+            )
+        feature = parsed.get("feature_constraints")
+        if isinstance(feature, dict):
+            forbidden = [str(item) for item in feature.get("forbidden_features") or []]
+            if forbidden:
+                constraints.append("禁入模字段：" + ", ".join(forbidden))
+            elif feature.get("exclude_identifier_columns"):
+                constraints.append("禁止 ID 类字段入模")
+        threshold = parsed.get("threshold_selection")
+        if isinstance(threshold, dict) and threshold.get("cost_ratio"):
+            constraints.append(
+                f"成本比 {threshold['cost_ratio']}：{threshold.get('description', '')}"
+            )
+        horizon = parsed.get("prediction_horizon")
+        if horizon:
+            constraints.append(f"预测窗口：{horizon}")
+        extra = parsed.get("constraints")
+        if isinstance(extra, list):
+            constraints.extend(str(item) for item in extra)
+        metrics: list[str] = []
+        evaluation = parsed.get("evaluation")
+        if isinstance(evaluation, dict):
+            metrics = [str(item) for item in evaluation.get("primary_metrics") or []]
+        outputs: dict[str, str] = {}
+        output = parsed.get("output")
+        if isinstance(output, dict) and output.get("field"):
+            detail = f"{output.get('type', '')} {output.get('range', '')}".strip()
+            outputs[str(output["field"])] = detail
+        nested = parsed.get("capability")
+        nested_name = nested.get("name") if isinstance(nested, dict) else None
+        target = parsed.get("target")
+        target_name = target.get("name") if isinstance(target, dict) else None
+        slug_source = str(target_name or nested_name or parsed.get("capability_name") or "")
+        slug = re.sub(r"[^a-z0-9]+", "_", slug_source.lower()).strip("_")
+        return CapabilitySpec(
+            spec_id=f"spec.{slug}" if slug else "spec.workflow.v1",
+            description=description,
+            task_type=Interpreter._task_type(parsed),
+            outputs=outputs,
+            constraints=constraints,
+            metrics=metrics,
+            cost_ratio_fn_fp=Interpreter._cost_ratio(parsed),
+        )
+
+    @staticmethod
+    def _task_type(parsed: dict[str, object]) -> TaskType:
+        raw = str(parsed.get("task_type") or parsed.get("problem_type") or "")
+        mapping = {
+            "binary_classification": TaskType.TABULAR_BINARY,
+            "tabular_binary_classification": TaskType.TABULAR_BINARY,
+            "tabular_regression": TaskType.TABULAR_REGRESSION,
+            "text_classification": TaskType.TEXT_CLASSIFICATION,
+        }
+        return mapping.get(raw, TaskType.TABULAR_BINARY)
+
+    @staticmethod
+    def _cost_ratio(parsed: dict[str, object]) -> float:
+        threshold = parsed.get("threshold_selection")
+        raw = str(threshold.get("cost_ratio", "")) if isinstance(threshold, dict) else ""
+        match = re.search(r"(\d+(?:\.\d+)?)\s*:\s*(\d+(?:\.\d+)?)", raw)
+        if match:
+            false_negative = float(match.group(1))
+            false_positive = float(match.group(2))
+            if false_positive > 0:
+                return false_negative / false_positive
+        return 5.0
 
 
 class Retriever:

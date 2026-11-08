@@ -88,6 +88,7 @@ class LLMSettings(_ConfigModel):
     reasoning_effort: str = "high"
     thinking: str = "enabled"
     role_overrides: dict[str, dict[str, str]] = Field(default_factory=dict)
+    role_providers: dict[str, str] = Field(default_factory=dict)
     api_key_env: str = "LLM_API_KEY"
     cassette: CassetteSettings = Field(default_factory=CassetteSettings)
 

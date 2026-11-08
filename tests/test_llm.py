@@ -172,7 +172,7 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(settings.model, "deepseek-flash")
         self.assertEqual(settings.api_key_env, "LLM_API_KEY")
         self.assertIn("reasoning_effort", settings.cassette.key_fields)
-        self.assertEqual(settings.cassette.on_miss, "error")
+        self.assertEqual(settings.cassette.on_miss, "fallback_mock")
 
     def test_missing_credential_is_explicit(self) -> None:
         settings = load_settings(CONFIG).llm
@@ -183,7 +183,7 @@ class ProviderTests(unittest.TestCase):
             OpenAICompatLLM(settings, ROOT)
 
     def test_mock_provider_builds_without_key(self) -> None:
-        settings = load_settings(CONFIG).llm
+        settings = load_settings(CONFIG).llm.model_copy(update={"role_providers": {}})
         self.assertIsInstance(build_llm(settings, ROOT), MockLLM)
 
     def test_unknown_provider_rejected(self) -> None:

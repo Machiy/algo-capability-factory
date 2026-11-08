@@ -82,6 +82,7 @@ def render_run_report(trace: RunTrace, reports: list[ValidationReport],
         "> test 集全程未访问。引用 cassette 回放的内容须另标注「离线回放」。",
         "",
         f"- 能力描述：{trace.spec}",
+        f"- 能力理解来源：{trace.interpreter_source}",
         f"- 知识图谱：{trace.kg_mode}（图谱来源 {trace.graph_source}）",
         f"- 历史失败经验命中：{'是' if trace.used_historical_warnings else '否'}",
         f"- 七步流程：执行完成（{' → '.join(SEVEN_STEPS)} 均有产物）",
@@ -172,7 +173,7 @@ class Workflow:
         with (root / settings.paths.data).open(encoding="utf-8") as handle:
             n_samples = sum(1 for _ in handle) - 1
         checker = StaticChecker(settings.runtime, task.dataset)
-        self.interpreter = Interpreter(llm)
+        self.interpreter = Interpreter(llm, settings.llm)
         self.retriever = Retriever(graph, settings.knowledge.top_k,
                                    settings.knowledge.weights)
         self.planner = Planner(llm)
@@ -225,7 +226,8 @@ class Workflow:
 
     def _n_parse(self, state: _GraphState) -> dict:
         spec = self.interpreter.parse(state["spec_text"])
-        trace = RunTrace(run_id=state["run_id"], spec=state["spec_text"])
+        trace = RunTrace(run_id=state["run_id"], spec=state["spec_text"],
+                         interpreter_source=self.interpreter.last_source)
         trace.steps.append(SEVEN_STEPS[0])
         return {"spec": spec, "trace": trace}
 
@@ -371,9 +373,13 @@ def run_from_cli(spec_text: str, mock: bool = False,
     settings = load_settings(root / "configs/default.yaml")
     task = load_task_settings(root / "configs/verify_credit.yaml")
     if mock:
-        settings.llm = settings.llm.model_copy(update={"provider": "mock"})
+        # --mock 表示全链路规则模板，按角色路由也一并关闭
+        settings.llm = settings.llm.model_copy(
+            update={"provider": "mock", "role_providers": {}}
+        )
     trace = Workflow(settings, task, root).run(spec_text)
     print(f"[P3] 七步闭环执行完成；四层全通过={trace.passed} "
+          f"理解来源={trace.interpreter_source} "
           f"候选={len(trace.candidates)} 修复={len(trace.repairs)} "
           f"报告={trace.report_path}")
     for item in sorted(trace.candidates, key=lambda c: -c.score):

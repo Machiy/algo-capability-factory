@@ -22,6 +22,11 @@ llm:
   role_overrides:
     Interpreter: {reasoning_effort: low}   # 结构化抽取不需深度思考，省时省额度
     Coder: {reasoning_effort: high}        # 代码生成保留高强度推理
+  # 按角色指定后端：未列出的角色走上面的 provider。
+  # Interpreter 走 cassette，让「能力理解」由真实 LLM 录制响应驱动；
+  # 其余角色保持规则模板，保证确定性与零外部依赖。
+  role_providers:
+    Interpreter: cassette
   # 凭据只从环境变量读取（.env 的 LLM_API_KEY），不写入配置文件或 cassette
   api_key_env: LLM_API_KEY
 
@@ -30,7 +35,9 @@ llm:
     dir: assets/llm_cassettes
     version: 1
     record: false               # openai_compat 下置 true 时录制真实调用
-    on_miss: error              # error | fallback_mock；禁止静默造假
+    # 未命中时显式回退规则模板，回退结果的 source 标为 mock 并记录 warning，
+    # 不冒充真实调用；置 error 可改为严格失败。
+    on_miss: fallback_mock
     # 命中键必须包含所有影响输出的参数，否则不同思考强度下会错配回放
     key_fields: [role, system, user, model, temperature, max_tokens, reasoning_effort, thinking]
     strip: [authorization, api_key, base_url, cookies, set-cookie]

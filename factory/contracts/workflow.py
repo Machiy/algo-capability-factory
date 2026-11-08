@@ -54,6 +54,7 @@ class RunTrace(_StrictModel):
     generated_files: list[str] = Field(default_factory=list)
     report_path: str = ""
     passed: bool = False
+    interpreter_source: str = "mock"
     kg_mode: str = "with_kg"
     graph_source: str = "sources"
     used_historical_warnings: bool = False
