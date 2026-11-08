@@ -233,6 +233,7 @@ python -m factory run --spec "预测信用卡客户下月违约概率，按5:1�
 # 5) 分阶段可复现入口
 python scripts/build_kg.py               # 构建能力图谱与检索产物
 python scripts/verify_baseline.py        # baseline 四层验证自检
+python scripts/run_ablation.py           # 有 KG / 无 KG 消融对比
 python scripts/record_llm.py             # 录制真实 DeepSeek 调用（需 key）
 python -m unittest discover -s tests -v  # 全量测试
 
@@ -372,7 +373,22 @@ def build_pipeline(config):
 | 1 | `KeyError: PAY_1` | 按 `Dataset` 列名映射改为 `PAY_0` | 沙箱从 FAIL 恢复为 PASS |
 | 2 | `MetricBelowThreshold` | 策略表命中「切换模型族 / 按成本比调阈值」，当前 Mock 模板无可执行动作 | 如实标记 `no_change`，停止盲目重试 |
 
-> 说明：指标层未达标是 baseline 级候选的真实表现，不是流程失败；达到 `verify_credit.yaml` 门槛需要后续引入 WOE 分箱、采样与成本最优阈值。「有 KG / 无 KG」消融对比与「第二轮检索命中首轮经验」属于 P4 待办，当前未做，不预先声称。
+> 说明：指标层未达标是 baseline 级候选的真实表现，不是流程失败；达到 `verify_credit.yaml` 门槛需要后续引入 WOE 分箱、采样与成本最优阈值。
+
+**沉淀闭环消融（实测，`scripts/run_ablation.py`）**
+
+同一 spec、同一候选方案、同一数据集，唯一变量是是否检索并注入图谱证据：
+
+| 指标 | 有 KG | 无 KG |
+|---|---|---|
+| 图谱来源 | 上一轮回写 `capabilities_after_run.json` | 源材料重抽 |
+| 命中历史失败经验 | 是 | 否 |
+| 修复轮次 | 3 | 4 |
+| 是否首轮避开 T1 | 是 | 否 |
+| 错误签名 | `MetricBelowThreshold` ×3 | `KeyError: PAY_1` + `MetricBelowThreshold` ×3 |
+| 候选 AUC（降序） | 0.720635 / 0.720629 / 0.720612 | 0.720635 / 0.720629 / 0.720612 |
+
+有 KG 组从回写图谱读到上一轮的 `KeyError: PAY_1` 失败案例，Coder 首轮即改用 `PAY_0`，省掉一次失败执行；无 KG 组没有这条证据，先踩 T1 再修复。两组 AUC 完全一致，说明沉淀改变的是过程效率而非指标口径，未做任何数值美化。完整对比见 `outputs/reports/ablation.md`。
 
 ---
 
@@ -393,6 +409,7 @@ def build_pipeline(config):
 | **小数据下资源分析缺说服力** | 构造 10× 合成扩展集，记录各候选耗时 / 峰值内存 / 推理 P95 |
 | **指标口径不统一** | 成本比、KS 门槛、baseline 定义全部配置化到 `verify_*.yaml`，避免硬编码 |
 | **早期为快速打通闭环写了若干自研轻量件，与开发要求 f「可使用现成工具但需说明选择理由」有张力** | 中途把「复用优先」写进 `.codebuddy/rules/architecture.md` 作为不可裁剪规则，逐项评估现成方案后替换：自研状态机 → LangGraph `StateGraph`、`ctypes` 内存监控 → `psutil`、手写日志格式 → `structlog`、`argparse` → `Typer`、手写 Markdown 正则 → `markdown-it-py`、手写词元计数 → `rank_bm25`；`vcrpy` / `bandit` / CrewAI / LlamaIndex 评估后因粒度或契约冲突未采用，理由逐项写在第 2 节选型表。全部替换以「功能不变」验收：ruff 全绿、83 用例全过、图谱仍 95 节点 / 259 边、端到端 3 候选 AUC 与修复轨迹逐字一致 |
+| **沉淀只写不读**：Curator 已把结果写入 `capabilities_after_run.json`，但工作流每轮都从源材料重抽，下一轮看不到上一轮经验 | 让 `Workflow` 启动时优先加载回写图谱（不存在才回退源材料），检索器优先返回本项目实测 `FailureCase`，Coder 命中 T1 历史经验时首轮即避开，Curator 按 `run_id` 去重避免膨胀。消融实测：修复轮次 3 vs 4、有 KG 首轮避开 `PAY_1`、两组 AUC 完全一致 |
 
 ---
 
@@ -433,7 +450,7 @@ def build_pipeline(config):
 - [x] 第 8 节所有 `<实测后填充>` 替换为实测指标，附上真实报告文件与图谱 diff
 - [x] 第 9 节补记「复用优先」实现挑战；其余实现挑战待 P5 末
 - [x] 附录 A 保持与最终 README 结构一致
-- [ ] P4 补「有 KG / 无 KG」消融对比与第二轮检索命中首轮经验的证据
+- [x] P4 补「有 KG / 无 KG」消融对比与第二轮检索命中首轮经验的证据（见第 8 节与 `outputs/reports/ablation.md`）
 - [ ] P5 补 Web / API 界面与最终验收指标
 
 ## 附录 C · 数据与引用
@@ -464,6 +481,7 @@ License: CC BY 4.0 (UCI) / CC0 Public Domain (OpenML d/43435)
 | P3 LLM 后端 | `3ceb961`、`ecd9e69`、`1a0148f` | `MockLLM` / `OpenAICompatLLM` / `RecordedLLM`、脱敏 cassette 与断网回放、一次真实 DeepSeek 调用证据 |
 | P3 七步闭环 | `677ab5b`、`4a6e5c6`、`208bbd7` | 8 角色、Beam Top-3、≤3 轮定向修复、Curator 回写、`run --spec` 与端到端产物 |
 | 复用优先整改 | `5f26a87`、`379f7aa`、`f064a1b`、`82f6d4f` | 新增规则；现成库替换基础设施 / 检索 / 解析；LangGraph 替换自研状态机；同步选型理由与产物 |
+| P4 沉淀闭环 | `c642c24` | 工作流优先加载回写图谱、检索优先实测失败经验、Coder 首轮避开 T1、回写按 `run_id` 去重；新增消融脚本与对比报告 |
 
 > 完整历史以 `git --no-pager log` 为准。所有提交时间由 Git 按实际提交时刻记录，未做调整；评审可据此还原 P0 → P3 的演进。
 
