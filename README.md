@@ -4,7 +4,7 @@
 >
 > 对应题目：LLM Agent 笔试《基于 AI Agent 的算法能力系统开发》。
 
-**当前仓库状态：规划阶段（v1.0）。** 仓库当前只包含基础骨架与已下载的示例数据：`README.md`、`requirements.txt`、`.gitignore`、`scripts/download_data.py`、`assets/data/UCI_Credit_Card.csv`。其余模块按阶段逐步加入；下文描述的架构、命令与产物为后续实现目标，标注「预期」「实现后填充」的内容将在对应阶段完成后替换为真实产物与实测数值。本文档已按题目「提交方式」要求的十项内容完整写好。
+**当前仓库状态：规划阶段（v1.0）。** 仓库当前包含基础骨架、已下载的示例数据，以及配置、业务材料、契约骨架与测试用例等阶段性资产；Agent 工作流、知识图谱、验证器等实现模块按阶段新增。下文描述的命令与产物为后续实现目标，标注「预期」「实现后填充」的内容将在对应阶段完成后替换为真实产物与实测数值。本文档已按题目「提交方式」要求的十项内容完整写好。
 
 ---
 
@@ -81,17 +81,22 @@ python -m factory run --spec "预测信用卡客户下月违约概率，处理�
 
 ```
 algo-capability-factory/
-├── README.md
-├── requirements.txt
-├── .gitignore
-├── scripts/
-│   └── download_data.py
-└── assets/
-    └── data/
-        └── UCI_Credit_Card.csv
+├── README.md  requirements.txt  .env.example  pyproject.toml  .gitignore
+├── configs/{default.yaml, verify_credit.yaml, verify_regression.yaml, verify_text.yaml}
+├── scripts/download_data.py
+├── assets/
+│   ├── data/UCI_Credit_Card.csv
+│   ├── docs/{data_dictionary.md, risk_policy.md, expert_rules.md,
+│   │         experiment_log.md, failure_review.md, test_report.md}
+│   └── legacy/legacy_default_model.py
+├── factory/
+│   ├── __init__.py  __main__.py
+│   └── contracts/{__init__.py, models.py}
+├── outputs/{generated/, reports/, kg/}
+└── tests/
 ```
 
-后续阶段将按模块逐步新增 `configs/`、`factory/`（契约、知识图谱、Agent、验证）、`assets/docs/` 业务材料、`assets/legacy/`、`outputs/`、`tests/`。这些内容目前暂存在本地归档区，不纳入版本控制，实现时按阶段取回并提交。
+上述为骨架与能力抽取素材；`knowledge/`、`agents/`、`workflow/`、`runtime/`、`validation/` 等实现模块将在后续阶段按提交逐步加入。内部规划文档不纳入版本控制。
 
 ---
 
@@ -404,7 +409,7 @@ UCI Machine Learning Repository. https://doi.org/10.24432/C55S3H
 License: CC BY 4.0 (UCI) / CC0 Public Domain (OpenML d/43435)
 ```
 
-衍生材料 `assets/docs/` 与 `assets/legacy/` 为本项目构造的模拟业务材料，将在后续阶段加入仓库，仅用于演示能力抽取流程。
+衍生材料 `assets/docs/` 与 `assets/legacy/` 为本项目构造的模拟业务材料，仅用于演示能力抽取流程。
 
 ---
 
