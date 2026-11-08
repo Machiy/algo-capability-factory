@@ -8,10 +8,10 @@
 |---|---|---|
 | 图谱来源 | after_run | sources |
 | 命中历史失败经验 | 是 | 否 |
-| 修复轮次 | 3 | 4 |
-| 错误签名 | MetricBelowThreshold、MetricBelowThreshold、MetricBelowThreshold | KeyError: PAY_1、MetricBelowThreshold、MetricBelowThreshold、MetricBelowThreshold |
+| 修复轮次 | 2 | 3 |
+| 错误签名 | MetricBelowThreshold、MetricBelowThreshold | KeyError: PAY_1、MetricBelowThreshold、MetricBelowThreshold |
 | 是否首轮避开 T1 | 是 | 否 |
-| 候选 AUC（降序） | 0.720635 / 0.720629 / 0.720612 | 0.720635 / 0.720629 / 0.720612 |
+| 候选 AUC（降序） | 0.784337 / 0.720629 / 0.720612 | 0.784337 / 0.720629 / 0.720612 |
 
 ## 结论
 

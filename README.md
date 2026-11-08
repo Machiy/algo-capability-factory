@@ -81,6 +81,7 @@ python -m factory run --spec "预测信用卡客户下月违约概率，处理�
 | cassette 回放 | `RecordedLLM`（`BaseLLM` 层按角色 + prompt 命中） | 无 key、断网可原样回放；未命中显式报错，不静默造假 | `vcrpy` 拦截 HTTP 层，而 `provider=cassette` 根本不构造 `openai` client，无法工作；已录制的脱敏 cassette 也会失效 |
 | 四层验证 | 自研组合器 + `pytest` + 子进程沙箱 | 题目任务 5 要的是「统一验证机制」这一组合，无单一现成库覆盖；指标用 `sklearn.metrics`、报告用 `Jinja2` | 无对应单一库；组合编排属项目职责 |
 | 项目业务规则 | 时间外划分、禁 `ID` / 敏感字段、T1–T4 列名映射、成本比阈值、证据 SHA-256、`verify_*.yaml` 门槛 | 题目场景的合规约束，任何通用库都不会内置，属必须自研部分 | 无对应现成库 |
+| 算法模板 | 装饰器注册表（`factory/agents/templates.py`），内置 LR / HGB / RF | 与指标插件同一模式，新增算法族只需一个 `@register` 函数；`Coder` 按 `model_family` 渲染，三个候选因此真的代表三种算法 | 代码模板用标准库 `str.format`，不为单文件模板引入 Jinja2（Jinja2 仅用于报告） |
 | 算法栈 | pandas + scikit-learn + imbalanced-learn | 全 CPU、秒级、确定性强，`Pipeline` 天然防泄漏 | — |
 | 接入 | Typer CLI | 现成 CLI 框架，`--version` / `--check` / `run --spec` 三入口 | `argparse` 已替换；FastAPI / Streamlit 属 P5 |
 | 报告 / 可视化 | Jinja2 Markdown + PyVis HTML | 交付验证报告样例与图谱可视化 | — |
@@ -345,26 +346,27 @@ def build_pipeline(config):
 
 ## 8. 验证结果和报告样例
 
-> 以下为一次真实运行的实测结果，不做数值填充或美化。指标未达业务门槛时如实判 FAIL，并保留失败记录回写 `FailureCase`。
+> 以下为一次真实运行的实测结果，不做数值填充或美化。候选按 Beam Top-3 比较不同算法族，最好的候选指标达标；未达标的候选如实判 FAIL 并保留失败记录回写 `FailureCase`。
 
 **端到端报告**：`outputs/reports/run_demo.md`（七步轨迹、检索证据、候选排名、四层结论、修复轨迹、设计依据、图谱 diff）。**框架自检样例**：`outputs/reports/validation_sample.md`（标注为 baseline，非最终验收）。
 
 | 项目 | 实测结果 |
 |---|---|
 | 七步流程 | a–g 全部执行完成，CLI 退出码 0 |
-| 候选方案 | 3 个（Beam Top-3），AUC 0.72061 / 0.72063 / 0.72064 |
-| 修复轨迹 | 默认（有 KG）首轮即避开 T1、修复 3 轮；无 KG 时复现 `KeyError: PAY_1` → 列名映射为 `PAY_0`、修复 4 轮（见下方消融） |
-| 四层结论 | 接口 / 功能 / 稳定性 PASS；指标层 FAIL（AUC 0.7206 < 0.78、F1 < 0.45） |
+| 能力理解 | `能力理解来源=cassette`、`spec_id=spec.next_month_default`（真实 DeepSeek 响应，离线回放） |
+| 候选方案 | 3 个（Beam Top-3）：LR(C=0.5) AUC 0.72061、LR(C=1.0) AUC 0.72063、**HGB AUC 0.78434** |
+| 修复轨迹 | 首次运行复现 `KeyError: PAY_1` → 列名映射为 `PAY_0`（3 轮）；有 KG 时首轮避开（2 轮），见下方消融 |
+| 四层结论 | **`plan.03`（HGB）四层全 PASS**；LR 两个候选指标层 FAIL（AUC < 0.78、F1 < 0.45） |
 | 图谱沉淀 | `outputs/kg/capabilities_after_run.json`，新增 ValidationRun / FailureCase / 能力 v2 节点 |
 
-**四层验证结论（实测）**
+**四层验证结论（实测，最佳候选 HGB）**
 
 | 层级 | 检查项 | 结果 | 说明 |
 |---|---|---|---|
 | 接口规范 | 契约签名 / AST 白名单 / 禁 `ID` 入模 | PASS | 静态检查 |
 | 功能正确性 | smoke / 无异常 / 确定性 | PASS | 子进程用真实数据 fit / predict |
-| 指标表现 | AUC、KS、PR-AUC、F1、成本损失、PSI、分组 AUC | FAIL | 时间外划分；baseline 级 LR 未达业务门槛 |
-| 运行稳定性 | 超时 60s / 内存 2GB / 重复运行 | PASS | 单次约 1.7–2.1s，子进程隔离 |
+| 指标表现 | AUC 0.7843 ≥ 0.78、F1 0.4899 ≥ 0.45、KS 0.4400 ≥ 0.35 | PASS | 时间外划分；HGB 达标 |
+| 运行稳定性 | 超时 60s / 内存 2GB / 重复运行 | PASS | 单次约 1.9–2.2s，子进程隔离 |
 
 **可复现的真实修复轨迹（实测）**
 
@@ -373,11 +375,11 @@ def build_pipeline(config):
 | 轮次 | 错误签名 | 定向修复 | 结果 |
 |---|---|---|---|
 | 1 | `KeyError: PAY_1` | 按 `Dataset` 列名映射改为 `PAY_0` | 沙箱从 FAIL 恢复为 PASS |
-| 2 | `MetricBelowThreshold` | 策略表命中「切换模型族 / 按成本比调阈值」，当前 Mock 模板无可执行动作 | 如实标记 `no_change`，停止盲目重试 |
+| 2–3 | `MetricBelowThreshold` | 策略表命中「切换模型族 / 按成本比调阈值」，LR 模板无可执行动作 | 如实标记 `no_change`；同批 HGB 候选直接达标 |
 
-有 KG 默认路径：`Interpreter` 走真实录制、图谱含首轮 `FailureCase`，Coder 首轮即用 `PAY_0`，`KeyError` 不再出现，修复轮次降为 3；差异见下方消融表。
+有 KG 默认路径：`Interpreter` 走真实录制、图谱含首轮 `FailureCase`，Coder 首轮即用 `PAY_0`，`KeyError` 不再出现，修复轮次由 3 降为 2；差异见下方消融表。
 
-> 说明：指标层未达标是 baseline 级候选的真实表现，不是流程失败；达到 `verify_credit.yaml` 门槛需要后续引入 WOE 分箱、采样与成本最优阈值。
+> LR 候选未达标是 baseline 级方案的真实表现，不是流程失败；引入 HGB / RF 后指标层已达标，阈值仍以 `verify_credit.yaml` 为准，未做任何下调。
 
 **沉淀闭环消融（实测，`scripts/run_ablation.py`）**
 
@@ -387,10 +389,10 @@ def build_pipeline(config):
 |---|---|---|
 | 图谱来源 | 上一轮回写 `capabilities_after_run.json` | 源材料重抽 |
 | 命中历史失败经验 | 是 | 否 |
-| 修复轮次 | 3 | 4 |
+| 修复轮次 | 2 | 3 |
 | 是否首轮避开 T1 | 是 | 否 |
-| 错误签名 | `MetricBelowThreshold` ×3 | `KeyError: PAY_1` + `MetricBelowThreshold` ×3 |
-| 候选 AUC（降序） | 0.720635 / 0.720629 / 0.720612 | 0.720635 / 0.720629 / 0.720612 |
+| 错误签名 | `MetricBelowThreshold` ×2 | `KeyError: PAY_1` + `MetricBelowThreshold` ×2 |
+| 候选 AUC（降序） | 0.784337 / 0.720629 / 0.720612 | 0.784337 / 0.720629 / 0.720612 |
 
 有 KG 组从回写图谱读到上一轮的 `KeyError: PAY_1` 失败案例，Coder 首轮即改用 `PAY_0`，省掉一次失败执行；无 KG 组没有这条证据，先踩 T1 再修复。两组 AUC 完全一致，说明沉淀改变的是过程效率而非指标口径，未做任何数值美化。完整对比见 `outputs/reports/ablation.md`。
 
@@ -486,6 +488,7 @@ License: CC BY 4.0 (UCI) / CC0 Public Domain (OpenML d/43435)
 | P3 七步闭环 | `677ab5b`、`4a6e5c6`、`208bbd7` | 8 角色、Beam Top-3、≤3 轮定向修复、Curator 回写、`run --spec` 与端到端产物 |
 | 复用优先整改 | `5f26a87`、`379f7aa`、`f064a1b`、`82f6d4f` | 新增规则；现成库替换基础设施 / 检索 / 解析；LangGraph 替换自研状态机；同步选型理由与产物 |
 | P4 沉淀闭环 | `c642c24` | 工作流优先加载回写图谱、检索优先实测失败经验、Coder 首轮避开 T1、回写按 `run_id` 去重；新增消融脚本与对比报告 |
+| 算法模板插件 | `e3873f7` | 装饰器注册表 + LR / HGB / RF 三个内置模板；Coder 按 `family` 渲染，修掉候选族被忽略的缺陷，HGB 候选四层达标 |
 
 > 完整历史以 `git --no-pager log` 为准。所有提交时间由 Git 按实际提交时刻记录，未做调整；评审可据此还原 P0 → P3 的演进。
 
