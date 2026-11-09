@@ -4,7 +4,7 @@
 >
 > 对应题目：LLM Agent 笔试《基于 AI Agent 的算法能力系统开发》。
 
-**当前仓库状态：a–g 七步核心闭环已跑通（P0–P3）。** 已实现 L0 契约、L1 能力图谱与混合检索、L2 的 8 个 Agent 角色与工作流编排、L3 子进程沙箱与 AST 静态检查、L4 四层验证与报告生成，以及三种 LLM 后端和脱敏 cassette；`python -m factory run --spec "..." --mock` 一次产出生成代码、四层报告、修复轨迹与图谱回写。指标层因 baseline 级候选未达业务门槛如实判 FAIL，见第 8 节；P4 消融对比与 P5 Web / API 界面属后续阶段。本文档已按题目「提交方式」要求的十项内容写好。
+**当前仓库状态：P0–P5 已完成并实测。** a–g 七步闭环（能力抽取 → 检索 → 规划 → 生成 → 验证 → 修复 → 沉淀）全链路可跑；L0 契约、L1 能力图谱与混合检索、L2 的 8 个 Agent 角色与 LangGraph 编排、L3 子进程沙箱与 AST 静态检查、L4 四层验证与报告生成、L5 的 Typer CLI 与 FastAPI 均已落地，并支持三种 LLM 后端与脱敏 cassette。`python -m factory run --spec "..." --mock` 一次产出生成代码、四层报告、修复轨迹与图谱回写；最新一次实测为 3 候选、最佳候选（HGB）四层全通过、AUC 0.7843。题目进阶要求的 8 项全部满足，10 项加分项已覆盖 7 项（跨场景迁移、真实仓库抽取、资源消耗分析见第 10 节后续方向）。本文档已按题目「提交方式」要求的十项内容写好。
 
 ---
 
@@ -23,7 +23,7 @@
                      验证报告 + 候选排名 + 设计依据 + 图谱 diff
 ```
 
-**快速开始（P5 完成后可用）**
+**快速开始**
 
 ```bash
 pip install -r requirements.txt
@@ -60,7 +60,7 @@ python -m factory run --spec "预测信用卡客户下月违约概率，处理�
 | L2 支撑 | `llm/` | `BaseLLM` 抽象与三个实现：`MockLLM`（默认）、`OpenAICompatLLM`（DeepSeek API）、`RecordedLLM`（cassette 回放） |
 | L3 执行 | `runtime/` | 子进程沙箱、AST 静态检查、超时 / 内存限制、错误分类器 |
 | L4 验证 | `validation/` | 四层检查器、指标插件注册、报告生成 |
-| L5 接入 | `cli/`、`api/`、`ui/` | Typer CLI、FastAPI、Streamlit |
+| L5 接入 | `cli/`（`__main__.py`）、`api/` | Typer CLI、FastAPI；Web UI（Streamlit）按裁剪顺序未做，题目「或」已由 CLI + API 满足 |
 | L6 资产 | `assets/` | 数据、6 份业务材料、模板、示例、报告样例与 LLM cassette |
 
 **设计原则**：契约先行（所有模块只依赖 Pydantic 数据类）、LLM 可替换（抽象 `BaseLLM`）、验证与场景解耦（换 yaml 即换任务类型）、执行与验证隔离（生成代码只在子进程沙箱内运行）。
@@ -83,7 +83,7 @@ python -m factory run --spec "预测信用卡客户下月违约概率，处理�
 | 项目业务规则 | 时间外划分、禁 `ID` / 敏感字段、T1–T4 列名映射、成本比阈值、证据 SHA-256、`verify_*.yaml` 门槛 | 题目场景的合规约束，任何通用库都不会内置，属必须自研部分 | 无对应现成库 |
 | 算法模板 | 装饰器注册表（`factory/agents/templates.py`），内置 LR / HGB / RF | 与指标插件同一模式，新增算法族只需一个 `@register` 函数；`Coder` 按 `model_family` 渲染，三个候选因此真的代表三种算法 | 代码模板用标准库 `str.format`，不为单文件模板引入 Jinja2（Jinja2 仅用于报告） |
 | 算法栈 | pandas + scikit-learn + imbalanced-learn | 全 CPU、秒级、确定性强，`Pipeline` 天然防泄漏 | — |
-| 接入 | Typer CLI | 现成 CLI 框架，`--version` / `--check` / `run --spec` 三入口 | `argparse` 已替换；FastAPI / Streamlit 属 P5 |
+| 接入 | Typer CLI + FastAPI | 现成 CLI / Web 框架，CLI 有 `--version` / `--check` / `run` / `api` 入口，API 有 `/health`、`/templates`、`/run` 三端点并自动导出 OpenAPI | `argparse` 已替换；Streamlit 权衡后未做——题目为「或」，多一个前端只增加依赖与演示成本，不增加评分点 |
 | 报告 / 可视化 | Jinja2 Markdown + PyVis HTML | 交付验证报告样例与图谱可视化 | — |
 
 **当前仓库结构**
@@ -93,7 +93,7 @@ algo-capability-factory/
 ├── README.md  requirements.txt  .env.example  pyproject.toml  .gitignore
 ├── .codebuddy/{CODEBUDDY.md, rules/}
 ├── configs/{default.yaml, verify_credit.yaml, verify_regression.yaml, verify_text.yaml}
-├── scripts/download_data.py
+├── scripts/{download_data.py, build_kg.py, verify_baseline.py, run_ablation.py, record_llm.py}
 ├── assets/
 │   ├── data/UCI_Credit_Card.csv
 │   ├── docs/{data_dictionary.md, risk_policy.md, expert_rules.md,
@@ -101,13 +101,20 @@ algo-capability-factory/
 │   ├── legacy/legacy_default_model.py
 │   └── llm_cassettes/          # 脱敏后的真实 LLM 对话与响应，入库
 ├── factory/
-│   ├── __init__.py  __main__.py
-│   └── contracts/{__init__.py, models.py}
-├── outputs/{generated/, reports/, kg/}
-└── tests/
+│   ├── __init__.py  __main__.py  config.py  logging_setup.py
+│   ├── contracts/{models.py, knowledge.py, llm.py, validation.py, workflow.py}
+│   ├── knowledge/{extractor.py, parsing.py, graph.py, retrieval.py, pipeline.py, visualize.py}
+│   ├── agents/{roles.py, templates.py}
+│   ├── workflow/pipeline.py    # LangGraph 七步编排
+│   ├── llm/{base.py, mock.py, openai_compat.py, recorded.py, cassette.py, routing.py, demo.py}
+│   ├── runtime/{sandbox.py, dataset_sandbox.py, static_check.py}
+│   ├── validation/{checks.py, metrics.py, split.py, report.py}
+│   └── api/app.py
+├── outputs/{generated/, reports/, kg/, runs/}   # runs/ 为临时轨迹，不入库
+└── tests/                      # 11 个测试文件、104 个用例
 ```
 
-上述为骨架与能力抽取素材；`knowledge/`、`agents/`、`workflow/`、`runtime/`、`validation/` 等实现模块将在后续阶段按提交逐步加入。内部规划文档不纳入版本控制。
+`knowledge/`、`agents/`、`workflow/`、`runtime/`、`validation/`、`api/` 均已实现并入库。内部规划文档（`PLAN.md`）、原始数据包与 `_archive/` 不纳入版本控制。
 
 ---
 
@@ -127,7 +134,7 @@ algo-capability-factory/
 | `FailureCase` | error_type、traceback_sig、root_cause、fix_strategy、occurrence |
 | `Evidence` | path、excerpt、sha256、doc_type |
 
-### 边（12 类）
+### 边（13 类，与 `factory/contracts/knowledge.py` 的关系枚举一致）
 
 | 边 | 用途 |
 |---|---|
@@ -247,7 +254,7 @@ python -m factory --version
 python -m factory --check
 ```
 
-> `factory ui` 与 FastAPI / Streamlit 界面属 P5 阶段，当前尚未实现；CLI 已可用。
+> 接入层现状：CLI 与 FastAPI 均已可用（`factory api --port 8000` 启动服务）；Streamlit 前端按裁剪顺序未做，题目要求为「Web 界面、CLI 或 API」三者之一，CLI + API 已满足。
 
 **最小依赖**：核心闭环需 `pydantic`、`PyYAML`、`pandas`、`scikit-learn`、`networkx`、`langgraph`、`rank-bm25`、`markdown-it-py`、`psutil`、`structlog`（全部为现成库，`requirements.txt` 已锁版本区间）；若只需验证数据契约与配置，可先 `pip install pydantic PyYAML` 再运行 `python -m unittest discover -s tests -v`。`pyvis`、`Jinja2`、`Typer`、`openai` 按入口加载，全量清单见 `requirements.txt`。
 
@@ -309,8 +316,8 @@ python -m factory --check
 | 任务 | 配置 | 用途 |
 |---|---|---|
 | T-credit 信用卡违约二分类（主） | `verify_credit.yaml` | 端到端闭环演示，含 3 轮真实修复 |
-| T-regression 需求量回归 | `verify_regression.yaml` | 验证不同任务类型的验证配置（UCI Bike Sharing / California Housing） |
-| T-text 文本分类 | `verify_text.yaml` | 验证跨场景迁移（AG News 或 ChnSentiCorp） |
+| T-regression 需求量回归 | `verify_regression.yaml` | 验证不同任务类型的验证配置：现在只到指标层 smoke（`status: contract_only`），完整 Bike Sharing 数据未入库 |
+| T-text 文本分类 | `verify_text.yaml` | 跨场景迁移的目标配置；当前仅定义契约，文本数据与端到端报告待补 |
 
 **数据使用声明**：数据仅用于算法原型研究。敏感字段仅用于分组公平性审计，不构成任何授信或部署建议；样本来自 2005 年 4–9 月单一时段，结论不外推至当前客群。
 
@@ -337,7 +344,7 @@ def build_pipeline(config):
     ])
 ```
 
-首轮 `Coder` 规则模板按直觉把最近一期写成 `PAY_1`（T1 陷阱），在子进程用真实数据集触发 `KeyError: PAY_1`；`Repairer` 按策略表替换为 `PAY_0` 后重新通过沙箱。三个候选以不同 `C` 值区分，AUC 实测见第 8 节。
+首轮 `Coder` 规则模板按直觉把最近一期写成 `PAY_1`（T1 陷阱），在子进程用真实数据集触发 `KeyError: PAY_1`；`Repairer` 按策略表替换为 `PAY_0` 后重新通过沙箱。三个候选由算法模板插件按不同模型族渲染（逻辑回归 ×2 + 直方图梯度提升 ×1），AUC 实测见第 8 节。
 
 实现要点：
 
@@ -364,6 +371,8 @@ def build_pipeline(config):
 | 修复轨迹 | 首次运行复现 `KeyError: PAY_1` → 列名映射为 `PAY_0`（3 轮）；有 KG 时首轮避开（2 轮），见下方消融 |
 | 四层结论 | **`plan.03`（HGB）四层全 PASS**；LR 两个候选指标层 FAIL（AUC < 0.78、F1 < 0.45） |
 | 图谱沉淀 | `outputs/kg/capabilities_after_run.json`，新增 ValidationRun / FailureCase / 能力 v2 节点 |
+
+> 说明：`Curator` 按 `run_id` 去重，重复运行同一个 `run_id` 时报告里的「图谱沉淀 diff」会显示 0（新增节点已在首轮写入）；新增节点的完整清单以 `capabilities_after_run.json` 为准，两轮差异见第 8 节消融表与 `outputs/reports/ablation.md`。
 
 **四层验证结论（实测，最佳候选 HGB）**
 
@@ -406,22 +415,22 @@ def build_pipeline(config):
 
 ## 9. 遇到的挑战和解决方案
 
-以下为设计阶段已识别的挑战、以及实现过程中补记的解决方案；其余实现问题将在 P5 结束后继续补记。
+以下为设计阶段已识别的挑战、以及实现过程中补记的解决方案（含「复用优先」整改与沉淀闭环返工）。
 
 | 挑战 | 解决方案 |
 |---|---|
 | **数据字典与实际数据不一致**（T1、T2），生成代码易按直觉写错列名与类别枚举 | 把 T1–T4 全部抽成 `Dataset.known_issues` 与能力节点，验证期做 schema 断言，失败后按列名表定向修复，并把修复结果回写为可复用经验 |
 | **时间泄漏**：标签为「下月」违约，随机划分会让模型看到未来信息，指标虚高 | 时间外划分 + `PRECEDES` 约束强制 `Pipeline` 且 fit 仅 on train + AST 静态泄漏检查；test 集仅在终评使用一次 |
 | **无大模型 / 无额度时 demo 跑不起来** | `BaseLLM` 抽象 + `MockLLM` 规则模板为默认路径，真实 LLM 仅作增强，prompt 模板与输出 schema 落盘以保证确定性 |
-| **生成代码不可信** | 独立子进程沙箱 + 超时 / 内存限制 + AST import 白名单 + 临时目录 + 禁网 + 禁读标签路径 |
+| **生成代码不可信** | 独立子进程沙箱 + 超时 / 内存限制 + AST import 白名单 + 临时目录 + 禁读标签路径；网络库（`socket` / `urllib` / `requests` / `httpx`）不在白名单内，生成代码无法 import 出网 |
 | **知识图谱容易沦为静态展示** | 检索结果强制进入 Planner / Coder prompt，`PRECEDES` 参与验证，并做「有 KG / 无 KG」消融对比写入报告 |
 | **修复退化为反复重试** | 先做错误分类再按签名定向修复，最多 3 轮，每轮记录 `(错误签名, 修复动作, 结果)` 三元组 |
 | **敏感属性与公平性** | 敏感字段不入模，仅用于分组 AUC 审计，README 明确不作部署建议；把公平性做成 `Metric` 插件 |
 | **数据时效与分布漂移** | 用 PSI 指标 + 时间外验证量化漂移，作为「真实行业落地复杂问题」写入报告，不回避 |
 | **小数据下资源分析缺说服力** | 构造 10× 合成扩展集，记录各候选耗时 / 峰值内存 / 推理 P95 |
 | **指标口径不统一** | 成本比、KS 门槛、baseline 定义全部配置化到 `verify_*.yaml`，避免硬编码 |
-| **早期为快速打通闭环写了若干自研轻量件，与开发要求 f「可使用现成工具但需说明选择理由」有张力** | 中途把「复用优先」写进 `.codebuddy/rules/architecture.md` 作为不可裁剪规则，逐项评估现成方案后替换：自研状态机 → LangGraph `StateGraph`、`ctypes` 内存监控 → `psutil`、手写日志格式 → `structlog`、`argparse` → `Typer`、手写 Markdown 正则 → `markdown-it-py`、手写词元计数 → `rank_bm25`；`vcrpy` / `bandit` / CrewAI / LlamaIndex 评估后因粒度或契约冲突未采用，理由逐项写在第 2 节选型表。全部替换以「功能不变」验收：ruff 全绿、83 用例全过、图谱仍 95 节点 / 259 边、端到端 3 候选 AUC 与修复轨迹逐字一致 |
-| **沉淀只写不读**：Curator 已把结果写入 `capabilities_after_run.json`，但工作流每轮都从源材料重抽，下一轮看不到上一轮经验 | 让 `Workflow` 启动时优先加载回写图谱（不存在才回退源材料），检索器优先返回本项目实测 `FailureCase`，Coder 命中 T1 历史经验时首轮即避开，Curator 按 `run_id` 去重避免膨胀。消融实测：修复轮次 3 vs 4、有 KG 首轮避开 `PAY_1`、两组 AUC 完全一致 |
+| **早期为快速打通闭环写了若干自研轻量件，与开发要求 f「可使用现成工具但需说明选择理由」有张力** | 中途把「复用优先」写进 `.codebuddy/rules/architecture.md` 作为不可裁剪规则，逐项评估现成方案后替换：自研状态机 → LangGraph `StateGraph`、`ctypes` 内存监控 → `psutil`、手写日志格式 → `structlog`、`argparse` → `Typer`、手写 Markdown 正则 → `markdown-it-py`、手写词元计数 → `rank_bm25`；`vcrpy` / `bandit` / CrewAI / LlamaIndex 评估后因粒度或契约冲突未采用，理由逐项写在第 2 节选型表。全部替换以「功能不变」验收：ruff 全绿、测试全过（当前 104 个用例）、图谱仍 95 节点 / 259 边、端到端 3 候选 AUC 与修复轨迹逐字一致 |
+| **沉淀只写不读**：Curator 已把结果写入 `capabilities_after_run.json`，但工作流每轮都从源材料重抽，下一轮看不到上一轮经验 | 让 `Workflow` 启动时优先加载回写图谱（不存在才回退源材料），检索器优先返回本项目实测 `FailureCase`，Coder 命中 T1 历史经验时首轮即避开，Curator 按 `run_id` 去重避免膨胀。消融实测：修复轮次 2（有 KG）vs 3（无 KG）、有 KG 首轮避开 `PAY_1`、两组 AUC 完全一致 |
 
 ---
 
@@ -463,7 +472,7 @@ def build_pipeline(config):
 - [x] 第 9 节补记「复用优先」实现挑战；其余实现挑战待 P5 末
 - [x] 附录 A 保持与最终 README 结构一致
 - [x] P4 补「有 KG / 无 KG」消融对比与第二轮检索命中首轮经验的证据（见第 8 节与 `outputs/reports/ablation.md`）
-- [ ] P5 补 Web / API 界面与最终验收指标
+- [x] P5 补接入层与最终验收指标：FastAPI 三端点 + `outputs/reports/openapi.json`，第 8 节替换为实测数值；Streamlit 前端按裁剪顺序未做（题目「或」已满足）
 
 ## 附录 C · 数据与引用
 

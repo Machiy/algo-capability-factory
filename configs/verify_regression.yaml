@@ -1,7 +1,9 @@
 # 第二任务类型：回归，对应进阶要求「支持不同任务类型的验证配置」
-# 主线 P2/P5 用 sklearn 内置或合成回归数据跑一次最小 smoke，证明不改核心验证器即可切换配置；
-# 下方 path 指向的完整 Bike Sharing 数据包属 P6 可选扩展，故 status 仍为 planned。
-status: planned
+# 现状：验证器已完全由本文件驱动，rmse / mae / r2 三个插件已注册，
+# `tests/test_validation.py::test_regression_config_switches_without_code_change`
+# 用固定数组跑通指标层 smoke，证明切换任务类型不改核心验证器。
+# 但完整 Bike Sharing 数据包未入库，端到端四层验证尚未跑，故状态为 contract_only。
+status: contract_only
 task_type: tabular_regression
 capability_id: cap.regression.demand.v1
 
