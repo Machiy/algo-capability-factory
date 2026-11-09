@@ -238,7 +238,11 @@ python scripts/run_ablation.py           # 有 KG / 无 KG 消融对比
 python scripts/record_llm.py             # 录制真实 DeepSeek 调用（需 key）
 python -m unittest discover -s tests -v  # 全量测试
 
-# 6) 入口自检
+# 6) 接入层（API）
+python -m factory api --export-openapi   # 导出 OpenAPI 文档到 outputs/reports/
+python -m factory api --port 8000        # 启动 FastAPI 服务（/health、/templates、/run）
+
+# 7) 入口自检
 python -m factory --version
 python -m factory --check
 ```
@@ -427,7 +431,7 @@ def build_pipeline(config):
 4. 从真实业务仓库持续增量抽取，形成能力版本谱系与血缘追踪；
 5. 扩展回归、多标签、时序任务的验证插件，成为多任务能力工厂；
 6. 引入成本敏感多目标优化，同时优化 AUC、成本损失与公平性约束；
-7. 对接在线评分服务的部署配置（OpenAPI 接口文档由 P5 的 FastAPI 自动生成并导出为 `outputs/reports/openapi.json`，属交付物而非后续方向）；
+7. 对接在线评分服务的部署配置（OpenAPI 文档已由 FastAPI 自动生成并导出为 `outputs/reports/openapi.json`，见第 5 节 `python -m factory api --export-openapi`；部署配置仍属后续方向）；
 8. 接入更多真实代码仓库的函数级抽取，提升能力复用率。
 
 ---
@@ -489,6 +493,7 @@ License: CC BY 4.0 (UCI) / CC0 Public Domain (OpenML d/43435)
 | 复用优先整改 | `5f26a87`、`379f7aa`、`f064a1b`、`82f6d4f` | 新增规则；现成库替换基础设施 / 检索 / 解析；LangGraph 替换自研状态机；同步选型理由与产物 |
 | P4 沉淀闭环 | `c642c24` | 工作流优先加载回写图谱、检索优先实测失败经验、Coder 首轮避开 T1、回写按 `run_id` 去重；新增消融脚本与对比报告 |
 | 算法模板插件 | `e3873f7` | 装饰器注册表 + LR / HGB / RF 三个内置模板；Coder 按 `family` 渲染，修掉候选族被忽略的缺陷，HGB 候选四层达标 |
+| 接入层 | `d04c517` | FastAPI 三个端点 + CLI `api` 子命令；OpenAPI 由框架自动生成并导出 `outputs/reports/openapi.json` |
 
 > 完整历史以 `git --no-pager log` 为准。所有提交时间由 Git 按实际提交时刻记录，未做调整；评审可据此还原 P0 → P3 的演进。
 
