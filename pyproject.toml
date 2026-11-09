@@ -22,3 +22,6 @@ addopts = "-q"
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+# assets/repo 是第三方开源仓库快照（MIT），只做 AST 抽取输入，
+# 不参与本项目代码规范；排除后 ruff 只检查自己写的代码。
+exclude = ["assets/repo"]

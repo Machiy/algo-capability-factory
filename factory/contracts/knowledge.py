@@ -35,10 +35,9 @@ class NodeType(str, Enum):
 
 
 class EdgeType(str, Enum):
-    """关系类型。
+    """关系类型，共 13 类；PLAN / README 与本枚举使用同一口径。
 
-    PLAN / README 写作「12 类边」，但其表格实际列举了 13 个关系；此处
-    完整保留全部关系，不为了凑数字丢弃语义，测试断言至少覆盖 12 类。
+    测试断言至少覆盖 12 类，实际枚举 13 类，不为了凑数字丢弃语义。
     """
 
     REQUIRES = "REQUIRES"

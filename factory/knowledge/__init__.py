@@ -3,6 +3,7 @@
 from factory.knowledge.extractor import BaseExtractor, MockExtractor, read_sources
 from factory.knowledge.graph import KnowledgeGraphStore
 from factory.knowledge.pipeline import build_knowledge_graph
+from factory.knowledge.repo_extractor import RepoExtractor, RepoScan
 from factory.knowledge.retrieval import HybridRetriever
 from factory.knowledge.visualize import render_html
 
@@ -11,6 +12,8 @@ __all__ = [
     "HybridRetriever",
     "KnowledgeGraphStore",
     "MockExtractor",
+    "RepoExtractor",
+    "RepoScan",
     "build_knowledge_graph",
     "read_sources",
     "render_html",

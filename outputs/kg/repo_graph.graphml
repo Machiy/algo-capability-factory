@@ -1,0 +1,3454 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d22" for="edge" attr.name="attr_call" attr.type="string" />
+  <key id="d21" for="edge" attr.name="edge_type" attr.type="string" />
+  <key id="d20" for="node" attr.name="attr_imports" attr.type="string" />
+  <key id="d19" for="node" attr.name="attr_docstring" attr.type="string" />
+  <key id="d18" for="node" attr.name="attr_lineno" attr.type="long" />
+  <key id="d17" for="node" attr.name="attr_source_path" attr.type="string" />
+  <key id="d16" for="node" attr.name="attr_calls" attr.type="string" />
+  <key id="d15" for="node" attr.name="attr_decorators" attr.type="string" />
+  <key id="d14" for="node" attr.name="attr_returns" attr.type="string" />
+  <key id="d13" for="node" attr.name="attr_parameters" attr.type="string" />
+  <key id="d12" for="node" attr.name="attr_signature" attr.type="string" />
+  <key id="d11" for="node" attr.name="attr_qualname" attr.type="string" />
+  <key id="d10" for="node" attr.name="attr_module" attr.type="string" />
+  <key id="d9" for="node" attr.name="attr_repository" attr.type="string" />
+  <key id="d8" for="node" attr.name="attr_python_requires" attr.type="string" />
+  <key id="d7" for="node" attr.name="attr_lib_deps" attr.type="string" />
+  <key id="d6" for="node" attr.name="evidence_count" attr.type="long" />
+  <key id="d5" for="node" attr.name="status" attr.type="string" />
+  <key id="d4" for="node" attr.name="task_type" attr.type="string" />
+  <key id="d3" for="node" attr.name="version" attr.type="string" />
+  <key id="d2" for="node" attr.name="name" attr.type="string" />
+  <key id="d1" for="node" attr.name="node_type" attr.type="string" />
+  <key id="d0" for="node" attr.name="node_id" attr.type="string" />
+  <graph edgedefault="directed">
+    <node id="env.repo.scorecardpy">
+      <data key="d0">env.repo.scorecardpy</data>
+      <data key="d1">Environment</data>
+      <data key="d2">scorecardpy 依赖环境</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d7">["matplotlib", "numpy", "pandas", "patsy", "pkg_resources", "scipy", "setuptools", "statsmodels"]</data>
+      <data key="d8" />
+      <data key="d9">D:/Users/MACHIYUAN/OneDrive/文档/硕士/27读博/ZJU/LLMagent/assets/repo/scorecardpy</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.condition_fun.lr">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.condition_fun.lr</data>
+      <data key="d1">Capability</data>
+      <data key="d2">lr</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.condition_fun</data>
+      <data key="d11">lr</data>
+      <data key="d12">def lr(dt, y, x)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["dtx.astype", "dty.astype", "fit", "sm.GLM", "sm.add_constant", "sm.families.Binomial"]</data>
+      <data key="d17">scorecardpy/condition_fun.py</data>
+      <data key="d18">10</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.condition_fun.str_to_list">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.condition_fun.str_to_list</data>
+      <data key="d1">Capability</data>
+      <data key="d2">str_to_list</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.condition_fun</data>
+      <data key="d11">str_to_list</data>
+      <data key="d12">def str_to_list(x)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["isinstance"]</data>
+      <data key="d17">scorecardpy/condition_fun.py</data>
+      <data key="d18">24</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.condition_fun.check_const_cols">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.condition_fun.check_const_cols</data>
+      <data key="d1">Capability</data>
+      <data key="d2">check_const_cols</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.condition_fun</data>
+      <data key="d11">check_const_cols</data>
+      <data key="d12">def check_const_cols(dat)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["dat.drop", "format", "join", "len", "list", "unique", "warnings.warn"]</data>
+      <data key="d17">scorecardpy/condition_fun.py</data>
+      <data key="d18">30</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.condition_fun.check_datetime_cols">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.condition_fun.check_datetime_cols</data>
+      <data key="d1">Capability</data>
+      <data key="d2">check_datetime_cols</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.condition_fun</data>
+      <data key="d11">check_datetime_cols</data>
+      <data key="d12">def check_datetime_cols(dat)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["apply", "columns.tolist", "dat.apply", "dat.drop", "format", "join", "len", "select_dtypes", "warnings.warn"]</data>
+      <data key="d17">scorecardpy/condition_fun.py</data>
+      <data key="d18">39</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.condition_fun.check_cateCols_uniqueValues">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.condition_fun.check_cateCols_uniqueValues</data>
+      <data key="d1">Capability</data>
+      <data key="d2">check_cateCols_uniqueValues</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.condition_fun</data>
+      <data key="d11">check_cateCols_uniqueValues</data>
+      <data key="d12">def check_cateCols_uniqueValues(dat, var_skip=None)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["SystemExit", "format", "input", "int", "is_numeric_dtype", "join", "len", "list", "print", "set", "str_to_list", "unique"]</data>
+      <data key="d17">scorecardpy/condition_fun.py</data>
+      <data key="d18">48</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.condition_fun.rep_blank_na">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.condition_fun.rep_blank_na</data>
+      <data key="d1">Capability</data>
+      <data key="d2">rep_blank_na</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.condition_fun</data>
+      <data key="d11">rep_blank_na</data>
+      <data key="d12">def rep_blank_na(dat)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["any", "apply", "astype", "dat.index.duplicated", "dat.reset_index", "format", "join", "len", "list", "str.findall", "sum", "warnings.warn"]</data>
+      <data key="d17">scorecardpy/condition_fun.py</data>
+      <data key="d18">69</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.condition_fun.check_y">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.condition_fun.check_y</data>
+      <data key="d1">Capability</data>
+      <data key="d2">check_y</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.condition_fun</data>
+      <data key="d11">check_y</data>
+      <data key="d12">def check_y(dat, y, positive)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["Exception", "any", "apply", "astype", "bool", "dat.dropna", "format", "int", "is_numeric_dtype", "isinstance", "isnull", "len", "np.unique", "pd.isnull", "re.search", "re.split", "str", "str_to_list", "warnings.warn"]</data>
+      <data key="d17">scorecardpy/condition_fun.py</data>
+      <data key="d18">104</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.condition_fun.check_print_step">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.condition_fun.check_print_step</data>
+      <data key="d1">Capability</data>
+      <data key="d2">check_print_step</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.condition_fun</data>
+      <data key="d11">check_print_step</data>
+      <data key="d12">def check_print_step(print_step)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["isinstance", "warnings.warn"]</data>
+      <data key="d17">scorecardpy/condition_fun.py</data>
+      <data key="d18">154</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.condition_fun.x_variable">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.condition_fun.x_variable</data>
+      <data key="d1">Capability</data>
+      <data key="d2">x_variable</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.condition_fun</data>
+      <data key="d11">x_variable</data>
+      <data key="d12">def x_variable(dat, y, x, var_skip=None)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["any", "difference", "format", "intersection", "join", "len", "list", "set", "str_to_list", "warnings.warn"]</data>
+      <data key="d17">scorecardpy/condition_fun.py</data>
+      <data key="d18">162</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.condition_fun.check_breaks_list">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.condition_fun.check_breaks_list</data>
+      <data key="d1">Capability</data>
+      <data key="d2">check_breaks_list</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.condition_fun</data>
+      <data key="d11">check_breaks_list</data>
+      <data key="d12">def check_breaks_list(breaks_list, xs)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["Exception", "eval", "isinstance"]</data>
+      <data key="d17">scorecardpy/condition_fun.py</data>
+      <data key="d18">184</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.condition_fun.check_special_values">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.condition_fun.check_special_values</data>
+      <data key="d1">Capability</data>
+      <data key="d2">check_special_values</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.condition_fun</data>
+      <data key="d11">check_special_values</data>
+      <data key="d12">def check_special_values(special_values, xs)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["Exception", "isinstance", "warnings.warn"]</data>
+      <data key="d17">scorecardpy/condition_fun.py</data>
+      <data key="d18">196</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.germancredit.germancredit">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.germancredit.germancredit</data>
+      <data key="d1">Capability</data>
+      <data key="d2">German Credit Data</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.germancredit</data>
+      <data key="d11">germancredit</data>
+      <data key="d12">def germancredit()</data>
+      <data key="d13">[]</data>
+      <data key="d14">DataFrame</data>
+      <data key="d15">[]</data>
+      <data key="d16">["CategoricalDtype", "astype", "cate_levels.keys", "cate_type", "pd.read_csv", "pkg_resources.resource_filename"]</data>
+      <data key="d17">scorecardpy/germancredit.py</data>
+      <data key="d18">8</data>
+      <data key="d19">German Credit Data
+------
+Credit data that classifies debtors described by a set of 
+attributes as good or bad credit risks. See source link 
+below for detailed information.
+[source](https://archive.ics.uci.edu/ml/datasets/Statlog+(German+Credit+Data))
+
+Params
+------
+
+Returns
+------
+DataFrame
+
+Examples
+------
+import scorecardpy as sc
+
+# load data
+dat = sc.germancredit()
+
+# # data structure
+# dat.shape
+# dat.dtypes</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.germancredit.cate_type">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.germancredit.cate_type</data>
+      <data key="d1">Capability</data>
+      <data key="d2">cate_type</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.germancredit</data>
+      <data key="d11">cate_type</data>
+      <data key="d12">def cate_type(levels)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["CategoricalDtype"]</data>
+      <data key="d17">scorecardpy/germancredit.py</data>
+      <data key="d18">53</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ie">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ie</data>
+      <data key="d1">Capability</data>
+      <data key="d2">ie</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.info_ent_indx_gini</data>
+      <data key="d11">ie</data>
+      <data key="d12">def ie(dt, y='creditability', x=None, order=True)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["ie_xy", "ielist.sort_values", "pd.DataFrame", "rep_blank_na", "rmcol_datetime_unique1", "x_variable"]</data>
+      <data key="d17">scorecardpy/info_ent_indx_gini.py</data>
+      <data key="d18">41</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ie_xy">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ie_xy</data>
+      <data key="d1">Capability</data>
+      <data key="d2">ie_xy</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.info_ent_indx_gini</data>
+      <data key="d11">ie_xy</data>
+      <data key="d12">def ie_xy(x, y)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["agg", "df_enti.apply", "df_xy.groupby", "df_xy.p.apply", "groupby", "np.log2", "pd.DataFrame", "rename", "replace", "reset_index", "size", "sum", "transform"]</data>
+      <data key="d17">scorecardpy/info_ent_indx_gini.py</data>
+      <data key="d18">62</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ie_01">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ie_01</data>
+      <data key="d1">Capability</data>
+      <data key="d2">ie_01</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.info_ent_indx_gini</data>
+      <data key="d11">ie_01</data>
+      <data key="d12">def ie_01(good, bad)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["assign", "df_enti.apply", "np.log2", "pd.DataFrame", "sum", "x.p0.apply", "x.p1.apply"]</data>
+      <data key="d17">scorecardpy/info_ent_indx_gini.py</data>
+      <data key="d18">101</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ig">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ig</data>
+      <data key="d1">Capability</data>
+      <data key="d2">ig</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.info_ent_indx_gini</data>
+      <data key="d11">ig</data>
+      <data key="d12">def ig(dt, y, x=None, order=True)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["ig_xy", "iglist.sort_values", "pd.DataFrame", "rep_blank_na", "rmcol_datetime_unique1", "x_variable"]</data>
+      <data key="d17">scorecardpy/info_ent_indx_gini.py</data>
+      <data key="d18">147</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ig_xy">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ig_xy</data>
+      <data key="d1">Capability</data>
+      <data key="d2">ig_xy</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.info_ent_indx_gini</data>
+      <data key="d11">ig_xy</data>
+      <data key="d12">def ig_xy(x, y)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["agg", "df_gini.apply", "df_xy.groupby", "df_xy.p.apply", "groupby", "pd.DataFrame", "rename", "replace", "reset_index", "size", "sum", "transform"]</data>
+      <data key="d17">scorecardpy/info_ent_indx_gini.py</data>
+      <data key="d18">169</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ig_01">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ig_01</data>
+      <data key="d1">Capability</data>
+      <data key="d2">ig_01</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.info_ent_indx_gini</data>
+      <data key="d11">ig_01</data>
+      <data key="d12">def ig_01(good, bad)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["assign", "df_gini.apply", "pd.DataFrame", "sum"]</data>
+      <data key="d17">scorecardpy/info_ent_indx_gini.py</data>
+      <data key="d18">188</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.info_value.iv">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.info_value.iv</data>
+      <data key="d1">Capability</data>
+      <data key="d2">Information Value</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.info_value</data>
+      <data key="d11">iv</data>
+      <data key="d12">def iv(dt, y, x=None, positive='bad|1', order=True)</data>
+      <data key="d13">["dt: A data frame with both x (predictor/feature) and", "y: Name of y variable.", "x: Name of x variables. Default is NULL. If x is NULL, then", "positive: Value of positive class, default is \"bad|1\".", "order: Logical, default is TRUE. If it is TRUE, the output"]</data>
+      <data key="d14">DataFrame</data>
+      <data key="d15">[]</data>
+      <data key="d16">["check_y", "dt.copy", "isinstance", "iv_xy", "ivlist.sort_values", "pd.DataFrame", "x_variable"]</data>
+      <data key="d17">scorecardpy/info_value.py</data>
+      <data key="d18">8</data>
+      <data key="d19">Information Value
+------
+This function calculates information value (IV) for multiple x variables. 
+It treats each unique x value as a group and counts the number of y 
+classes. If there is a zero number of y class, it will be replaced by 
+0.99 to make sure it calculable.
+
+Params
+------
+dt: A data frame with both x (predictor/feature) and 
+  y (response/label) variables.
+y: Name of y variable.
+x: Name of x variables. Default is NULL. If x is NULL, then 
+  all variables except y are counted as x variables.
+positive: Value of positive class, default is "bad|1".
+order: Logical, default is TRUE. If it is TRUE, the output 
+  will descending order via iv.
+
+Returns
+------
+DataFrame
+    Information Value
+
+Examples
+------
+import scorecardpy as sc
+
+# load data
+dat = sc.germancredit()
+
+# information values
+dt_info_value = sc.iv(dat, y = "creditability")</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.info_value.iv_xy">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.info_value.iv_xy</data>
+      <data key="d1">Capability</data>
+      <data key="d2">iv_xy</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.info_value</data>
+      <data key="d11">iv_xy</data>
+      <data key="d12">def iv_xy(x, y)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["apply", "assign", "fillna", "groupby", "iv.sum", "np.log", "pd.DataFrame", "pd.Series", "replace", "sum", "x.astype"]</data>
+      <data key="d17">scorecardpy/info_value.py</data>
+      <data key="d18">71</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.info_value.iv_01">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.info_value.iv_01</data>
+      <data key="d1">Capability</data>
+      <data key="d2">iv_01</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.info_value</data>
+      <data key="d11">iv_01</data>
+      <data key="d12">def iv_01(good, bad)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["assign", "iv.sum", "np.log", "pd.DataFrame", "replace", "sum"]</data>
+      <data key="d17">scorecardpy/info_value.py</data>
+      <data key="d18">112</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.info_value.miv_01">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.info_value.miv_01</data>
+      <data key="d1">Capability</data>
+      <data key="d2">miv_01</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.info_value</data>
+      <data key="d11">miv_01</data>
+      <data key="d12">def miv_01(good, bad)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["assign", "np.log", "pd.DataFrame", "replace", "sum"]</data>
+      <data key="d17">scorecardpy/info_value.py</data>
+      <data key="d18">137</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.info_value.woe_01">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.info_value.woe_01</data>
+      <data key="d1">Capability</data>
+      <data key="d2">woe_01</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.info_value</data>
+      <data key="d11">woe_01</data>
+      <data key="d12">def woe_01(good, bad)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["assign", "np.log", "pd.DataFrame", "replace", "sum"]</data>
+      <data key="d17">scorecardpy/info_value.py</data>
+      <data key="d18">161</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.info_value.goodbad">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.info_value.goodbad</data>
+      <data key="d1">Capability</data>
+      <data key="d2">goodbad</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.info_value</data>
+      <data key="d11">goodbad</data>
+      <data key="d12">def goodbad(df)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["pd.Series", "sum"]</data>
+      <data key="d17">scorecardpy/info_value.py</data>
+      <data key="d18">73</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.one_hot.one_hot">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.one_hot.one_hot</data>
+      <data key="d1">Capability</data>
+      <data key="d2">One Hot Encoding</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.one_hot</data>
+      <data key="d11">one_hot</data>
+      <data key="d12">def one_hot(dt, cols_skip=None, cols_encode=None, nacol_rm=False, replace_na=-1, category_to_integer=False)</data>
+      <data key="d13">["dt: A data frame.", "cols_skip: Name of categorical variables that will skip and without doing", "cols_encode: Name of categorical variables to be one-hot encoded, default", "nacol_rm: Logical. One-hot encoding on categorical variable contains missing", "replace_na: Replace missing values with a specified value such as -1 by", "factor_to_integer: Logical. Converting categorical variables to integer."]</data>
+      <data key="d14">A one-hot encoded data frame.</data>
+      <data key="d15">[]</data>
+      <data key="d16">["apply", "dt.drop", "getattr", "index.tolist", "is_numeric_dtype", "isinstance", "len", "list", "pd.concat", "pd.factorize", "pd.get_dummies", "rep_na", "set", "str", "str_to_list", "temp_dt.drop", "unique", "values.any", "x.fillna", "x.isna", "x_variable"]</data>
+      <data key="d17">scorecardpy/one_hot.py</data>
+      <data key="d18">6</data>
+      <data key="d19">One Hot Encoding
+------
+One-hot encoding on categorical variables. It is not needed when creating 
+a standard scorecard model, but required in models that without doing woe 
+transformation.
+
+Params
+------
+dt: A data frame.
+cols_skip: Name of categorical variables that will skip and without doing 
+    one-hot encoding. Default is None.
+cols_encode: Name of categorical variables to be one-hot encoded, default 
+    is None. If it is None, then all categorical variables except in 
+    cols_skip are counted.
+nacol_rm: Logical. One-hot encoding on categorical variable contains missing 
+    values, whether to remove the column generated to indicate the presence 
+    of NAs. Default is False.
+replace_na: Replace missing values with a specified value such as -1 by 
+    default, or the mean/median value of the variable in which they occur. 
+    If it is None, then no missing values will be replaced.
+factor_to_integer: Logical. Converting categorical variables to integer. 
+    Default is False.
+
+Returns
+------
+A one-hot encoded data frame.
+
+Examples
+------
+import scorecardpy as sc
+import pandas as pd
+
+# load data
+dat1 = sc.germancredit()
+dat2 = pd.DataFrame({'creditability':['good','bad']}).sample(50, replace=True)
+dat = pd.concat([dat1, dat2], ignore_index=True)
+
+dt_oh0 = sc.one_hot(dat, cols_skip = 'creditability', nacol_rm = False) # default
+dt_oh1 = sc.one_hot(dat, cols_skip = 'creditability', nacol_rm = True)
+
+dt_oh2 = sc.one_hot(dat, cols_skip = 'creditability', replace_na = -1) # default
+dt_oh3 = sc.one_hot(dat, cols_skip = 'creditability', replace_na = 'median')
+dt_oh4 = sc.one_hot(dat, cols_skip = 'creditability', replace_na = None)</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.one_hot.rep_na">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.one_hot.rep_na</data>
+      <data key="d1">Capability</data>
+      <data key="d2">rep_na</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.one_hot</data>
+      <data key="d11">rep_na</data>
+      <data key="d12">def rep_na(x, repalce_na)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["getattr", "is_numeric_dtype", "isinstance", "str", "values.any", "x.fillna", "x.isna"]</data>
+      <data key="d17">scorecardpy/one_hot.py</data>
+      <data key="d18">80</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.perf.eva_dfkslift">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.perf.eva_dfkslift</data>
+      <data key="d1">Capability</data>
+      <data key="d2">eva_dfkslift</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.perf</data>
+      <data key="d11">eva_dfkslift</data>
+      <data key="d12">def eva_dfkslift(df, groupnum=None)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["abs", "agg", "assign", "df.sort_values", "groupby", "len", "np.arange", "np.ceil", "np.cumsum", "pd.DataFrame", "pd.concat", "rename", "reset_index", "sum"]</data>
+      <data key="d17">scorecardpy/perf.py</data>
+      <data key="d18">10</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.perf.eva_pks">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.perf.eva_pks</data>
+      <data key="d1">Capability</data>
+      <data key="d2">eva_pks</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.perf</data>
+      <data key="d11">eva_pks</data>
+      <data key="d12">def eva_pks(dfkslift, title)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["max", "plt.gca", "plt.plot", "plt.text", "round", "set", "sort_values", "str"]</data>
+      <data key="d17">scorecardpy/perf.py</data>
+      <data key="d18">37</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.perf.eva_plift">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.perf.eva_plift</data>
+      <data key="d1">Capability</data>
+      <data key="d2">eva_plift</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.perf</data>
+      <data key="d11">eva_plift</data>
+      <data key="d12">def eva_plift(dfkslift, title)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["np.mean", "plt.gca", "plt.plot", "plt.text", "set", "sum"]</data>
+      <data key="d17">scorecardpy/perf.py</data>
+      <data key="d18">60</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.perf.eva_dfrocpr">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.perf.eva_dfrocpr</data>
+      <data key="d1">Capability</data>
+      <data key="d2">eva_dfrocpr</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.perf</data>
+      <data key="d11">eva_dfrocpr</data>
+      <data key="d12">def eva_dfrocpr(df)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["agg", "assign", "df.sort_values", "groupby", "np.cumsum", "rename", "reset_index", "sum"]</data>
+      <data key="d17">scorecardpy/perf.py</data>
+      <data key="d18">80</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.perf.eva_proc">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.perf.eva_proc</data>
+      <data key="d1">Capability</data>
+      <data key="d2">eva_proc</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.perf</data>
+      <data key="d11">eva_proc</data>
+      <data key="d12">def eva_proc(dfrocpr, title)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["assign", "dfrocpr.sort_values", "np.arange", "np.array", "pd.DataFrame", "pd.concat", "plt.fill_between", "plt.gca", "plt.plot", "plt.text", "round", "set", "shift", "sort_values", "str", "sum"]</data>
+      <data key="d17">scorecardpy/perf.py</data>
+      <data key="d18">102</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.perf.eva_ppr">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.perf.eva_ppr</data>
+      <data key="d1">Capability</data>
+      <data key="d2">eva_ppr</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.perf</data>
+      <data key="d11">eva_ppr</data>
+      <data key="d12">def eva_ppr(dfrocpr, title)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["np.arange", "np.array", "plt.gca", "plt.plot", "set"]</data>
+      <data key="d17">scorecardpy/perf.py</data>
+      <data key="d18">132</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.perf.eva_pf1">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.perf.eva_pf1</data>
+      <data key="d1">Capability</data>
+      <data key="d2">eva_pf1</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.perf</data>
+      <data key="d11">eva_pf1</data>
+      <data key="d12">def eva_pf1(dfrocpr, title)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["dfrocpr.assign", "idxmax", "idxmin", "np.cumsum", "np.mean", "plt.gca", "plt.plot", "plt.text", "round", "set", "str", "sum"]</data>
+      <data key="d17">scorecardpy/perf.py</data>
+      <data key="d18">150</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.perf.perf_eva">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.perf.perf_eva</data>
+      <data key="d1">Capability</data>
+      <data key="d2">KS, ROC, Lift, PR</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.perf</data>
+      <data key="d11">perf_eva</data>
+      <data key="d12">def perf_eva(label, pred, title=None, groupnum=None, plot_type=['ks', 'roc'], show_plot=True, positive='bad|1', seed=186)</data>
+      <data key="d13">["label: Label values, such as 0s and 1s, 0 represent for good", "pred: Predicted probability or score.", "title: Title of plot, default is \"performance\".", "groupnum: The group number when calculating KS.  Default NULL,", "plot_type: Types of performance plot, such as \"ks\", \"lift\", \"roc\", \"pr\".", "show_plot: Logical value, default is TRUE. It means whether to show plot.", "positive: Value of positive class, default is \"bad|1\".", "seed: Integer, default is 186. The specify seed is used for random sorting data."]</data>
+      <data key="d14">dict</data>
+      <data key="d15">[]</data>
+      <data key="d16">["any", "assign", "check_y", "df.dropna", "df.isna", "eva_dfkslift", "eva_dfrocpr", "eval", "int", "len", "max", "np.arange", "np.ceil", "np.mean", "np.unique", "pd.DataFrame", "pd.concat", "plt.figure", "plt.show", "plt.subplot", "round", "sample", "shift", "sort_values", "str", "sum", "warnings.warn"]</data>
+      <data key="d17">scorecardpy/perf.py</data>
+      <data key="d18">183</data>
+      <data key="d19">KS, ROC, Lift, PR
+------
+perf_eva provides performance evaluations, such as 
+kolmogorov-smirnow(ks), ROC, lift and precision-recall curves, 
+based on provided label and predicted probability values.
+
+Params
+------
+label: Label values, such as 0s and 1s, 0 represent for good 
+  and 1 for bad.
+pred: Predicted probability or score.
+title: Title of plot, default is "performance".
+groupnum: The group number when calculating KS.  Default NULL, 
+  which means the number of sample size.
+plot_type: Types of performance plot, such as "ks", "lift", "roc", "pr". 
+  Default c("ks", "roc").
+show_plot: Logical value, default is TRUE. It means whether to show plot.
+positive: Value of positive class, default is "bad|1".
+seed: Integer, default is 186. The specify seed is used for random sorting data.
+
+Returns
+------
+dict
+    ks, auc, gini values, and figure objects
+
+Details
+------
+Accuracy = 
+    true positive and true negative/total cases
+Error rate = 
+    false positive and false negative/total cases
+TPR, True Positive Rate(Recall or Sensitivity) = 
+    true positive/total actual positive
+PPV, Positive Predicted Value(Precision) = 
+    true positive/total predicted positive
+TNR, True Negative Rate(Specificity) = 
+    true negative/total actual negative
+NPV, Negative Predicted Value = 
+    true negative/total predicted negative
+    
+Examples
+------
+import scorecardpy as sc
+
+# load data
+dat = sc.germancredit()
+
+# filter variable via missing rate, iv, identical value rate
+dt_sel = sc.var_filter(dat, "creditability")
+
+# woe binning ------
+bins = sc.woebin(dt_sel, "creditability")
+dt_woe = sc.woebin_ply(dt_sel, bins)
+
+y = dt_woe.loc[:,'creditability']
+X = dt_woe.loc[:,dt_woe.columns != 'creditability']
+
+# logistic regression ------
+from sklearn.linear_model import LogisticRegression
+lr = LogisticRegression(penalty='l1', C=0.9, solver='saga')
+lr.fit(X, y)
+
+# predicted proability
+dt_pred = lr.predict_proba(X)[:,1]
+
+# performace ------
+# Example I # only ks &amp; auc values
+sc.perf_eva(y, dt_p</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.perf.perf_psi">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.perf.perf_psi</data>
+      <data key="d1">Capability</data>
+      <data key="d2">PSI</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.perf</data>
+      <data key="d11">perf_psi</data>
+      <data key="d12">def perf_psi(score, label=None, title=None, x_limits=None, x_tick_break=50, show_plot=True, seed=186, return_distr_dat=False)</data>
+      <data key="d13">["score: A list of credit score for actual and expected data samples.", "label: A list of label value for actual and expected data samples.", "title: Title of plot, default is NULL.", "x_limits: x-axis limits, default is None.", "x_tick_break: x-axis ticker break, default is 50.", "show_plot: Logical, default is TRUE. It means whether to show plot.", "return_distr_dat: Logical, default is FALSE.", "seed: Integer, default is 186. The specify seed is used for random"]</data>
+      <data key="d14">dict</data>
+      <data key="d15">[]</data>
+      <data key="d16">["Exception", "agg", "any", "assign", "ax1.bar", "ax1.legend", "ax1.set_ylabel", "ax1.set_ylim", "ax1.twinx", "ax2.legend", "ax2.plot", "ax2.scatter", "ax2.set_ylabel", "ax2.set_ylim", "copy", "dat.groupby", "distr_prob.groupby", "distr_prob.pivot_table", "dt_bae.assign", "fillna", "format", "int", "isinstance", "label.keys", "len", "list", "max", "min", "np.arange", "np.ceil", "np.floor", "np.log", "np.nanmax", "np.unique", "pd.DataFrame", "pd.concat", "pd.cut", "pivot_table", "plt.show", "plt.subplots", "plt.title", "plt.xticks", "psi", "quantile", "range", "rename", "reset_index", "round", "sample", "score.keys", "score.values", "set", "size", "str", "sum", "transform", "unique"]</data>
+      <data key="d17">scorecardpy/perf.py</data>
+      <data key="d18">327</data>
+      <data key="d19">PSI
+------
+perf_psi calculates population stability index (PSI) and provides 
+credit score distribution based on credit score datasets.
+
+Params
+------
+score: A list of credit score for actual and expected data samples. 
+  For example, score = list(actual = score_A, expect = score_E), both 
+  score_A and score_E are dataframes with the same column names.
+label: A list of label value for actual and expected data samples. 
+  The default is NULL. For example, label = list(actual = label_A, 
+  expect = label_E), both label_A and label_E are vectors or 
+  dataframes. The label values should be 0s and 1s, 0 represent for 
+  good and 1 for bad.
+title: Title of plot, default is NULL.
+x_limits: x-axis limits, default is None.
+x_tick_break: x-axis ticker break, default is 50.
+show_plot: Logical, default is TRUE. It means whether to show plot.
+return_distr_dat: Logical, default is FALSE.
+seed: Integer, default is 186. The specify seed is used for random 
+  sorting data.
+
+Returns
+------
+dict
+    psi values and figure objects
+    
+Details
+------
+The population stability index (PSI) formula is displayed below: 
+\deqn{PSI = \sum((Actual\% - Expected\%)*(\ln(rac{Actual\%}{Expected\%}))).} 
+The rule of thumb for the PSI is as follows: Less than 0.1 inference 
+insignificant change, no action required; 0.1 - 0.25 inference some 
+minor change, check other scorecard monitoring metrics; Greater than 
+0.25 inference major shift in population, need to delve deeper.
+
+Examples
+------
+import scorecardpy as sc
+
+# load data
+dat = sc.germancredit()
+
+# filter variable via missing rate, iv, identical value rate
+dt_sel = sc.var_filter(dat, "creditability")
+
+# breaking dt into train and test ------
+train, test = sc.split_df(dt_sel, 'creditability').values()
+
+# woe binning ------
+bins = sc.woebin(train, "creditability")
+
+# converting train and test into woe values
+train_woe = sc.woebin_ply(train, bins)
+test_woe = sc.woebin_ply(test, bins)
+
+y_train = train_woe.loc[:,'creditability']
+X_train = train_wo</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.perf.n0">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.perf.n0</data>
+      <data key="d1">Capability</data>
+      <data key="d2">n0</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.perf</data>
+      <data key="d11">n0</data>
+      <data key="d12">def n0(x)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["sum"]</data>
+      <data key="d17">scorecardpy/perf.py</data>
+      <data key="d18">13</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.perf.n1">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.perf.n1</data>
+      <data key="d1">Capability</data>
+      <data key="d2">n1</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.perf</data>
+      <data key="d11">n1</data>
+      <data key="d12">def n1(x)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["sum"]</data>
+      <data key="d17">scorecardpy/perf.py</data>
+      <data key="d18">14</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.perf.n0.L81">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.perf.n0.L81</data>
+      <data key="d1">Capability</data>
+      <data key="d2">n0</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.perf</data>
+      <data key="d11">n0</data>
+      <data key="d12">def n0(x)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["sum"]</data>
+      <data key="d17">scorecardpy/perf.py</data>
+      <data key="d18">81</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.perf.n1.L82">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.perf.n1.L82</data>
+      <data key="d1">Capability</data>
+      <data key="d2">n1</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.perf</data>
+      <data key="d11">n1</data>
+      <data key="d12">def n1(x)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["sum"]</data>
+      <data key="d17">scorecardpy/perf.py</data>
+      <data key="d18">82</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.perf.psi">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.perf.psi</data>
+      <data key="d1">Capability</data>
+      <data key="d2">psi</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.perf</data>
+      <data key="d11">psi</data>
+      <data key="d12">def psi(dat)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["agg", "assign", "dat.groupby", "dt_bae.assign", "fillna", "np.log", "pivot_table", "reset_index", "size", "sum"]</data>
+      <data key="d17">scorecardpy/perf.py</data>
+      <data key="d18">469</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.perf.good">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.perf.good</data>
+      <data key="d1">Capability</data>
+      <data key="d2">good</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.perf</data>
+      <data key="d11">good</data>
+      <data key="d12">def good(x)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["sum"]</data>
+      <data key="d17">scorecardpy/perf.py</data>
+      <data key="d18">509</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.perf.bad">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.perf.bad</data>
+      <data key="d1">Capability</data>
+      <data key="d2">bad</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.perf</data>
+      <data key="d11">bad</data>
+      <data key="d12">def bad(x)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["sum"]</data>
+      <data key="d17">scorecardpy/perf.py</data>
+      <data key="d18">510</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.scorecard.ab">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.scorecard.ab</data>
+      <data key="d1">Capability</data>
+      <data key="d2">ab</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.scorecard</data>
+      <data key="d11">ab</data>
+      <data key="d12">def ab(points0=600, odds0=1 / 19, pdo=50)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["np.log"]</data>
+      <data key="d17">scorecardpy/scorecard.py</data>
+      <data key="d18">11</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.scorecard.scorecard">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.scorecard.scorecard</data>
+      <data key="d1">Capability</data>
+      <data key="d2">Creating a Scorecard</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.scorecard</data>
+      <data key="d11">scorecard</data>
+      <data key="d12">def scorecard(bins, model, xcolumns, points0=600, odds0=1 / 19, pdo=50, basepoints_eq0=False, digits=0)</data>
+      <data key="d13">["bins: Binning information generated from `woebin` function.", "model: A LogisticRegression model object.", "points0: Target points, default 600.", "odds0: Target odds, default 1/19. Odds = p/(1-p).", "pdo: Points to Double the Odds, default 50.", "basepoints_eq0: Logical, default is FALSE. If it is TRUE, the", "digits: The number of digits after the decimal point for points"]</data>
+      <data key="d14">DataFrame</data>
+      <data key="d15">[]</data>
+      <data key="d16">["ab", "assign", "coef_df.drop", "isinstance", "len", "model.summary2", "np.arange", "np.array", "pd.DataFrame", "pd.Series", "pd.concat", "re.sub", "round", "str", "type"]</data>
+      <data key="d17">scorecardpy/scorecard.py</data>
+      <data key="d18">42</data>
+      <data key="d19">Creating a Scorecard
+------
+`scorecard` creates a scorecard based on the results from `woebin` 
+and LogisticRegression object from sklearn or statsmodels
+
+Params
+------
+bins: Binning information generated from `woebin` function.
+model: A LogisticRegression model object.
+points0: Target points, default 600.
+odds0: Target odds, default 1/19. Odds = p/(1-p).
+pdo: Points to Double the Odds, default 50.
+basepoints_eq0: Logical, default is FALSE. If it is TRUE, the 
+  basepoints will equally distribute to each variable.
+digits: The number of digits after the decimal point for points 
+  calculation. Default 0.
+
+
+Returns
+------
+DataFrame
+    scorecard dataframe
+
+Examples
+------
+import scorecardpy as sc
+
+# load data
+dat = sc.germancredit()
+
+# filter variable via missing rate, iv, identical value rate
+dt_sel = sc.var_filter(dat, "creditability")
+
+# woe binning ------
+bins = sc.woebin(dt_sel, "creditability")
+dt_woe = sc.woebin_ply(dt_sel, bins)
+
+y = dt_woe.loc[:,'creditability']
+X = dt_woe.loc[:,dt_woe.columns != 'creditability']
+
+# logistic regression ------
+from sklearn.linear_model import LogisticRegression
+lr = LogisticRegression(penalty='l1', C=0.9, solver='saga')
+lr.fit(X, y)
+
+# # predicted proability
+# dt_pred = lr.predict_proba(X)[:,1]
+# # performace
+# # ks &amp; roc plot
+# sc.perf_eva(y, dt_pred)
+
+# scorecard
+# Example I # creat a scorecard
+card = sc.scorecard(bins, lr, X.columns)
+
+# credit score
+# Example I # only total score
+score1 = sc.scorecard_ply(dt_sel, card)
+# Example II # credit score for both total and each variable
+score2 = sc.scorecard_ply(dt_sel, card, only_total_score = False)</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.scorecard.scorecard2">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.scorecard.scorecard2</data>
+      <data key="d1">Capability</data>
+      <data key="d2">Creating a Scorecard</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.scorecard</data>
+      <data key="d11">scorecard2</data>
+      <data key="d12">def scorecard2(bins, dt, y, x=None, points0=600, odds0=1 / 19, pdo=50, basepoints_eq0=False, digits=0, return_prob=False, positive='bad|1', **kwargs)</data>
+      <data key="d13">["bins: Binning information generated from woebin function.", "dt: A data frame with both x (predictor/feature) and y (response/label) variables.", "y: Name of y variable.", "x: Name of x variables. If it is None, then all variables in bins are used. Defaults to None.", "points0: Target points, default 600.", "odds0: Target odds, default 1/19. Odds = p/(1-p).", "pdo: Points to Double the Odds, default 50.", "basepoints_eq0: Logical, defaults to False. If it is True, the basepoints will equally distribute to each variable.", "digits: The number of digits after the decimal point for points calculation. Default 0.", "return_prob: Logical, defaults to False. If it is True, the predict probability will also return.", "kwargs: Additional parameters."]</data>
+      <data key="d14">A scorecard data frames</data>
+      <data key="d15">[]</data>
+      <data key="d16">["check_y", "dt.keys", "isinstance", "join", "list", "lr", "lrmodel.predict", "pd.concat", "scorecard", "sm.add_constant", "unique", "woebin_ply", "x_variable"]</data>
+      <data key="d17">scorecardpy/scorecard.py</data>
+      <data key="d18">146</data>
+      <data key="d19">Creating a Scorecard
+------
+`scorecard2` creates a scorecard based on the results from woebin. It has 
+the same function of scorecard, but without model object input.
+
+Params
+------
+bins: Binning information generated from woebin function.
+dt: A data frame with both x (predictor/feature) and y (response/label) variables.
+y: Name of y variable.
+x: Name of x variables. If it is None, then all variables in bins are used. Defaults to None.
+points0: Target points, default 600.
+odds0: Target odds, default 1/19. Odds = p/(1-p).
+pdo: Points to Double the Odds, default 50.
+basepoints_eq0: Logical, defaults to False. If it is True, the basepoints will equally distribute to each variable.
+digits: The number of digits after the decimal point for points calculation. Default 0.
+return_prob: Logical, defaults to False. If it is True, the predict probability will also return.
+kwargs: Additional parameters.
+
+Returns
+------
+A scorecard data frames
+
+Examples
+------
+# load data
+import scorecardpy as sc
+dt = sc.germancredit()
+
+# filter variable via missing rate, iv, identical value rate
+dtvf = sc.var_filter(dt, "creditability")
+
+# split into train and test
+dtlst = sc.split_df(dtvf, y = 'creditability')
+# binning
+bins = sc.woebin(dtlst['train'], "creditability")
+
+# train only
+## create scorecard
+card1 = sc.scorecard2(bins=bins, dt=dtlst['train'], y='creditability')
+## scorecard and predicted probability
+cardprob1 = sc.scorecard2(bins=bins, dt=dtlst['train'], y='creditability', return_prob = True)
+print(cardprob1.keys())
+
+# both train and test
+## create scorecard
+card2 = sc.scorecard2(bins=bins, dt=dtlst, y='creditability')
+## scorecard and predicted probability
+cardprob2 = sc.scorecard2(bins=bins, dt=dtlst, y='creditability', return_prob = True)
+print(cardprob2.keys())
+print(cardprob2['prob'].keys())</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.scorecard.scorecard_ply">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.scorecard.scorecard_ply</data>
+      <data key="d1">Capability</data>
+      <data key="d2">Score Transformation</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.scorecard</data>
+      <data key="d11">scorecard_ply</data>
+      <data key="d12">def scorecard_ply(dt, card, only_total_score=True, print_step=0, replace_blank_na=True, var_kp=None)</data>
+      <data key="d13">["dt: Original data", "card: Scorecard generated from `scorecard`.", "only_total_score: Logical, default is TRUE. If it is TRUE, then", "print_step: A non-negative integer. Default is 1. If print_step&gt;0,", "replace_blank_na: Logical. Replace blank values with NA. Defaults to True.", "var_kp: Name of force kept variables, such as id column. Defaults to None."]</data>
+      <data key="d14">DataFrame</data>
+      <data key="d15">[]</data>
+      <data key="d16">["bool", "card.copy", "check_print_step", "dat_score.sum", "dt.copy", "format", "isinstance", "len", "list", "np.arange", "pd.concat", "print", "rep_blank_na", "set", "str", "unique", "warnings.warn", "woepoints_ply1"]</data>
+      <data key="d17">scorecardpy/scorecard.py</data>
+      <data key="d18">252</data>
+      <data key="d19">Score Transformation
+------
+`scorecard_ply` calculates credit score using the results from `scorecard`.
+
+Params
+------
+dt: Original data
+card: Scorecard generated from `scorecard`.
+only_total_score: Logical, default is TRUE. If it is TRUE, then 
+  the output includes only total credit score; Otherwise, if it 
+  is FALSE, the output includes both total and each variable's 
+  credit score.
+print_step: A non-negative integer. Default is 1. If print_step&gt;0, 
+  print variable names by each print_step-th iteration. If 
+  print_step=0, no message is print.
+replace_blank_na: Logical. Replace blank values with NA. Defaults to True. 
+  This parameter should be the same with woebin's.
+var_kp: Name of force kept variables, such as id column. Defaults to None.
+
+Return
+------
+DataFrame
+    Credit score
+
+Examples
+------
+import scorecardpy as sc
+
+# load data
+dat = sc.germancredit()
+
+# filter variable via missing rate, iv, identical value rate
+dt_sel = sc.var_filter(dat, "creditability")
+
+# woe binning ------
+bins = sc.woebin(dt_sel, "creditability")
+dt_woe = sc.woebin_ply(dt_sel, bins)
+
+y = dt_woe.loc[:,'creditability']
+X = dt_woe.loc[:,dt_woe.columns != 'creditability']
+
+# logistic regression ------
+from sklearn.linear_model import LogisticRegression
+lr = LogisticRegression(penalty='l1', C=0.9, solver='saga')
+lr.fit(X, y)
+
+# # predicted proability
+# dt_pred = lr.predict_proba(X)[:,1]
+# # performace
+# # ks &amp; roc plot
+# sc.perf_eva(y, dt_pred)
+
+# scorecard
+# Example I # creat a scorecard
+card = sc.scorecard(bins, lr, X.columns)
+
+# credit score
+# Example I # only total score
+score1 = sc.scorecard_ply(dt_sel, card)
+# Example II # credit score for both total and each variable
+score2 = sc.scorecard_ply(dt_sel, card, only_total_score = False)</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.split_df.split_df">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.split_df.split_df</data>
+      <data key="d1">Capability</data>
+      <data key="d2">Split a dataset</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.split_df</data>
+      <data key="d11">split_df</data>
+      <data key="d12">def split_df(dt, y=None, ratio=0.7, seed=186)</data>
+      <data key="d13">["dt: A data frame.", "y: Name of y variable, default is NULL. The input data will split", "ratio: A numeric value, default is 0.7. It indicates the ratio of", "seed: A random seed, default is 186."]</data>
+      <data key="d14">dict</data>
+      <data key="d15">[]</data>
+      <data key="d16">["OrderedDict", "all", "apply", "dt.copy", "dt.groupby", "dt.index.tolist", "dt.sample", "isinstance", "len", "list", "rep_blank_na", "set", "sort_index", "sum", "test.groupby", "train.index.tolist", "warnings.warn", "x.sample"]</data>
+      <data key="d17">scorecardpy/split_df.py</data>
+      <data key="d18">10</data>
+      <data key="d19">Split a dataset
+------
+Split a dataset into train and test
+
+Params
+------
+dt: A data frame.
+y: Name of y variable, default is NULL. The input data will split 
+    based on the predictor y, if it is provide.
+ratio: A numeric value, default is 0.7. It indicates the ratio of 
+    total rows contained in one split, must less than 1.
+seed: A random seed, default is 186.
+
+Returns
+------
+dict
+    a dictionary of train and test
+
+Examples
+------
+import scorecardpy as sc
+
+# load data
+dat = sc.germancredit()
+
+# split train and test
+train, test = sc.split_df(dat, 'creditability').values()
+
+# set ratios for both train and test
+train2, test2 = sc.split_df(dat, 'creditability', ratio = [0.5, 0.2]).values()</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.var_filter.var_filter">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.var_filter.var_filter</data>
+      <data key="d1">Capability</data>
+      <data key="d2">Variable Filter</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.var_filter</data>
+      <data key="d11">var_filter</data>
+      <data key="d12">def var_filter(dt, y, x=None, iv_limit=0.02, missing_limit=0.95, identical_limit=0.95, var_rm=None, var_kp=None, return_rm_reason=False, positive='bad|1')</data>
+      <data key="d13">["dt: A data frame with both x (predictor/feature) and y", "y: Name of y variable.", "x: Name of x variables. Default is NULL. If x is NULL, then all", "iv_limit: The information value of kept variables should&gt;=iv_limit.", "missing_limit: The missing rate of kept variables should&lt;=missing_limit.", "identical_limit: The identical value rate (excluding NAs) of kept", "var_rm: Name of force removed variables, default is NULL.", "var_kp: Name of force kept variables, default is NULL.", "return_rm_reason: Logical, default is FALSE.", "positive: Value of positive class, default is \"bad|1\"."]</data>
+      <data key="d14">DataFrame</data>
+      <data key="d15">[]</data>
+      <data key="d16">["a.isnull", "a.value_counts", "apply", "assign", "check_y", "difference", "dropna", "dt.copy", "dt_rm_reason.query", "dt_var_sel.variable.tolist", "dt_var_selector.query", "format", "groupby", "isinstance", "iv", "iv_list.merge", "join", "len", "list", "max", "merge", "np.unique", "pd.DataFrame", "pd.concat", "pd.melt", "pd.merge", "print", "rename", "reset_index", "set", "time.gmtime", "time.strftime", "time.time", "tolist", "warnings.warn", "x_variable"]</data>
+      <data key="d17">scorecardpy/var_filter.py</data>
+      <data key="d18">11</data>
+      <data key="d19">Variable Filter
+------
+This function filter variables base on specified conditions, such as 
+information value, missing rate, identical value rate.
+
+Params
+------
+dt: A data frame with both x (predictor/feature) and y 
+  (response/label) variables.
+y: Name of y variable.
+x: Name of x variables. Default is NULL. If x is NULL, then all 
+  variables except y are counted as x variables.
+iv_limit: The information value of kept variables should&gt;=iv_limit. 
+  The default is 0.02.
+missing_limit: The missing rate of kept variables should&lt;=missing_limit. 
+  The default is 0.95.
+identical_limit: The identical value rate (excluding NAs) of kept 
+  variables should &lt;= identical_limit. The default is 0.95.
+var_rm: Name of force removed variables, default is NULL.
+var_kp: Name of force kept variables, default is NULL.
+return_rm_reason: Logical, default is FALSE.
+positive: Value of positive class, default is "bad|1".
+
+Returns
+------
+DataFrame
+    A data.table with y and selected x variables
+Dict(if return_rm_reason == TRUE)
+    A DataFrame with y and selected x variables and 
+      a DataFrame with the reason of removed x variable.
+
+Examples
+------
+import scorecardpy as sc
+
+# load data
+dat = sc.germancredit()
+
+# variable filter
+dt_sel = sc.var_filter(dat, y = "creditability")</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.vif.lr">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.vif.lr</data>
+      <data key="d1">Capability</data>
+      <data key="d2">lr</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.vif</data>
+      <data key="d11">lr</data>
+      <data key="d12">def lr(dt, y, x)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["dtx.astype", "dty.astype", "fit", "sm.GLM", "sm.add_constant", "sm.families.Binomial"]</data>
+      <data key="d17">scorecardpy/vif.py</data>
+      <data key="d18">7</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.vif.vif">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.vif.vif</data>
+      <data key="d1">Capability</data>
+      <data key="d2">Variance Inflation Factors</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.vif</data>
+      <data key="d11">vif</data>
+      <data key="d12">def vif(dt, y, x=None, merge_coef=False, positive='bad|1')</data>
+      <data key="d13">["dt: A data frame with both x (predictor/feature) and y (response/label) variables.", "y: Name of y variable.", "x: Name of x variables. Default is None. If x is None,", "merge_coef: Logical, whether to merge with coefficients of model summary matrix. Defaults to FALSE.", "positive: Value of positive class, default \"bad|1\"."]</data>
+      <data key="d14">data frame</data>
+      <data key="d15">[]</data>
+      <data key="d16">["check_y", "dmatrices", "dt.copy", "isinstance", "join", "lr", "lrfit.summary2", "pd.DataFrame", "pd.merge", "range", "rename", "reset_index", "variance_inflation_factor", "x_variable"]</data>
+      <data key="d17">scorecardpy/vif.py</data>
+      <data key="d18">21</data>
+      <data key="d19">Variance Inflation Factors
+------
+vif calculates variance-inflation factors for logistic regression.
+
+Params
+------
+dt: A data frame with both x (predictor/feature) and y (response/label) variables.
+y: Name of y variable.
+x: Name of x variables. Default is None. If x is None, 
+  then all variables except y are counted as x variables.
+merge_coef: Logical, whether to merge with coefficients of model summary matrix. Defaults to FALSE.
+positive: Value of positive class, default "bad|1".
+
+Returns
+------
+data frame
+    A data frame with columns for variable and gvif.
+
+Examples
+------
+import scorecardpy as sc
+
+# load data
+dat = sc.germancredit()
+
+# Example I
+sc.vif(dat, 
+    y = 'creditability', 
+    x=['age_in_years', 'credit_amount', 'present_residence_since'], 
+    merge_coef=True)</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.split_vec_todf">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.split_vec_todf</data>
+      <data key="d1">Capability</data>
+      <data key="d2">Create a dataframe based on provided vector.</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">split_vec_todf</data>
+      <data key="d12">def split_vec_todf(vec)</data>
+      <data key="d13">["vec: list"]</data>
+      <data key="d14">pandas.DataFrame</data>
+      <data key="d15">[]</data>
+      <data key="d16">["assign", "i.split", "pd.DataFrame", "pd.merge", "rename", "replace", "reset_index", "stack", "str"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">18</data>
+      <data key="d19">Create a dataframe based on provided vector. 
+Split the rows that including '%,%' into multiple rows. 
+Replace 'missing' by np.nan.
+
+Params
+------
+vec: list
+
+Returns
+------
+pandas.DataFrame
+    returns a dataframe with three columns
+    {'bin_chr':orginal vec, 'rowid':index of vec, 'value':splited vec}</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.add_missing_spl_val">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.add_missing_spl_val</data>
+      <data key="d1">Capability</data>
+      <data key="d2">add missing to spl_val if there is nan in dtm.value and</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">add_missing_spl_val</data>
+      <data key="d12">def add_missing_spl_val(dtm, breaks, spl_val)</data>
+      <data key="d13">["dtm: melt dataframe", "breaks: breaks list", "spl_val: speical values list"]</data>
+      <data key="d14">list</data>
+      <data key="d15">[]</data>
+      <data key="d16">["any", "dtm.value.isnull", "str"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">45</data>
+      <data key="d19">add missing to spl_val if there is nan in dtm.value and 
+missing is not specified in breaks and spl_val
+
+Params
+------
+dtm: melt dataframe
+breaks: breaks list
+spl_val: speical values list
+
+Returns
+------
+list
+    returns spl_val list</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.n0">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.n0</data>
+      <data key="d1">Capability</data>
+      <data key="d2">n0</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">n0</data>
+      <data key="d12">def n0(x)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["sum"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">83</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.n1">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.n1</data>
+      <data key="d1">Capability</data>
+      <data key="d2">n1</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">n1</data>
+      <data key="d12">def n1(x)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["sum"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">84</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.dtm_binning_sv">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.dtm_binning_sv</data>
+      <data key="d1">Capability</data>
+      <data key="d2">Split the orginal dtm (melt dataframe) into</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">dtm_binning_sv</data>
+      <data key="d12">def dtm_binning_sv(dtm, breaks, spl_val)</data>
+      <data key="d13">["dtm: melt dataframe", "spl_val: speical values list"]</data>
+      <data key="d14">list</data>
+      <data key="d15">[]</data>
+      <data key="d16">["ValueError", "add_missing_spl_val", "agg", "astype", "drop", "dtm.fillna", "dtm.index.isin", "dtm_sv.fillna", "fillna", "groupby", "is_numeric_dtype", "len", "np.isnan", "np.where", "pd.merge", "rename", "reset_index", "set_index", "split_vec_todf", "sv_df.fillna"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">86</data>
+      <data key="d19">Split the orginal dtm (melt dataframe) into 
+binning_sv (binning of special_values) and 
+a new dtm (without special_values).
+
+Params
+------
+dtm: melt dataframe
+spl_val: speical values list
+
+Returns
+------
+list
+    returns a list with binning_sv and dtm</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.check_empty_bins">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.check_empty_bins</data>
+      <data key="d1">Capability</data>
+      <data key="d2">check_empty_bins</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">check_empty_bins</data>
+      <data key="d12">def check_empty_bins(dtm, binning)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["agg", "bin_list.remove", "difference", "dtm.bin.astype", "dtm.groupby", "format", "group", "len", "list", "map", "np.unique", "pd.cut", "range", "re.match", "rename", "reset_index", "set", "sorted", "tolist"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">150</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_breaks">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.woebin2_breaks</data>
+      <data key="d1">Capability</data>
+      <data key="d2">get binning if breaks is provided</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">woebin2_breaks</data>
+      <data key="d12">def woebin2_breaks(dtm, breaks, spl_val)</data>
+      <data key="d13">["dtm: melt dataframe", "breaks: breaks list", "spl_val: speical values list"]</data>
+      <data key="d14">DataFrame</data>
+      <data key="d15">[]</data>
+      <data key="d16">["agg", "any", "astype", "binning.assign", "bk_df.assign", "bk_df.value.tolist", "check_empty_bins", "difference", "drop", "dtm.groupby", "dtm_binning_sv", "fillna", "float", "format", "group", "groupby", "is_numeric_dtype", "isnull", "join", "len", "list", "map", "pd.cut", "pd.merge", "range", "re.search", "rename", "reset_index", "set", "sort_values", "sorted", "split_vec_todf", "x.value.astype"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">171</data>
+      <data key="d19">get binning if breaks is provided
+
+Params
+------
+dtm: melt dataframe
+breaks: breaks list
+spl_val: speical values list
+
+Returns
+------
+DataFrame
+    returns a binning datafram</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.pretty">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.pretty</data>
+      <data key="d1">Capability</data>
+      <data key="d2">pretty breakpoints, the same as pretty function in R</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">pretty</data>
+      <data key="d12">def pretty(low, high, n)</data>
+      <data key="d13">["low: minimal value", "low: maximal value", "n: number of intervals"]</data>
+      <data key="d14">numpy.ndarray</data>
+      <data key="d15">[]</data>
+      <data key="d16">["abs", "nicenumber", "np.arange", "np.ceil", "np.floor", "np.log10", "np.sign"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">236</data>
+      <data key="d19">pretty breakpoints, the same as pretty function in R
+
+Params
+------
+low: minimal value 
+low: maximal value 
+n: number of intervals
+
+Returns
+------
+numpy.ndarray
+    returns a breakpoints array</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_init_bin">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.woebin2_init_bin</data>
+      <data key="d1">Capability</data>
+      <data key="d2">initial binning</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">woebin2_init_bin</data>
+      <data key="d12">def woebin2_init_bin(dtm, init_count_distr, breaks, spl_val)</data>
+      <data key="d13">["dtm: melt dataframe", "init_count_distr: the minimal precentage in the fine binning process", "breaks: breaks", "breaks: breaks list", "spl_val: speical values list"]</data>
+      <data key="d14">dict</data>
+      <data key="d15">[]</data>
+      <data key="d16">["agg", "assign", "astype", "check_empty_bins", "dtm.groupby", "dtm_binning_sv", "fillna", "filter", "float", "format", "group", "init_bin.assign", "init_bin.groupby", "init_bin.query", "init_bin.sort_values", "is_numeric_dtype", "join", "len", "list", "max", "min", "np.nanmax", "np.nanmin", "np.trunc", "np.unique", "np.where", "pd.cut", "pretty", "query", "range", "re.match", "re.sub", "rename", "reset_index", "shift", "sorted", "xvalue.quantile"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">270</data>
+      <data key="d19">initial binning
+
+Params
+------
+dtm: melt dataframe
+init_count_distr: the minimal precentage in the fine binning process
+breaks: breaks
+breaks: breaks list
+spl_val: speical values list
+
+Returns
+------
+dict
+    returns a dict with initial binning and special_value binning</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_tree_add_1brkp">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.woebin2_tree_add_1brkp</data>
+      <data key="d1">Capability</data>
+      <data key="d2">add a breakpoint into provided bestbreaks</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">woebin2_tree_add_1brkp</data>
+      <data key="d12">def woebin2_tree_add_1brkp(dtm, initial_binning, count_distr_limit, bestbreaks=None)</data>
+      <data key="d13">[]</data>
+      <data key="d14">DataFrame</data>
+      <data key="d15">[]</data>
+      <data key="d16">["agg", "apply", "assign", "binning_1bst_brk.groupby", "binning_add_1bst", "breaks_set.difference", "difference", "float", "format", "group", "groupby", "initial_binning.assign", "initial_binning.copy", "int", "is_numeric_dtype", "iv_01", "join", "len", "list", "map", "max", "min", "pd.cut", "pd.melt", "range", "re.match", "re.sub", "reset_index", "set", "sorted", "str", "tolist", "total_iv_all_breaks", "total_iv_all_brks.assign", "total_iv_all_brks.groupby", "transform"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">378</data>
+      <data key="d19">add a breakpoint into provided bestbreaks
+
+Params
+------
+dtm
+initial_binning
+count_distr_limit
+bestbreaks
+
+Returns
+------
+DataFrame
+    a binning dataframe with updated breaks</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_tree">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.woebin2_tree</data>
+      <data key="d1">Capability</data>
+      <data key="d2">binning using tree-like method</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">woebin2_tree</data>
+      <data key="d12">def woebin2_tree(dtm, init_count_distr=0.02, count_distr_limit=0.05, stop_limit=0.1, bin_num_limit=8, breaks=None, spl_val=None)</data>
+      <data key="d13">[]</data>
+      <data key="d14">dict</data>
+      <data key="d15">[]</data>
+      <data key="d16">["float", "len", "min", "tolist", "woebin2_init_bin", "woebin2_tree_add_1brkp"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">476</data>
+      <data key="d19">binning using tree-like method
+
+Params
+------
+dtm:
+init_count_distr:
+count_distr_limit:
+stop_limit:
+bin_num_limit:
+breaks:
+spl_val:
+
+Returns
+------
+dict
+    returns a dict with initial binning and special_value binning</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_chimerge">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.woebin2_chimerge</data>
+      <data key="d1">Capability</data>
+      <data key="d2">binning using chimerge method</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">woebin2_chimerge</data>
+      <data key="d12">def woebin2_chimerge(dtm, init_count_distr=0.02, count_distr_limit=0.05, stop_limit=0.1, bin_num_limit=8, breaks=None, spl_val=None)</data>
+      <data key="d13">[]</data>
+      <data key="d14">dict</data>
+      <data key="d15">[]</data>
+      <data key="d16">["add_chisq", "agg", "apply", "assign", "binning_chisq.assign", "binning_chisq.chisq.min", "binning_chisq.groupby", "chdtri", "chisq_df.assign", "chisq_df.groupby", "fillna", "float", "group", "groupby", "initial_binning.assign", "is_numeric_dtype", "join", "len", "min", "np.isnan", "np.unique", "np.where", "pd.melt", "pd.merge", "re.match", "re.sub", "reset_index", "rm_brkp.sort_values", "shift", "sort_values", "sum", "transform", "woebin2_init_bin", "x.shift"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">542</data>
+      <data key="d19">binning using chimerge method
+
+Params
+------
+dtm:
+init_count_distr:
+count_distr_limit:
+stop_limit:
+bin_num_limit:
+breaks:
+spl_val:
+
+Returns
+------
+dict
+    returns a dict with initial binning and special_value binning</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.binning_format">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.binning_format</data>
+      <data key="d1">Capability</data>
+      <data key="d2">format binning dataframe</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">binning_format</data>
+      <data key="d12">def binning_format(binning)</data>
+      <data key="d13">["binning: with columns of variable, bin, good, bad"]</data>
+      <data key="d14">DataFrame</data>
+      <data key="d15">[]</data>
+      <data key="d16">["any", "gp23.group", "miv_01", "re.match", "re_extract_all", "str", "sum", "woe_01"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">668</data>
+      <data key="d19">format binning dataframe
+
+Params
+------
+binning: with columns of variable, bin, good, bad
+
+Returns
+------
+DataFrame
+    binning dataframe with columns of 'variable', 'bin', 
+    'count', 'count_distr', 'good', 'bad', 'badprob', 'woe', 
+    'bin_iv', 'total_iv',  'breaks', 'is_special_values'</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.woebin2">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.woebin2</data>
+      <data key="d1">Capability</data>
+      <data key="d2">provides woe binning for only two series</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">woebin2</data>
+      <data key="d12">def woebin2(dtm, breaks=None, spl_val=None, init_count_distr=0.02, count_distr_limit=0.05, stop_limit=0.1, bin_num_limit=8, method='tree')</data>
+      <data key="d13">[]</data>
+      <data key="d14">DataFrame</data>
+      <data key="d15">[]</data>
+      <data key="d16">["assign", "bin_list.keys", "binning_format", "pd.concat", "reset_index", "woebin2_breaks", "woebin2_chimerge", "woebin2_init_bin", "woebin2_tree"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">711</data>
+      <data key="d19">provides woe binning for only two series
+
+Params
+------
+
+
+Returns
+------
+DataFrame
+    </data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.bins_to_breaks">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.bins_to_breaks</data>
+      <data key="d1">Capability</data>
+      <data key="d2">bins_to_breaks</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">bins_to_breaks</data>
+      <data key="d12">def bins_to_breaks(bins, dt, to_string=False, save_string=None)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["agg", "bins_breakslist.groupby", "f.write", "format", "is_numeric_dtype", "isin", "isinstance", "join", "len", "np.arange", "open", "pd.DataFrame", "pd.concat", "pd.merge", "print", "time.localtime", "time.strftime", "time.time", "unique"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">752</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.woebin">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.woebin</data>
+      <data key="d1">Capability</data>
+      <data key="d2">WOE Binning</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">woebin</data>
+      <data key="d12">def woebin(dt, y, x=None, var_skip=None, breaks_list=None, special_values=None, stop_limit=0.1, count_distr_limit=0.05, bin_num_limit=8, positive='bad|1', no_cores=None, print_step=0, method='tree', ignore_const_cols=True, ignore_datetime_cols=True, check_cate_num=True, replace_blank=True, save_breaks_list=None, **kwargs)</data>
+      <data key="d13">["dt: A data frame with both x (predictor/feature) and y (response/label) variables.", "y: Name of y variable.", "x: Name of x variables. Default is None. If x is None,", "var_skip: Name of variables that will skip for binning. Defaults to None.", "breaks_list: List of break points, default is None.", "special_values: the values specified in special_values", "count_distr_limit: The minimum percentage of final binning", "stop_limit: Stop binning segmentation when information value", "Accepted range: 0-0.5; default is 0.1.", "bin_num_limit: Integer. The maximum number of binning.", "positive: Value of positive class, default \"bad|1\".", "no_cores: Number of CPU cores for parallel computation.", "print_step: A non-negative integer. Default is 1. If print_step&gt;0,", "method: Optimal binning method, it should be \"tree\" or \"chimerge\".", "ignore_const_cols: Logical. Ignore constant columns. Defaults to True.", "ignore_datetime_cols: Logical. Ignore datetime columns. Defaults to True.", "check_cate_num: Logical. Check whether the number of unique values in", "replace_blank: Logical. Replace blank values with None. Defaults to True.", "save_breaks_list: The file name to save breaks_list. Default is None."]</data>
+      <data key="d14">dictionary</data>
+      <data key="d15">[]</data>
+      <data key="d16">["bins_to_breaks", "bool", "breaks_list.keys", "check_breaks_list", "check_cateCols_uniqueValues", "check_const_cols", "check_datetime_cols", "check_print_step", "check_special_values", "check_y", "dict", "dt.copy", "format", "int", "isinstance", "kwargs.get", "len", "list", "mp.Pool", "mp.cpu_count", "np.arange", "np.ceil", "pd.DataFrame", "platform.system", "pool.close", "pool.starmap", "print", "rep_blank_na", "special_values.keys", "str", "time.gmtime", "time.strftime", "time.time", "warnings.warn", "woebin2", "x_variable", "zip"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">782</data>
+      <data key="d19">WOE Binning
+------
+`woebin` generates optimal binning for numerical, factor and categorical 
+variables using methods including tree-like segmentation or chi-square 
+merge. woebin can also customizing breakpoints if the breaks_list or 
+special_values was provided.
+
+The default woe is defined as ln(Distr_Bad_i/Distr_Good_i). If you 
+prefer ln(Distr_Good_i/Distr_Bad_i), please set the argument `positive` 
+as negative value, such as '0' or 'good'. If there is a zero frequency 
+class when calculating woe, the zero will replaced by 0.99 to make the 
+woe calculable.
+
+Params
+------
+dt: A data frame with both x (predictor/feature) and y (response/label) variables.
+y: Name of y variable.
+x: Name of x variables. Default is None. If x is None, 
+  then all variables except y are counted as x variables.
+var_skip: Name of variables that will skip for binning. Defaults to None.
+breaks_list: List of break points, default is None. 
+  If it is not None, variable binning will based on the 
+  provided breaks.
+special_values: the values specified in special_values 
+  will be in separate bins. Default is None.
+count_distr_limit: The minimum percentage of final binning 
+  class number over total. Accepted range: 0.01-0.2; default 
+  is 0.05.
+stop_limit: Stop binning segmentation when information value 
+  gain ratio less than the stop_limit, or stop binning merge 
+  when the minimum of chi-square less than 'qchisq(1-stoplimit, 1)'. 
+  Accepted range: 0-0.5; default is 0.1.
+bin_num_limit: Integer. The maximum number of binning.
+positive: Value of positive class, default "bad|1".
+no_cores: Number of CPU cores for parallel computation. 
+  Defaults None. If no_cores is None, the no_cores will 
+  set as 1 if length of x variables less than 10, and will 
+  set as the number of all CPU cores if the length of x variables 
+  greater than or equal to 10.
+print_step: A non-negative integer. Default is 1. If print_step&gt;0, 
+  print variable names by each print_step-th iteration. 
+  If print_step=0 or no</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.woepoints_ply1">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.woepoints_ply1</data>
+      <data key="d1">Capability</data>
+      <data key="d2">Transform original values into woe or porints for one variable.</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">woepoints_ply1</data>
+      <data key="d12">def woepoints_ply1(dtx, binx, x_i, woe_points)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["assign", "astype", "bool", "dtx.assign", "dtx.replace", "explode", "format", "group", "is_numeric_dtype", "is_string_dtype", "isin", "join", "len", "list", "map", "np.unique", "pd.Series", "pd.cut", "pd.merge", "range", "re.match", "re.search", "rename", "replace", "set_index", "sort_values", "str", "str.split"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">1012</data>
+      <data key="d19">Transform original values into woe or porints for one variable.
+
+Params
+------
+
+Returns
+------</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.woebin_ply">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.woebin_ply</data>
+      <data key="d1">Capability</data>
+      <data key="d2">WOE Transformation</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">woebin_ply</data>
+      <data key="d12">def woebin_ply(dt, bins, no_cores=None, print_step=0, replace_blank=True, **kwargs)</data>
+      <data key="d13">["dt: A data frame.", "bins: Binning information generated from `woebin`.", "no_cores: Number of CPU cores for parallel computation.", "print_step: A non-negative integer. Default is 1. If", "replace_blank: Logical. Replace blank values with None. Defaults to True."]</data>
+      <data key="d14">DataFrame</data>
+      <data key="d15">[]</data>
+      <data key="d16">["bool", "check_print_step", "format", "int", "intersection", "isinstance", "kwargs.get", "len", "list", "mp.Pool", "mp.cpu_count", "np.arange", "np.ceil", "pd.concat", "platform.system", "pool.close", "pool.starmap", "print", "rep_blank_na", "reset_index", "set", "str", "time.gmtime", "time.strftime", "time.time", "unique", "woepoints_ply1", "zip"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">1070</data>
+      <data key="d19">WOE Transformation
+------
+`woebin_ply` converts original input data into woe values 
+based on the binning information generated from `woebin`.
+
+Params
+------
+dt: A data frame.
+bins: Binning information generated from `woebin`.
+no_cores: Number of CPU cores for parallel computation. 
+  Defaults None. If no_cores is None, the no_cores will 
+  set as 1 if length of x variables less than 10, and will 
+  set as the number of all CPU cores if the length of x 
+  variables greater than or equal to 10.
+print_step: A non-negative integer. Default is 1. If 
+  print_step&gt;0, print variable names by each print_step-th 
+  iteration. If print_step=0 or no_cores&gt;1, no message is print.
+replace_blank: Logical. Replace blank values with None. Defaults to True.
+
+Returns
+-------
+DataFrame
+    a dataframe of woe values for each variables 
+
+Examples
+-------
+import scorecardpy as sc
+import pandas as pd
+
+# load data
+dat = sc.germancredit()
+
+# Example I
+dt = dat[["creditability", "credit.amount", "purpose"]]
+# binning for dt
+bins = sc.woebin(dt, y = "creditability")
+
+# converting original value to woe
+dt_woe = sc.woebin_ply(dt, bins=bins)
+
+# Example II
+# binning for germancredit dataset
+bins_germancredit = sc.woebin(dat, y="creditability")
+
+# converting the values in germancredit to woe
+## bins is a dict
+germancredit_woe = sc.woebin_ply(dat, bins=bins_germancredit) 
+## bins is a dataframe
+germancredit_woe = sc.woebin_ply(dat, bins=pd.concat(bins_germancredit))</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.plot_bin">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.plot_bin</data>
+      <data key="d1">Capability</data>
+      <data key="d2">plot binning of one variable</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">plot_bin</data>
+      <data key="d12">def plot_bin(binx, title, show_iv)</data>
+      <data key="d13">[]</data>
+      <data key="d14">matplotlib fig object</data>
+      <data key="d15">[]</data>
+      <data key="d16">["ax1.bar", "ax1.set_ylabel", "ax1.set_yticks", "ax1.text", "ax1.twinx", "ax2.plot", "ax2.set_ylabel", "ax2.set_yticks", "ax2.text", "ax2.tick_params", "len", "max", "np.arange", "np.ceil", "plt.legend", "plt.subplots", "plt.title", "plt.xticks", "round", "str"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">1195</data>
+      <data key="d19">plot binning of one variable
+
+Params
+------
+binx:
+title:
+show_iv:
+
+Returns
+------
+matplotlib fig object</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.woebin_plot">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.woebin_plot</data>
+      <data key="d1">Capability</data>
+      <data key="d2">WOE Binning Visualization</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">woebin_plot</data>
+      <data key="d12">def woebin_plot(bins, x=None, title=None, show_iv=True)</data>
+      <data key="d13">["bins: A list or data frame. Binning information generated by `woebin`.", "x: Name of x variables. Default is None. If x is None, then all", "title: String added to the plot title. Default is None.", "show_iv: Logical. Default is True, which means show information value"]</data>
+      <data key="d14">dict</data>
+      <data key="d15">[]</data>
+      <data key="d16">["apply", "bins.groupby", "isinstance", "pd.concat", "plot_bin", "reset_index", "sum", "unique"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">1250</data>
+      <data key="d19">WOE Binning Visualization
+------
+`woebin_plot` create plots of count distribution and bad probability 
+for each bin. The binning informations are generates by `woebin`.
+
+Params
+------
+bins: A list or data frame. Binning information generated by `woebin`.
+x: Name of x variables. Default is None. If x is None, then all 
+  variables except y are counted as x variables.
+title: String added to the plot title. Default is None.
+show_iv: Logical. Default is True, which means show information value 
+  in the plot title.
+
+Returns
+------
+dict
+    a dict of matplotlib figure objests
+    
+Examples
+------
+import scorecardpy as sc
+import matplotlib.pyplot as plt
+
+# load data
+dat = sc.germancredit()
+
+# Example I
+dt1 = dat[["creditability", "credit.amount"]]
+
+bins1 = sc.woebin(dt1, y="creditability")
+p1 = sc.woebin_plot(bins1)
+plt.show(p1)
+
+# Example II
+bins = sc.woebin(dat, y="creditability")
+plotlist = sc.woebin_plot(bins)
+
+# # save binning plot
+# for key,i in plotlist.items():
+#     plt.show(i)
+#     plt.savefig(str(key)+'.png')</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.woebin_adj_print_basic_info">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.woebin_adj_print_basic_info</data>
+      <data key="d1">Capability</data>
+      <data key="d2">print basic information of woebinnig in adjusting process</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">woebin_adj_print_basic_info</data>
+      <data key="d12">def woebin_adj_print_basic_info(i, xs, bins, dt, bins_breakslist)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["describe", "hist", "is_numeric_dtype", "len", "plt.show", "plt.title", "print", "str", "unique", "value_counts", "woebin_plot"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">1317</data>
+      <data key="d19">print basic information of woebinnig in adjusting process
+
+Params
+------
+
+Returns
+------</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.woebin_adj_break_plot">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.woebin_adj_break_plot</data>
+      <data key="d1">Capability</data>
+      <data key="d2">update breaks and provies a binning plot</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">woebin_adj_break_plot</data>
+      <data key="d12">def woebin_adj_break_plot(dt, y, x_i, breaks, stop_limit, sv_i, method)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["eval", "is_numeric_dtype", "join", "plt.show", "print", "set", "woebin", "woebin_plot"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">1354</data>
+      <data key="d19">update breaks and provies a binning plot
+
+Params
+------
+
+Returns
+------</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.woebin_adj">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.woebin_adj</data>
+      <data key="d1">Capability</data>
+      <data key="d2">WOE Binning Adjustment</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">woebin_adj</data>
+      <data key="d12">def woebin_adj(dt, y, bins, adj_all_var=False, special_values=None, method='tree', save_breaks_list=None, count_distr_limit=0.05)</data>
+      <data key="d13">["dt: A data frame.", "y: Name of y variable.", "bins: A list or data frame. Binning information generated from woebin.", "adj_all_var: Logical, whether to show monotonic woe variables. Default", "special_values: the values specified in special_values will in separate", "method: optimal binning method, it should be \"tree\" or \"chimerge\".", "save_breaks_list: The file name to save breaks_list. Default is None.", "count_distr_limit: The minimum percentage of final binning"]</data>
+      <data key="d14">dict</data>
+      <data key="d15">[]</data>
+      <data key="d16">["apply", "bins2.assign", "bins2.dropna", "bins2.groupby", "bins_to_breaks", "check_special_values", "format", "input", "int", "isdigit", "isinstance", "join", "len", "menu", "np.arange", "nunique", "pd.concat", "print", "re.sub", "reset_index", "shift", "special_values.keys", "str", "unique", "warnings.warn", "woebin", "woebin_adj_break_plot", "woebin_adj_print_basic_info"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">1384</data>
+      <data key="d19">WOE Binning Adjustment
+------
+`woebin_adj` interactively adjust the binning breaks.
+
+Params
+------
+dt: A data frame.
+y: Name of y variable.
+bins: A list or data frame. Binning information generated from woebin.
+adj_all_var: Logical, whether to show monotonic woe variables. Default
+  is True
+special_values: the values specified in special_values will in separate 
+  bins. Default is None.
+method: optimal binning method, it should be "tree" or "chimerge". 
+  Default is "tree".
+save_breaks_list: The file name to save breaks_list. Default is None.
+count_distr_limit: The minimum percentage of final binning 
+  class number over total. Accepted range: 0.01-0.2; default 
+  is 0.05.
+
+
+Returns
+------
+dict
+    dictionary of breaks
+    
+Examples
+------
+import scorecardpy as sc
+
+# load data
+dat = sc.germancredit()
+
+# Example I
+dt = dat[["creditability", "age.in.years", "credit.amount"]]
+
+bins = sc.woebin(dt, y="creditability")
+breaks_adj = sc.woebin_adj(dt, y="creditability", bins=bins)
+bins_final = sc.woebin(dt, y="creditability", breaks_list=breaks_adj)
+
+# Example II
+binsII = sc.woebin(dat, y="creditability")
+breaks_adjII = sc.woebin_adj(dat, "creditability", binsII)
+bins_finalII = sc.woebin(dat, y="creditability", breaks_list=breaks_adjII)</data>
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.nicenumber">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.nicenumber</data>
+      <data key="d1">Capability</data>
+      <data key="d2">nicenumber</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">nicenumber</data>
+      <data key="d12">def nicenumber(x)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["abs", "np.floor", "np.log10", "np.sign"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">252</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.total_iv_all_breaks">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.total_iv_all_breaks</data>
+      <data key="d1">Capability</data>
+      <data key="d2">total_iv_all_breaks</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">total_iv_all_breaks</data>
+      <data key="d12">def total_iv_all_breaks(initial_binning, bestbreaks, dtm_rows)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["agg", "apply", "assign", "breaks_set.difference", "difference", "float", "format", "groupby", "initial_binning.copy", "iv_01", "len", "list", "map", "min", "pd.cut", "pd.melt", "range", "re.sub", "reset_index", "set", "sorted", "str", "total_iv_all_brks.assign", "total_iv_all_brks.groupby", "transform"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">396</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.binning_add_1bst">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.binning_add_1bst</data>
+      <data key="d1">Capability</data>
+      <data key="d2">binning_add_1bst</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">binning_add_1bst</data>
+      <data key="d12">def binning_add_1bst(initial_binning, bestbreaks)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["agg", "assign", "binning_1bst_brk.groupby", "float", "format", "group", "initial_binning.assign", "int", "is_numeric_dtype", "iv_01", "join", "len", "min", "pd.cut", "range", "re.match", "reset_index", "sorted"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">429</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.add_chisq">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.add_chisq</data>
+      <data key="d1">Capability</data>
+      <data key="d2">add_chisq</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">add_chisq</data>
+      <data key="d12">def add_chisq(initial_binning)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["apply", "assign", "chisq_df.assign", "chisq_df.groupby", "groupby", "initial_binning.assign", "pd.melt", "pd.merge", "reset_index", "sort_values", "sum", "transform", "x.shift"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">576</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.gb_distr">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.gb_distr</data>
+      <data key="d1">Capability</data>
+      <data key="d2">gb_distr</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">gb_distr</data>
+      <data key="d12">def gb_distr(binx)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["sum"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">1300</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.menu">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.menu</data>
+      <data key="d1">Capability</data>
+      <data key="d2">menu</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">menu</data>
+      <data key="d12">def menu(i, xs_len, x_i)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["format", "input", "int", "isdigit", "isinstance", "print", "str", "warnings.warn"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">1459</data>
+      <data key="d19" />
+    </node>
+    <node id="cap.repo.scorecardpy.scorecardpy.woebin.re_extract_all">
+      <data key="d0">cap.repo.scorecardpy.scorecardpy.woebin.re_extract_all</data>
+      <data key="d1">Capability</data>
+      <data key="d2">re_extract_all</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">candidate</data>
+      <data key="d6">1</data>
+      <data key="d9">scorecardpy</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d11">re_extract_all</data>
+      <data key="d12">def re_extract_all(x)</data>
+      <data key="d13">[]</data>
+      <data key="d14" />
+      <data key="d15">[]</data>
+      <data key="d16">["gp23.group", "re.match"]</data>
+      <data key="d17">scorecardpy/woebin.py</data>
+      <data key="d18">698</data>
+      <data key="d19" />
+    </node>
+    <node id="evidence.repo.scorecardpy.scorecardpy">
+      <data key="d0">evidence.repo.scorecardpy.scorecardpy</data>
+      <data key="d1">Evidence</data>
+      <data key="d2">scorecardpy/scorecardpy 源码</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">scorecardpy</data>
+      <data key="d20">["scorecardpy.germancredit", "scorecardpy.info_value", "scorecardpy.one_hot", "scorecardpy.perf", "scorecardpy.scorecard", "scorecardpy.split_df", "scorecardpy.var_filter", "scorecardpy.vif", "scorecardpy.woebin"]</data>
+    </node>
+    <node id="evidence.repo.scorecardpy.scorecardpy.condition_fun">
+      <data key="d0">evidence.repo.scorecardpy.scorecardpy.condition_fun</data>
+      <data key="d1">Evidence</data>
+      <data key="d2">scorecardpy/scorecardpy.condition_fun 源码</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">scorecardpy.condition_fun</data>
+      <data key="d20">["numpy", "pandas", "pandas.api.types", "re", "statsmodels.api", "warnings"]</data>
+    </node>
+    <node id="evidence.repo.scorecardpy.scorecardpy.germancredit">
+      <data key="d0">evidence.repo.scorecardpy.scorecardpy.germancredit</data>
+      <data key="d1">Evidence</data>
+      <data key="d2">scorecardpy/scorecardpy.germancredit 源码</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">scorecardpy.germancredit</data>
+      <data key="d20">["pandas", "pandas.api.types", "pkg_resources"]</data>
+    </node>
+    <node id="evidence.repo.scorecardpy.scorecardpy.info_ent_indx_gini">
+      <data key="d0">evidence.repo.scorecardpy.scorecardpy.info_ent_indx_gini</data>
+      <data key="d1">Evidence</data>
+      <data key="d2">scorecardpy/scorecardpy.info_ent_indx_gini 源码</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">scorecardpy.info_ent_indx_gini</data>
+      <data key="d20">["condition_fun", "numpy", "pandas"]</data>
+    </node>
+    <node id="evidence.repo.scorecardpy.scorecardpy.info_value">
+      <data key="d0">evidence.repo.scorecardpy.scorecardpy.info_value</data>
+      <data key="d1">Evidence</data>
+      <data key="d2">scorecardpy/scorecardpy.info_value 源码</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">scorecardpy.info_value</data>
+      <data key="d20">["condition_fun", "numpy", "pandas"]</data>
+    </node>
+    <node id="evidence.repo.scorecardpy.scorecardpy.one_hot">
+      <data key="d0">evidence.repo.scorecardpy.scorecardpy.one_hot</data>
+      <data key="d1">Evidence</data>
+      <data key="d2">scorecardpy/scorecardpy.one_hot 源码</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">scorecardpy.one_hot</data>
+      <data key="d20">["condition_fun", "numpy", "pandas", "pandas.api.types"]</data>
+    </node>
+    <node id="evidence.repo.scorecardpy.scorecardpy.perf">
+      <data key="d0">evidence.repo.scorecardpy.scorecardpy.perf</data>
+      <data key="d1">Evidence</data>
+      <data key="d2">scorecardpy/scorecardpy.perf 源码</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">scorecardpy.perf</data>
+      <data key="d20">["condition_fun", "matplotlib.pyplot", "numpy", "pandas", "warnings"]</data>
+    </node>
+    <node id="evidence.repo.scorecardpy.scorecardpy.scorecard">
+      <data key="d0">evidence.repo.scorecardpy.scorecardpy.scorecard</data>
+      <data key="d1">Evidence</data>
+      <data key="d2">scorecardpy/scorecardpy.scorecard 源码</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">scorecardpy.scorecard</data>
+      <data key="d20">["condition_fun", "numpy", "pandas", "re", "woebin"]</data>
+    </node>
+    <node id="evidence.repo.scorecardpy.scorecardpy.split_df">
+      <data key="d0">evidence.repo.scorecardpy.scorecardpy.split_df</data>
+      <data key="d1">Evidence</data>
+      <data key="d2">scorecardpy/scorecardpy.split_df 源码</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">scorecardpy.split_df</data>
+      <data key="d20">["collections", "condition_fun", "numpy", "pandas", "warnings"]</data>
+    </node>
+    <node id="evidence.repo.scorecardpy.scorecardpy.var_filter">
+      <data key="d0">evidence.repo.scorecardpy.scorecardpy.var_filter</data>
+      <data key="d1">Evidence</data>
+      <data key="d2">scorecardpy/scorecardpy.var_filter 源码</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">scorecardpy.var_filter</data>
+      <data key="d20">["condition_fun", "info_value", "numpy", "pandas", "time", "warnings"]</data>
+    </node>
+    <node id="evidence.repo.scorecardpy.scorecardpy.vif">
+      <data key="d0">evidence.repo.scorecardpy.scorecardpy.vif</data>
+      <data key="d1">Evidence</data>
+      <data key="d2">scorecardpy/scorecardpy.vif 源码</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">scorecardpy.vif</data>
+      <data key="d20">["condition_fun", "pandas", "patsy", "statsmodels.api", "statsmodels.stats.outliers_influence"]</data>
+    </node>
+    <node id="evidence.repo.scorecardpy.scorecardpy.woebin">
+      <data key="d0">evidence.repo.scorecardpy.scorecardpy.woebin</data>
+      <data key="d1">Evidence</data>
+      <data key="d2">scorecardpy/scorecardpy.woebin 源码</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">scorecardpy.woebin</data>
+      <data key="d20">["condition_fun", "info_value", "matplotlib.pyplot", "multiprocessing", "numpy", "os", "pandas", "pandas.api.types", "platform", "re", "scipy.special", "time", "warnings"]</data>
+    </node>
+    <node id="evidence.repo.scorecardpy.setup">
+      <data key="d0">evidence.repo.scorecardpy.setup</data>
+      <data key="d1">Evidence</data>
+      <data key="d2">scorecardpy/setup 源码</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">setup</data>
+      <data key="d20">["codecs", "os", "re", "setuptools"]</data>
+    </node>
+    <edge source="cap.repo.scorecardpy.scorecardpy.condition_fun.lr" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.condition_fun.lr" target="evidence.repo.scorecardpy.scorecardpy.condition_fun" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.condition_fun.str_to_list" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.condition_fun.str_to_list" target="evidence.repo.scorecardpy.scorecardpy.condition_fun" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.condition_fun.check_const_cols" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.condition_fun.check_const_cols" target="evidence.repo.scorecardpy.scorecardpy.condition_fun" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.condition_fun.check_datetime_cols" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.condition_fun.check_datetime_cols" target="evidence.repo.scorecardpy.scorecardpy.condition_fun" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.condition_fun.check_cateCols_uniqueValues" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.condition_fun.check_cateCols_uniqueValues" target="evidence.repo.scorecardpy.scorecardpy.condition_fun" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.condition_fun.check_cateCols_uniqueValues" target="cap.repo.scorecardpy.scorecardpy.condition_fun.str_to_list" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">str_to_list</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.condition_fun.rep_blank_na" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.condition_fun.rep_blank_na" target="evidence.repo.scorecardpy.scorecardpy.condition_fun" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.condition_fun.check_y" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.condition_fun.check_y" target="evidence.repo.scorecardpy.scorecardpy.condition_fun" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.condition_fun.check_y" target="cap.repo.scorecardpy.scorecardpy.condition_fun.str_to_list" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">str_to_list</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.condition_fun.check_print_step" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.condition_fun.check_print_step" target="evidence.repo.scorecardpy.scorecardpy.condition_fun" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.condition_fun.x_variable" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.condition_fun.x_variable" target="evidence.repo.scorecardpy.scorecardpy.condition_fun" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.condition_fun.x_variable" target="cap.repo.scorecardpy.scorecardpy.condition_fun.str_to_list" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">str_to_list</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.condition_fun.check_breaks_list" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.condition_fun.check_breaks_list" target="evidence.repo.scorecardpy.scorecardpy.condition_fun" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.condition_fun.check_special_values" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.condition_fun.check_special_values" target="evidence.repo.scorecardpy.scorecardpy.condition_fun" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.germancredit.germancredit" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.germancredit.germancredit" target="evidence.repo.scorecardpy.scorecardpy.germancredit" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.germancredit.germancredit" target="cap.repo.scorecardpy.scorecardpy.germancredit.cate_type" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">cate_type</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.germancredit.cate_type" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.germancredit.cate_type" target="evidence.repo.scorecardpy.scorecardpy.germancredit" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ie" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ie" target="evidence.repo.scorecardpy.scorecardpy.info_ent_indx_gini" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ie" target="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ie_xy" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">ie_xy</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ie" target="cap.repo.scorecardpy.scorecardpy.condition_fun.rep_blank_na" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">rep_blank_na</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ie" target="cap.repo.scorecardpy.scorecardpy.condition_fun.x_variable" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">x_variable</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ie_xy" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ie_xy" target="evidence.repo.scorecardpy.scorecardpy.info_ent_indx_gini" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ie_01" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ie_01" target="evidence.repo.scorecardpy.scorecardpy.info_ent_indx_gini" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ig" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ig" target="evidence.repo.scorecardpy.scorecardpy.info_ent_indx_gini" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ig" target="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ig_xy" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">ig_xy</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ig" target="cap.repo.scorecardpy.scorecardpy.condition_fun.rep_blank_na" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">rep_blank_na</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ig" target="cap.repo.scorecardpy.scorecardpy.condition_fun.x_variable" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">x_variable</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ig_xy" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ig_xy" target="evidence.repo.scorecardpy.scorecardpy.info_ent_indx_gini" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ig_01" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_ent_indx_gini.ig_01" target="evidence.repo.scorecardpy.scorecardpy.info_ent_indx_gini" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_value.iv" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_value.iv" target="evidence.repo.scorecardpy.scorecardpy.info_value" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_value.iv" target="cap.repo.scorecardpy.scorecardpy.condition_fun.check_y" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">check_y</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_value.iv" target="cap.repo.scorecardpy.scorecardpy.info_value.iv_xy" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">iv_xy</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_value.iv" target="cap.repo.scorecardpy.scorecardpy.condition_fun.x_variable" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">x_variable</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_value.iv_xy" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_value.iv_xy" target="evidence.repo.scorecardpy.scorecardpy.info_value" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_value.iv_01" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_value.iv_01" target="evidence.repo.scorecardpy.scorecardpy.info_value" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_value.miv_01" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_value.miv_01" target="evidence.repo.scorecardpy.scorecardpy.info_value" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_value.woe_01" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_value.woe_01" target="evidence.repo.scorecardpy.scorecardpy.info_value" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_value.goodbad" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.info_value.goodbad" target="evidence.repo.scorecardpy.scorecardpy.info_value" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.one_hot.one_hot" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.one_hot.one_hot" target="evidence.repo.scorecardpy.scorecardpy.one_hot" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.one_hot.one_hot" target="cap.repo.scorecardpy.scorecardpy.one_hot.rep_na" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">rep_na</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.one_hot.one_hot" target="cap.repo.scorecardpy.scorecardpy.condition_fun.str_to_list" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">str_to_list</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.one_hot.one_hot" target="cap.repo.scorecardpy.scorecardpy.condition_fun.x_variable" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">x_variable</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.one_hot.rep_na" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.one_hot.rep_na" target="evidence.repo.scorecardpy.scorecardpy.one_hot" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.eva_dfkslift" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.eva_dfkslift" target="evidence.repo.scorecardpy.scorecardpy.perf" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.eva_pks" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.eva_pks" target="evidence.repo.scorecardpy.scorecardpy.perf" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.eva_plift" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.eva_plift" target="evidence.repo.scorecardpy.scorecardpy.perf" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.eva_dfrocpr" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.eva_dfrocpr" target="evidence.repo.scorecardpy.scorecardpy.perf" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.eva_proc" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.eva_proc" target="evidence.repo.scorecardpy.scorecardpy.perf" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.eva_ppr" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.eva_ppr" target="evidence.repo.scorecardpy.scorecardpy.perf" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.eva_pf1" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.eva_pf1" target="evidence.repo.scorecardpy.scorecardpy.perf" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.perf_eva" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.perf_eva" target="evidence.repo.scorecardpy.scorecardpy.perf" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.perf_eva" target="cap.repo.scorecardpy.scorecardpy.condition_fun.check_y" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">check_y</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.perf_eva" target="cap.repo.scorecardpy.scorecardpy.perf.eva_dfkslift" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">eva_dfkslift</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.perf_eva" target="cap.repo.scorecardpy.scorecardpy.perf.eva_dfrocpr" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">eva_dfrocpr</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.perf_psi" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.perf_psi" target="evidence.repo.scorecardpy.scorecardpy.perf" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.perf_psi" target="cap.repo.scorecardpy.scorecardpy.perf.psi" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">psi</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.n0" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.n1" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.n0.L81" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.n0.L81" target="evidence.repo.scorecardpy.scorecardpy.perf" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.n0.L81" target="evidence.repo.scorecardpy.scorecardpy.perf" id="1">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.n1.L82" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.n1.L82" target="evidence.repo.scorecardpy.scorecardpy.perf" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.n1.L82" target="evidence.repo.scorecardpy.scorecardpy.perf" id="1">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.psi" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.psi" target="evidence.repo.scorecardpy.scorecardpy.perf" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.good" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.good" target="evidence.repo.scorecardpy.scorecardpy.perf" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.bad" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.perf.bad" target="evidence.repo.scorecardpy.scorecardpy.perf" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.scorecard.ab" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.scorecard.ab" target="evidence.repo.scorecardpy.scorecardpy.scorecard" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.scorecard.scorecard" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.scorecard.scorecard" target="evidence.repo.scorecardpy.scorecardpy.scorecard" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.scorecard.scorecard" target="cap.repo.scorecardpy.scorecardpy.scorecard.ab" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">ab</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.scorecard.scorecard2" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.scorecard.scorecard2" target="evidence.repo.scorecardpy.scorecardpy.scorecard" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.scorecard.scorecard2" target="cap.repo.scorecardpy.scorecardpy.condition_fun.check_y" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">check_y</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.scorecard.scorecard2" target="cap.repo.scorecardpy.scorecardpy.condition_fun.lr" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">lr</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.scorecard.scorecard2" target="cap.repo.scorecardpy.scorecardpy.scorecard.scorecard" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">scorecard</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.scorecard.scorecard2" target="cap.repo.scorecardpy.scorecardpy.woebin.woebin_ply" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">woebin_ply</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.scorecard.scorecard2" target="cap.repo.scorecardpy.scorecardpy.condition_fun.x_variable" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">x_variable</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.scorecard.scorecard_ply" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.scorecard.scorecard_ply" target="evidence.repo.scorecardpy.scorecardpy.scorecard" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.scorecard.scorecard_ply" target="cap.repo.scorecardpy.scorecardpy.condition_fun.check_print_step" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">check_print_step</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.scorecard.scorecard_ply" target="cap.repo.scorecardpy.scorecardpy.condition_fun.rep_blank_na" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">rep_blank_na</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.scorecard.scorecard_ply" target="cap.repo.scorecardpy.scorecardpy.woebin.woepoints_ply1" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">woepoints_ply1</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.split_df.split_df" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.split_df.split_df" target="evidence.repo.scorecardpy.scorecardpy.split_df" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.split_df.split_df" target="cap.repo.scorecardpy.scorecardpy.condition_fun.rep_blank_na" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">rep_blank_na</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.var_filter.var_filter" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.var_filter.var_filter" target="evidence.repo.scorecardpy.scorecardpy.var_filter" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.var_filter.var_filter" target="cap.repo.scorecardpy.scorecardpy.condition_fun.check_y" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">check_y</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.var_filter.var_filter" target="cap.repo.scorecardpy.scorecardpy.info_value.iv" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">iv</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.var_filter.var_filter" target="cap.repo.scorecardpy.scorecardpy.condition_fun.x_variable" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">x_variable</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.vif.lr" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.vif.lr" target="evidence.repo.scorecardpy.scorecardpy.vif" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.vif.vif" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.vif.vif" target="evidence.repo.scorecardpy.scorecardpy.vif" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.vif.vif" target="cap.repo.scorecardpy.scorecardpy.condition_fun.check_y" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">check_y</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.vif.vif" target="cap.repo.scorecardpy.scorecardpy.condition_fun.lr" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">lr</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.vif.vif" target="cap.repo.scorecardpy.scorecardpy.condition_fun.x_variable" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">x_variable</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.split_vec_todf" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.split_vec_todf" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.add_missing_spl_val" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.add_missing_spl_val" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.n0" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.n0" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.n1" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.n1" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.dtm_binning_sv" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.dtm_binning_sv" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.dtm_binning_sv" target="cap.repo.scorecardpy.scorecardpy.woebin.add_missing_spl_val" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">add_missing_spl_val</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.dtm_binning_sv" target="cap.repo.scorecardpy.scorecardpy.woebin.split_vec_todf" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">split_vec_todf</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.check_empty_bins" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.check_empty_bins" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_breaks" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_breaks" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_breaks" target="cap.repo.scorecardpy.scorecardpy.woebin.check_empty_bins" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">check_empty_bins</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_breaks" target="cap.repo.scorecardpy.scorecardpy.woebin.dtm_binning_sv" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">dtm_binning_sv</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_breaks" target="cap.repo.scorecardpy.scorecardpy.woebin.split_vec_todf" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">split_vec_todf</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.pretty" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.pretty" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.pretty" target="cap.repo.scorecardpy.scorecardpy.woebin.nicenumber" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">nicenumber</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_init_bin" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_init_bin" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_init_bin" target="cap.repo.scorecardpy.scorecardpy.woebin.check_empty_bins" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">check_empty_bins</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_init_bin" target="cap.repo.scorecardpy.scorecardpy.woebin.dtm_binning_sv" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">dtm_binning_sv</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_init_bin" target="cap.repo.scorecardpy.scorecardpy.woebin.pretty" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">pretty</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_tree_add_1brkp" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_tree_add_1brkp" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_tree_add_1brkp" target="cap.repo.scorecardpy.scorecardpy.woebin.binning_add_1bst" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">binning_add_1bst</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_tree_add_1brkp" target="cap.repo.scorecardpy.scorecardpy.info_value.iv_01" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">iv_01</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_tree_add_1brkp" target="cap.repo.scorecardpy.scorecardpy.woebin.total_iv_all_breaks" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">total_iv_all_breaks</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_tree" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_tree" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_tree" target="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_init_bin" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">woebin2_init_bin</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_tree" target="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_tree_add_1brkp" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">woebin2_tree_add_1brkp</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_chimerge" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_chimerge" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_chimerge" target="cap.repo.scorecardpy.scorecardpy.woebin.add_chisq" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">add_chisq</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_chimerge" target="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_init_bin" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">woebin2_init_bin</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.binning_format" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.binning_format" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.binning_format" target="cap.repo.scorecardpy.scorecardpy.info_value.miv_01" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">miv_01</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.binning_format" target="cap.repo.scorecardpy.scorecardpy.woebin.re_extract_all" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">re_extract_all</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.binning_format" target="cap.repo.scorecardpy.scorecardpy.info_value.woe_01" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">woe_01</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2" target="cap.repo.scorecardpy.scorecardpy.woebin.binning_format" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">binning_format</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2" target="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_breaks" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">woebin2_breaks</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2" target="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_chimerge" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">woebin2_chimerge</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2" target="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_init_bin" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">woebin2_init_bin</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin2" target="cap.repo.scorecardpy.scorecardpy.woebin.woebin2_tree" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">woebin2_tree</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.bins_to_breaks" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.bins_to_breaks" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin" target="cap.repo.scorecardpy.scorecardpy.woebin.bins_to_breaks" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">bins_to_breaks</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin" target="cap.repo.scorecardpy.scorecardpy.condition_fun.check_breaks_list" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">check_breaks_list</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin" target="cap.repo.scorecardpy.scorecardpy.condition_fun.check_cateCols_uniqueValues" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">check_cateCols_uniqueValues</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin" target="cap.repo.scorecardpy.scorecardpy.condition_fun.check_const_cols" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">check_const_cols</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin" target="cap.repo.scorecardpy.scorecardpy.condition_fun.check_datetime_cols" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">check_datetime_cols</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin" target="cap.repo.scorecardpy.scorecardpy.condition_fun.check_print_step" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">check_print_step</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin" target="cap.repo.scorecardpy.scorecardpy.condition_fun.check_special_values" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">check_special_values</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin" target="cap.repo.scorecardpy.scorecardpy.condition_fun.check_y" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">check_y</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin" target="cap.repo.scorecardpy.scorecardpy.condition_fun.rep_blank_na" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">rep_blank_na</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin" target="cap.repo.scorecardpy.scorecardpy.woebin.woebin2" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">woebin2</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin" target="cap.repo.scorecardpy.scorecardpy.condition_fun.x_variable" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">x_variable</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woepoints_ply1" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woepoints_ply1" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin_ply" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin_ply" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin_ply" target="cap.repo.scorecardpy.scorecardpy.condition_fun.check_print_step" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">check_print_step</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin_ply" target="cap.repo.scorecardpy.scorecardpy.condition_fun.rep_blank_na" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">rep_blank_na</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin_ply" target="cap.repo.scorecardpy.scorecardpy.woebin.woepoints_ply1" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">woepoints_ply1</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.plot_bin" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.plot_bin" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin_plot" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin_plot" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin_plot" target="cap.repo.scorecardpy.scorecardpy.woebin.plot_bin" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">plot_bin</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin_adj_print_basic_info" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin_adj_print_basic_info" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin_adj_print_basic_info" target="cap.repo.scorecardpy.scorecardpy.woebin.woebin_plot" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">woebin_plot</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin_adj_break_plot" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin_adj_break_plot" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin_adj_break_plot" target="cap.repo.scorecardpy.scorecardpy.woebin.woebin" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">woebin</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin_adj_break_plot" target="cap.repo.scorecardpy.scorecardpy.woebin.woebin_plot" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">woebin_plot</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin_adj" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin_adj" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin_adj" target="cap.repo.scorecardpy.scorecardpy.woebin.bins_to_breaks" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">bins_to_breaks</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin_adj" target="cap.repo.scorecardpy.scorecardpy.condition_fun.check_special_values" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">check_special_values</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin_adj" target="cap.repo.scorecardpy.scorecardpy.woebin.menu" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">menu</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin_adj" target="cap.repo.scorecardpy.scorecardpy.woebin.woebin" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">woebin</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin_adj" target="cap.repo.scorecardpy.scorecardpy.woebin.woebin_adj_break_plot" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">woebin_adj_break_plot</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.woebin_adj" target="cap.repo.scorecardpy.scorecardpy.woebin.woebin_adj_print_basic_info" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">woebin_adj_print_basic_info</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.nicenumber" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.nicenumber" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.total_iv_all_breaks" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.total_iv_all_breaks" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.total_iv_all_breaks" target="cap.repo.scorecardpy.scorecardpy.info_value.iv_01" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">iv_01</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.binning_add_1bst" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.binning_add_1bst" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.binning_add_1bst" target="cap.repo.scorecardpy.scorecardpy.info_value.iv_01" id="0">
+      <data key="d21">USES</data>
+      <data key="d22">iv_01</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.add_chisq" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.add_chisq" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.gb_distr" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.gb_distr" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.menu" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.menu" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.re_extract_all" target="env.repo.scorecardpy" id="0">
+      <data key="d21">DEPENDS_ON</data>
+    </edge>
+    <edge source="cap.repo.scorecardpy.scorecardpy.woebin.re_extract_all" target="evidence.repo.scorecardpy.scorecardpy.woebin" id="0">
+      <data key="d21">EVIDENCED_BY</data>
+    </edge>
+  </graph>
+</graphml>

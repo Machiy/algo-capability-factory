@@ -4,7 +4,7 @@
 >
 > 对应题目：LLM Agent 笔试《基于 AI Agent 的算法能力系统开发》。
 
-**当前仓库状态：P0–P5 已完成并实测。** a–g 七步闭环（能力抽取 → 检索 → 规划 → 生成 → 验证 → 修复 → 沉淀）全链路可跑；L0 契约、L1 能力图谱与混合检索、L2 的 8 个 Agent 角色与 LangGraph 编排、L3 子进程沙箱与 AST 静态检查、L4 四层验证与报告生成、L5 的 Typer CLI 与 FastAPI 均已落地，并支持三种 LLM 后端与脱敏 cassette。`python -m factory run --spec "..." --mock` 一次产出生成代码、四层报告、修复轨迹与图谱回写；最新一次实测为 3 候选、最佳候选（HGB）四层全通过、AUC 0.7843。题目进阶要求的 8 项全部满足，10 项加分项已覆盖 7 项（跨场景迁移、真实仓库抽取、资源消耗分析见第 10 节后续方向）。本文档已按题目「提交方式」要求的十项内容写好。
+**当前仓库状态：P0–P5 已完成并实测。** a–g 七步闭环（能力抽取 → 检索 → 规划 → 生成 → 验证 → 修复 → 沉淀）全链路可跑；L0 契约、L1 能力图谱与混合检索、L2 的 8 个 Agent 角色与 LangGraph 编排、L3 子进程沙箱与 AST 静态检查、L4 四层验证与报告生成、L5 的 Typer CLI 与 FastAPI 均已落地，并支持三种 LLM 后端与脱敏 cassette。`python -m factory run --spec "..." --mock` 一次产出生成代码、四层报告、修复轨迹与图谱回写；最新一次实测为 3 候选、最佳候选（HGB）四层全通过、AUC 0.7843。题目进阶要求的 8 项全部满足，10 项加分项已覆盖 8 项（跨场景迁移见第 10 节后续方向）。本文档已按题目「提交方式」要求的十项内容写好。
 
 ---
 
@@ -55,7 +55,7 @@ python -m factory run --spec "预测信用卡客户下月违约概率，处理�
 | 层 | 模块 | 职责 |
 |---|---|---|
 | L0 契约 | `contracts/` | `CapabilitySpec`、`CandidatePlan`、`ValidationReport`（Pydantic），全系统唯一数据协议 |
-| L1 知识 | `knowledge/` | Schema、抽取器、NetworkX 图 + SQLite 持久化、混合检索器、PyVis 可视化 |
+| L1 知识 | `knowledge/` | Schema、材料抽取器（`Extractor`）、真实仓库 AST 抽取器（`RepoExtractor`）、NetworkX 图 + SQLite 持久化、混合检索器、PyVis 可视化 |
 | L2 Agent | `agents/`、`workflow/` | 8 个角色、LangGraph 状态机、Beam Search、修复策略表 |
 | L2 支撑 | `llm/` | `BaseLLM` 抽象与三个实现：`MockLLM`（默认）、`OpenAICompatLLM`（DeepSeek API）、`RecordedLLM`（cassette 回放） |
 | L3 执行 | `runtime/` | 子进程沙箱、AST 静态检查、超时 / 内存限制、错误分类器 |
@@ -78,6 +78,7 @@ python -m factory run --spec "预测信用卡客户下月违约概率，处理�
 | 沙箱资源监控 | `psutil` + 标准库 `subprocess` | 跨平台读取子进程内存；POSIX 另有 `resource.RLIMIT_AS` 硬限制 | `ctypes` 手写 Win32 结构已替换；RestrictedPython / Docker 对本原型过重 |
 | 日志 | `structlog` + 标准库 `logging` | 结构化渲染由现成库完成，模块内仍用 `getLogger(__name__)` | 手写 `basicConfig` 格式已替换 |
 | 静态检查 | 标准库 `ast` + 配置驱动白名单 | 已是现成能力；规则全部来自 `default.yaml` / `verify_credit.yaml` | `bandit` 只查通用安全漏洞，抓不到禁 `ID` 入模、`build_pipeline` 契约签名等项目规则；作为补充也未引入，以免改变 `StaticCheckResult.checks` |
+| 真实仓库抽取 | 标准库 `ast` + `RepoExtractor` | 只需「函数签名 / module 级依赖 / docstring 能力描述 / 行号证据」四类信息，标准库足够且零新增依赖 | `griffe` / `pydoc-markdown` 能导出 API 文档对象，但映射到本项目 `Capability` / `Evidence` 契约仍需同等量适配代码；`radon` / `pydeps` 只给复杂度和依赖图，不产出能力描述。故未引入 |
 | cassette 回放 | `RecordedLLM`（`BaseLLM` 层按角色 + prompt 命中） | 无 key、断网可原样回放；未命中显式报错，不静默造假 | `vcrpy` 拦截 HTTP 层，而 `provider=cassette` 根本不构造 `openai` client，无法工作；已录制的脱敏 cassette 也会失效 |
 | 四层验证 | 自研组合器 + `pytest` + 子进程沙箱 | 题目任务 5 要的是「统一验证机制」这一组合，无单一现成库覆盖；指标用 `sklearn.metrics`、报告用 `Jinja2` | 无对应单一库；组合编排属项目职责 |
 | 项目业务规则 | 时间外划分、禁 `ID` / 敏感字段、T1–T4 列名映射、成本比阈值、证据 SHA-256、`verify_*.yaml` 门槛 | 题目场景的合规约束，任何通用库都不会内置，属必须自研部分 | 无对应现成库 |
@@ -99,11 +100,13 @@ algo-capability-factory/
 │   ├── docs/{data_dictionary.md, risk_policy.md, expert_rules.md,
 │   │         experiment_log.md, failure_review.md, test_report.md}
 │   ├── legacy/legacy_default_model.py
+│   ├── repo/scorecardpy/       # 真实开源仓库快照（MIT），见 PROVENANCE.md
 │   └── llm_cassettes/          # 脱敏后的真实 LLM 对话与响应，入库
 ├── factory/
 │   ├── __init__.py  __main__.py  config.py  logging_setup.py
 │   ├── contracts/{models.py, knowledge.py, llm.py, validation.py, workflow.py}
-│   ├── knowledge/{extractor.py, parsing.py, graph.py, retrieval.py, pipeline.py, visualize.py}
+│   ├── knowledge/{extractor.py, repo_extractor.py, parsing.py, graph.py,
+│   │              retrieval.py, pipeline.py, visualize.py}
 │   ├── agents/{roles.py, templates.py}
 │   ├── workflow/pipeline.py    # LangGraph 七步编排
 │   ├── llm/{base.py, mock.py, openai_compat.py, recorded.py, cassette.py, routing.py, demo.py}
@@ -170,6 +173,21 @@ algo-capability-factory/
 ```
 
 抽取结果导出为 `outputs/kg/capabilities.json`、`capabilities.csv` 与 `graph.graphml`，可用 `outputs/kg/kg.html` 直接打开可视化。
+
+**真实开源仓库抽取（`RepoExtractor`）**
+
+除 6 份自建材料外，还从真实开源仓库 `scorecardpy`（MIT，快照与来源见 `assets/repo/PROVENANCE.md`）做 AST 抽取，实测产出 **95 节点 / 248 边 / 79 个公开能力**：
+
+| 抽取内容 | 来源 | 落地 |
+|---|---|---|
+| 函数 / 方法 | `ast.FunctionDef` | 每个公开函数一个 `Capability` 节点（id `cap.repo.scorecardpy.<module>.<func>`） |
+| 参数与返回 | docstring `Params` / `Returns` 段 | `attributes.parameters` / `attributes.returns`（21 个函数有结构化参数，其余用签名兜底） |
+| 能力描述 | docstring 首行 | 节点 `name`，例如 `WOE Binning`、`Information Value`、`KS, ROC, Lift, PR` |
+| 依赖 | module 级 import 减去标准库与包内自引用 | `Environment` 节点 `env.repo.scorecardpy`，实测 8 个第三方依赖 |
+| 可回溯证据 | 签名行 + docstring 首行，含文件与行号 | `Evidence`（`sha256` 可重算）+ `EVIDENCED_BY` 边 |
+| 能力组合 | 函数体内的点号调用 | `USES` 边，表示一个能力复用另一个能力 |
+
+产物：`outputs/kg/repo_capabilities.json`、`repo_capabilities.csv`、`repo_graph.graphml`；复现命令 `python scripts/extract_repo.py`。抽取器只做 `ast.parse`，**不 import、不执行**被抽取仓库代码。
 
 ---
 
@@ -243,6 +261,7 @@ python scripts/build_kg.py               # 构建能力图谱与检索产物
 python scripts/verify_baseline.py        # baseline 四层验证自检
 python scripts/run_ablation.py           # 有 KG / 无 KG 消融对比
 python scripts/resource_benchmark.py     # 1× / 10× 资源消耗与性能基准
+python scripts/extract_repo.py           # 从真实开源仓库抽取函数 / 依赖 / 能力描述
 python scripts/record_llm.py             # 录制真实 DeepSeek 调用（需 key）
 python -m unittest discover -s tests -v  # 全量测试
 
@@ -298,7 +317,8 @@ python -m factory --check
 | 文件 | 类型 | 提供的能力 |
 |---|---|---|
 | `docs/risk_policy.md`、`docs/data_dictionary.md` | 业务文档 | 成本比、额度区间、字段字典、适用条件 |
-| `legacy/legacy_default_model.py` | 历史代码仓库 | 旧评分卡实现、依赖、可抽取函数 |
+| `legacy/legacy_default_model.py` | 历史代码仓库（自建示例） | 旧评分卡实现、依赖、可抽取函数 |
+| `repo/scorecardpy/` | 真实开源仓库（MIT，来源见 `PROVENANCE.md`） | 13 个模块 / 81 个函数的签名、依赖、docstring 能力描述与行号证据 |
 | `docs/expert_rules.md` | 专家经验 | WOE 分箱、还款状态衍生、阈值经验 |
 | `docs/experiment_log.md` | 实验记录 | 历史模型与调参结果 |
 | `docs/test_report.md`、`docs/failure_review.md` | 测试报告 / 失败复盘 | 失败案例、泄漏事故、评价指标口径 |
@@ -444,6 +464,7 @@ def build_pipeline(config):
 | **小数据下资源分析缺说服力** | 构造 10× 合成扩展集，记录各候选耗时 / 峰值内存 / 推理 P95 |
 | **指标口径不统一** | 成本比、KS 门槛、baseline 定义全部配置化到 `verify_*.yaml`，避免硬编码 |
 | **早期为快速打通闭环写了若干自研轻量件，与开发要求 f「可使用现成工具但需说明选择理由」有张力** | 中途把「复用优先」写进 `.codebuddy/rules/architecture.md` 作为不可裁剪规则，逐项评估现成方案后替换：自研状态机 → LangGraph `StateGraph`、`ctypes` 内存监控 → `psutil`、手写日志格式 → `structlog`、`argparse` → `Typer`、手写 Markdown 正则 → `markdown-it-py`、手写词元计数 → `rank_bm25`；`vcrpy` / `bandit` / CrewAI / LlamaIndex 评估后因粒度或契约冲突未采用，理由逐项写在第 2 节选型表。全部替换以「功能不变」验收：ruff 全绿、测试全过（当前 104 个用例）、图谱仍 95 节点 / 259 边、端到端 3 候选 AUC 与修复轨迹逐字一致 |
+| **真实仓库的 docstring 格式不统一**：`scorecardpy` 用 `Params` 段、参数说明还跨行，部分函数完全没有结构化段 | 解析器同时接受 `Params` / `Parameters` / `Args`，跨行说明取首行；无结构化段时用签名兜底。81 个函数全部产出能力描述，其中 21 个有结构化参数——差异如实写进第 3 节，不补造内容 |
 | **沉淀只写不读**：Curator 已把结果写入 `capabilities_after_run.json`，但工作流每轮都从源材料重抽，下一轮看不到上一轮经验 | 让 `Workflow` 启动时优先加载回写图谱（不存在才回退源材料），检索器优先返回本项目实测 `FailureCase`，Coder 命中 T1 历史经验时首轮即避开，Curator 按 `run_id` 去重避免膨胀。消融实测：修复轮次 2（有 KG）vs 3（无 KG）、有 KG 首轮避开 `PAY_1`、两组 AUC 完全一致 |
 
 ---
