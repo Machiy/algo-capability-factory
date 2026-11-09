@@ -128,7 +128,7 @@ class DatasetContractTests(unittest.TestCase):
     def test_package_version(self) -> None:
         import factory
 
-        self.assertEqual(factory.__version__, "0.1.0")
+        self.assertEqual(factory.__version__, "1.0.0")
 
     @unittest.skipUnless(importlib.util.find_spec("pydantic") is not None, "pydantic 未安装")
     def test_contracts_importable_when_dependencies_installed(self) -> None:

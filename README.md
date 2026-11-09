@@ -323,7 +323,7 @@ python -m factory --check
 
 **干净环境实测（P5 记录）**：在系统临时目录新建空 venv，仅执行一次 `pip install -r requirements.txt`（106 个包，无冲突），随后直接跑通 `ruff check`（全绿）、当时的 104 个用例与端到端 `factory run`（`四层全通过=True`、`理解来源=cassette`、退出码 0），未安装任何清单外依赖。P6 未引入任何新的第三方依赖（文本与仓库抽取均用已有的 pandas / scikit-learn / 标准库），因此该结论继续成立；补充用例后当前全量测试为 **128 个**，在项目 venv 中全部通过。
 
-**持续集成**：`.github/workflows/ci.yml` 在 Python 3.11 / 3.12 上依次执行 `ruff check`、全量单元测试、三条端到端命令（信用卡违约 + 短信文本 + 需求量回归），并对输出断言 `四层全通过=True`；端到端走默认 provider（Interpreter 用已入库 cassette），因此 CI 不依赖任何 API key。矩阵按事件分流：**PR 只跑 3.12**（反馈快、省分钟数），**push 到 `main` 与手动触发跑 3.11 + 3.12**（保证 `requires-python >= 3.11` 有证据）。
+**持续集成**：`.github/workflows/ci.yml` 在 Python 3.11 / 3.12 上依次执行 `ruff check`、全量单元测试、两条端到端命令（信用卡违约 + 短信文本），并对输出断言 `四层全通过=True`；端到端走默认 provider（Interpreter 用已入库 cassette），因此 CI 不依赖任何 API key。
 
 **关于 LLM**：默认配置是「`Interpreter` 走 `cassette`（真实 DeepSeek 录制响应），其余角色走规则模板」—— 即**能力理解这一环由真实 LLM 驱动**，其余环节保持确定性。`llm.role_providers` 控制按角色路由，`--mock` 会关闭路由、强制全链路规则模板。本地部署模型在本项目不可行（CPU 推理过慢），因此按开发要求 g 的「API 调用方式」接入 **DeepSeek 的 OpenAI 兼容接口**：把 `llm.provider` 切到 `openai_compat`，按 `.env.example` 把 `LLM_API_KEY` 填进 `.env` 或设为环境变量即可。官方端点 `https://api.deepseek.com`、当前示例模型 `deepseek-flash`。真实响应的解析结构（`target.name`、`data_split`、`threshold_selection`、`feature_constraints`、`evaluation`）会被映射进 `CapabilitySpec`，端到端报告里的 `能力理解来源=cassette` 就是这条证据。
 
@@ -643,6 +643,33 @@ License: CC BY 4.0 (UCI) / CC0 Public Domain (OpenML d/43435)
 | 收尾补强 | `db58c34`、`6c04b87`、`5a8e214` 及本次提交 | 文档按实测回填并消除自相矛盾；资源基准与内存看门狗修复；真实开源仓库 AST 抽取；文本分类跨场景迁移 |
 
 > 完整历史以 `git --no-pager log` 为准。所有提交时间由 Git 按实际提交时刻记录，未做调整；评审可据此还原 P0 → P3 的演进。
+
+---
+
+## 附录 E · 交付物对照表（题目「交付内容」逐条索引）
+
+### 基础要求（11 项）
+
+| # | 题目交付物 | 本仓库对应位置 |
+|---|---|---|
+| 1 | 完整的项目代码库 | 仓库根目录；`factory/` 六层 82 个文件，git 历史按 P0 → P6 分阶段提交 |
+| 2 | 示例行业数据、文档或模拟业务材料 | `assets/data/{UCI_Credit_Card.csv, sms_spam.csv, synthetic_demand.csv}`；`assets/docs/`（6 份主场景材料 + `text/` 3 份文本材料）；`assets/legacy/legacy_default_model.py` |
+| 3 | 能力知识图谱 schema 设计说明 | 第 3 节：9 类节点 / 13 类关系 / 六要素落地映射 / 按场景拆分子图 |
+| 4 | 知识抽取结果文件（JSON / CSV / GraphML） | `outputs/kg/capabilities.json`、`capabilities.csv`、`graph.graphml`；文本场景 `text_capabilities.*`、`text_graph.graphml`；真实仓库 `repo_capabilities.*`、`repo_graph.graphml` |
+| 5 | Agent 工作流代码或流程配置 | `factory/workflow/pipeline.py`（LangGraph `StateGraph`）+ `factory/agents/roles.py`（8 角色）；流程图见第 4 节 |
+| 6 | 至少 1 个从能力描述到代码生成的完整示例 | `outputs/reports/run_demo.md`（能力描述 → 检索证据 → 3 候选 → 代码 → 修复 diff）+ `outputs/generated/candidate_plan.0*.py`；文本 / 回归场景另有 `run_text_demo.md`、`run_regression_demo.md` |
+| 7 | 自动验证脚本 | `python -m factory run`；`scripts/verify_baseline.py`；CI `.github/workflows/ci.yml`（lint + 128 用例 + 3 条端到端） |
+| 8 | 验证报告样例 | `outputs/reports/`：`run_demo.md`（四层结论 + 候选排名 + 修复轨迹）、`run_text_demo.md`、`run_regression_demo.md`、`validation_sample.md`、`ablation.md`、`resources.md`、`openapi.json` |
+| 9 | 项目文档 README.md | `README.md`（十节 + 附录 A–E） |
+| 10 | 环境依赖文件 | `requirements.txt`（106 个包；干净 venv 实测无清单外依赖） |
+| 11 | 使用示例和测试用例 | 第 5 节命令清单 + `tests/`（14 个文件 / 128 个用例，含泄漏拦截、沙箱、cassette 回放、跨场景等） |
+
+### 进阶与加分证据位置
+
+| 类别 | 证据 |
+|---|---|
+| 进阶 8 项 | 第 4 节（多轮修复 / 多候选 / 插件式接入 / 三份验证配置）+ 第 8 节（报告样例）；CLI 见 `factory/__main__.py`，API 见 `factory/api/app.py` 与 `outputs/reports/openapi.json` |
+| 加分 10 项 | 第 3 节（真实仓库抽取）、第 7 节（生成代码示例）、第 8 节（资源消耗分析、跨场景迁移、消融对比）、第 4 节（Beam Search、8 角色、失败经验复用、版本谱系、设计依据） |
 
 ---
 
