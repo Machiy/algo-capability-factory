@@ -13,7 +13,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12"]
+        # PR 只跑最新版（反馈快、省分钟数）；push 到 main 与手动触发跑全矩阵，
+        # 保证声明的 requires-python >= 3.11 有真实证据
+        python-version: ${{ (github.event_name == 'pull_request' && fromJSON('["3.12"]')) || fromJSON('["3.11", "3.12"]') }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
