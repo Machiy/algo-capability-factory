@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from pathlib import Path
 from typing import TypedDict
 
@@ -40,6 +41,9 @@ from factory.runtime.dataset_sandbox import DatasetSandbox
 from factory.validation import FourLayerValidator
 
 logger = logging.getLogger(__name__)
+
+# run_id 同时用于文件名与图谱节点 id：限死字符集并禁止「..」，杜绝路径穿越
+_RUN_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 
 SEVEN_STEPS = ["a.Parse", "b.Retrieve", "c.Plan", "d.Generate",
                "e.Execute+Validate", "f.Diagnose+Repair", "g.Sink"]
@@ -406,7 +410,16 @@ class Workflow:
         return {"trace": trace}
 
     def run(self, spec_text: str, run_id: str = "demo") -> RunTrace:
-        """用 LangGraph 执行七步，返回与旧状态机完全一致的 RunTrace。"""
+        """用 LangGraph 执行七步，返回与旧状态机完全一致的 RunTrace。
+
+        ``run_id`` 会拼进 ``run_<id>.md`` / ``trace_<id>.json`` 与图谱节点 id，
+        因此入口处强制校验字符集，避免从 API 传参造成路径穿越。
+        """
+        if not _RUN_ID_PATTERN.match(run_id) or ".." in run_id:
+            raise ValueError(
+                f"run_id 只允许字母、数字、点、下划线与连字符（不得含 ..），"
+                f"长度 1–64：{run_id!r}"
+            )
         final = self._graph.invoke(
             {"spec_text": spec_text, "run_id": run_id},
             config={"recursion_limit": 100},
@@ -437,7 +450,13 @@ def run_from_cli(spec_text: str, mock: bool = False,
     workflow = Workflow(settings, task, root, task_config=task_config,
                         kg_filename=kg_filename,
                         generated_subdir=generated_subdir)
-    trace = workflow.run(spec_text, run_id)
+    try:
+        trace = workflow.run(spec_text, run_id)
+    except (FileNotFoundError, ValueError) as exc:
+        # 数据缺失 / 配置非法 / 标识不合法属于使用问题：给出可读原因并返回非 0
+        logger.error("运行前检查失败：%s", exc)
+        print(f"错误：{exc}")
+        return 2
     print(f"[P3] 七步闭环执行完成；四层全通过={trace.passed} "
           f"理解来源={trace.interpreter_source} "
           f"候选={len(trace.candidates)} 修复={len(trace.repairs)} "

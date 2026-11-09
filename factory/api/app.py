@@ -12,7 +12,7 @@ import logging
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,19 @@ class RunRequest(BaseModel):
 
     spec: str = Field(description="自然语言能力描述")
     mock: bool = Field(default=False, description="强制规则模板路径")
-    run_id: str = Field(default="api", description="运行标识，用于产物命名")
+    # run_id 会拼进报告 / 轨迹文件名，必须限制字符集，避免路径穿越
+    run_id: str = Field(
+        default="api",
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$",
+        description="运行标识，用于产物命名（字母/数字/./_/-，1–64 位，禁止 ..）",
+    )
+
+    @field_validator("run_id")
+    @classmethod
+    def _reject_traversal(cls, value: str) -> str:
+        if ".." in value:
+            raise ValueError("run_id 不能包含 ..")
+        return value
 
 
 class CandidateSummary(BaseModel):
@@ -52,12 +64,14 @@ class RunResponse(BaseModel):
 
 def create_app(root: Path | None = None) -> Any:
     """构造 FastAPI 应用；``root`` 为仓库根目录。"""
-    from fastapi import FastAPI
+    from fastapi import FastAPI, HTTPException
+
+    from factory import __version__
 
     base = Path(root) if root is not None else ROOT
     app = FastAPI(
         title="AlgoCap Factory API",
-        version="0.1.0",
+        version=__version__,
         description=(
             "基于 AI Agent 的算法能力工厂：提交自然语言能力描述，"
             "返回生成代码、四层验证结论与图谱沉淀。"
@@ -84,7 +98,17 @@ def create_app(root: Path | None = None) -> Any:
             settings.llm = settings.llm.model_copy(
                 update={"provider": "mock", "role_providers": {}}
             )
-        trace = Workflow(settings, task, base).run(payload.spec, payload.run_id)
+        try:
+            trace = Workflow(settings, task, base).run(payload.spec, payload.run_id)
+        except (FileNotFoundError, ValueError) as exc:
+            # 配置 / 数据 / 标识非法属于调用方问题，回 400 并给出可读原因
+            logger.warning("运行请求被拒绝：%s", exc)
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except Exception as exc:  # 接口层兜底，避免把堆栈直接暴露给调用方
+            logger.exception("运行失败：%s", type(exc).__name__)
+            raise HTTPException(
+                status_code=500, detail=f"运行失败：{type(exc).__name__}"
+            ) from exc
         candidates = [
             CandidateSummary(
                 plan_id=item.plan_id,

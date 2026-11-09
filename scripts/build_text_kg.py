@@ -9,7 +9,6 @@
 
 from __future__ import annotations
 
-import logging
 import sys
 from pathlib import Path
 
@@ -20,13 +19,13 @@ if str(ROOT) not in sys.path:
 from factory.config import load_settings, load_task_settings
 from factory.contracts.knowledge import NodeType
 from factory.knowledge import build_knowledge_graph
+from factory.logging_setup import configure_logging
 
 TASK_CONFIG = "configs/verify_text.yaml"
 
 
 def main() -> int:
-    logging.basicConfig(level=logging.INFO,
-                        format="%(levelname)s %(name)s: %(message)s")
+    configure_logging()
     settings = load_settings(ROOT / "configs/default.yaml")
     task = load_task_settings(ROOT / TASK_CONFIG)
     if not task.knowledge.docs:

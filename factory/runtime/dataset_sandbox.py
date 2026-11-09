@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -127,11 +128,23 @@ except Exception:
 '''
 
 
+# pandas 抛的是 KeyError: "['PAY_1'] not in index"，dict 抛的是 KeyError: 'label'
+_KEY_ERROR_INDEX_RE = re.compile(r"KeyError:\s*\"?\[['\"]([^'\"]+)['\"]\]")
+_KEY_ERROR_PLAIN_RE = re.compile(r"KeyError:\s*['\"]?([A-Za-z_][A-Za-z0-9_.]*)['\"]?")
+
+
 def _signature(stderr: str) -> str:
+    """把子进程 stderr 归一到可复用的错误签名，供 Repairer 策略表命中。
+
+    列名类错误统一写成 ``KeyError: <列名>``，而不是只认 ``PAY_1``——
+    换数据集时同样的修复策略仍然可用。
+    """
     lines = [line.strip() for line in stderr.splitlines() if line.strip()]
     last = lines[-1] if lines else ""
-    if "KeyError" in last and "PAY_1" in last:
-        return "KeyError: PAY_1"
+    for pattern in (_KEY_ERROR_INDEX_RE, _KEY_ERROR_PLAIN_RE):
+        match = pattern.search(last)
+        if match:
+            return f"KeyError: {match.group(1)}"
     if "ForbiddenFeature" in last:
         return "ForbiddenFeature"
     return last or "RuntimeError"

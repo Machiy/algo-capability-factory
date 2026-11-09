@@ -8,7 +8,6 @@
 from __future__ import annotations
 
 import argparse
-import logging
 import sys
 from pathlib import Path
 
@@ -19,6 +18,7 @@ if str(ROOT) not in sys.path:
 from factory.config import load_settings
 from factory.contracts.knowledge import NodeType
 from factory.knowledge import HybridRetriever, build_knowledge_graph
+from factory.logging_setup import configure_logging
 
 DEFAULT_QUERY = "预测信用卡客户下月违约概率，时间外划分，成本敏感阈值，禁止数据泄漏"
 
@@ -31,10 +31,7 @@ def main() -> int:
     parser.add_argument("--log-level", default="INFO", help="日志级别")
     args = parser.parse_args()
 
-    logging.basicConfig(
-        level=getattr(logging, args.log_level.upper(), logging.INFO),
-        format="%(levelname)s %(name)s: %(message)s",
-    )
+    configure_logging(args.log_level)
     settings = load_settings(ROOT / args.config)
     graph = build_knowledge_graph(settings, ROOT)
     print(f"[P1] 节点 {len(graph.nodes)} / 边 {len(graph.edges)} / "

@@ -83,7 +83,10 @@ def api(
     from factory.api.app import create_app, write_openapi
 
     if export_openapi:
-        path = write_openapi(ROOT / "outputs/reports/openapi.json", ROOT)
+        from factory.config import load_settings
+        settings = load_settings(ROOT / "configs/default.yaml")
+        target = ROOT / settings.paths.reports / "openapi.json"
+        path = write_openapi(target, ROOT)
         print(f"[API] OpenAPI 已导出：{path.relative_to(ROOT).as_posix()}")
         raise typer.Exit()
     import uvicorn

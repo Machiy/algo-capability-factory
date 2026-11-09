@@ -11,11 +11,7 @@ import json
 import re
 from pathlib import Path
 
-from factory.agents.templates import (
-    LOGISTIC_REGRESSION_TEMPLATE,
-    list_templates,
-    render,
-)
+from factory.agents.templates import list_templates, render
 from factory.config import LLMSettings
 from factory.contracts.knowledge import KnowledgeGraph, RetrievalResult
 from factory.contracts.llm import LLMRequest
@@ -48,8 +44,6 @@ REPAIR_STRATEGIES = {
     "Nondeterminism": "注入 random_state",
     "LeakageDetected": "强制 sklearn.Pipeline 并改时间外划分",
 }
-
-CODE_TEMPLATE = LOGISTIC_REGRESSION_TEMPLATE
 
 # 各族候选的默认超参；新增模板时在此登记，避免超参散落在单点。
 HYPERPARAM_PRESETS: dict[str, list[dict[str, float]]] = {
@@ -415,7 +409,6 @@ class Curator:
 
 
 __all__ = [
-    "CODE_TEMPLATE",
     "REPAIR_STRATEGIES",
     "SYSTEM_PROMPTS",
     "Coder",
