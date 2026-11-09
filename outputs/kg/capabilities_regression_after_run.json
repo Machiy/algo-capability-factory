@@ -2469,7 +2469,7 @@
           "r2": 0.9511169495436053
         },
         "passed": true,
-        "duration_seconds": 3.203
+        "duration_seconds": 3.359
       },
       "evidence": []
     },
@@ -2487,7 +2487,7 @@
           "r2": 0.9775905179039528
         },
         "passed": true,
-        "duration_seconds": 1.984
+        "duration_seconds": 2.11
       },
       "evidence": []
     },
@@ -2505,7 +2505,7 @@
           "r2": 0.9177199810646829
         },
         "passed": true,
-        "duration_seconds": 3.688
+        "duration_seconds": 3.937
       },
       "evidence": []
     }
@@ -4105,5 +4105,5 @@
     "assets/docs/test_report.md",
     "assets/legacy/legacy_default_model.py"
   ],
-  "content_sha256": "aa88c75c6b01dcde8766062256964b92c1032969feac9552757f614e2d69fd72"
+  "content_sha256": "5303ee6efe9b9724e077fecd6cd218466657db4cf06a9be572225991bfb3787a"
 }

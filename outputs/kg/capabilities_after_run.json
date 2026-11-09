@@ -2498,7 +2498,7 @@
       "attributes": {
         "derived_from": "cap.data_dictionary.T1",
         "run_id": "demo",
-        "repair_rounds": 3
+        "repair_rounds": 2
       },
       "evidence": []
     },
@@ -2520,7 +2520,7 @@
           "grouped_auc_gap": 0.05875830231396728
         },
         "passed": false,
-        "duration_seconds": 2.219
+        "duration_seconds": 2.187
       },
       "evidence": []
     },
@@ -2533,16 +2533,16 @@
       "status": "active",
       "attributes": {
         "metrics": {
-          "auc": 0.7206289011592016,
-          "ks": 0.3927841415734961,
-          "pr_auc": 0.5054747154304732,
-          "f1": 0.3467843631778058,
-          "cost_weighted_loss": 0.8026666666666666,
-          "psi": 0.04680283687829093,
-          "grouped_auc_gap": 0.058616072130054264
+          "auc": 0.7899049146031963,
+          "ks": 0.4458879209822348,
+          "pr_auc": 0.5585265737164163,
+          "f1": 0.4737417943107221,
+          "cost_weighted_loss": 0.685,
+          "psi": 0.033255863484548585,
+          "grouped_auc_gap": 0.006730880194030342
         },
-        "passed": false,
-        "duration_seconds": 2.203
+        "passed": true,
+        "duration_seconds": 13.75
       },
       "evidence": []
     },
@@ -2564,7 +2564,7 @@
           "grouped_auc_gap": 0.004885606390561015
         },
         "passed": true,
-        "duration_seconds": 2.813
+        "duration_seconds": 3.203
       },
       "evidence": []
     },
@@ -2586,7 +2586,7 @@
           "grouped_auc_gap": 0.05875830231396728
         },
         "passed": false,
-        "duration_seconds": 2.203
+        "duration_seconds": 2.235
       },
       "evidence": []
     },
@@ -2599,16 +2599,16 @@
       "status": "active",
       "attributes": {
         "metrics": {
-          "auc": 0.7206289011592016,
-          "ks": 0.3927841415734961,
-          "pr_auc": 0.5054747154304732,
-          "f1": 0.3467843631778058,
-          "cost_weighted_loss": 0.8026666666666666,
-          "psi": 0.04680283687829093,
-          "grouped_auc_gap": 0.058616072130054264
+          "auc": 0.7899049146031963,
+          "ks": 0.4458879209822348,
+          "pr_auc": 0.5585265737164163,
+          "f1": 0.4737417943107221,
+          "cost_weighted_loss": 0.685,
+          "psi": 0.033255863484548585,
+          "grouped_auc_gap": 0.006730880194030342
         },
-        "passed": false,
-        "duration_seconds": 2.203
+        "passed": true,
+        "duration_seconds": 14.563
       },
       "evidence": []
     },
@@ -2630,7 +2630,7 @@
           "grouped_auc_gap": 0.004885606390561015
         },
         "passed": true,
-        "duration_seconds": 2.828
+        "duration_seconds": 2.953
       },
       "evidence": []
     }
@@ -3846,5 +3846,5 @@
     "assets/docs/test_report.md",
     "assets/legacy/legacy_default_model.py"
   ],
-  "content_sha256": "249468c56face3fe86d85bfdea3e4a835485ed940eab649706c5919cbbbc79d7"
+  "content_sha256": "f05588d30be7c2d60be2be8bfd48e2543996c2a6606d232610c8b9c1c6f4e1a0"
 }

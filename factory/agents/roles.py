@@ -226,8 +226,13 @@ class Planner:
         request = LLMRequest(role="Planner", system=SYSTEM_PROMPTS["Planner"], user=user)
         parsed = self.llm.complete(request).parsed
         raw_plans = parsed.get("candidates", [])
-        available = [family for family in (families or [])
-                     if f"{task_type}.{family}" in list_templates()]
+        # 模板有两种注册写法：任务专属的 ``<task_type>.<family>``（文本 / 回归）
+        # 与通用表格的裸 ``<family>``，两者都算已注册，否则裁剪会静默失效
+        templated = set(list_templates())
+        available = [
+            family for family in (families or [])
+            if family in templated or f"{task_type}.{family}" in templated
+        ]
         used: set[str] = set()
         plans: list[CandidatePlan] = []
         # 先按算法族去重再截断：直接切前 N 条会出现「同族候选占满宽度、

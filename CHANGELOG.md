@@ -14,6 +14,11 @@
 - **Coder 采用 LLM 代码**：真实 LLM 返回的代码先过 AST 静态检查，通过才采用；缺 `build_pipeline`、缺 `FEATURE_COLUMNS`、危险 import 均回退算法模板，原因记入 `RunTrace.code_sources` 与日志。Mock 输出标注为「仅作契约示例」。
 - `WorkflowSettings`：`beam_width` / `max_repair_rounds` / `determinism_repeat` / `evaluate_on_test` 全部从 `configs/default.yaml` 读取（此前 `workflow` 段存在但从未被加载）。
 
+### 修复
+
+- **候选族裁剪从未生效**：可用性判断只认 `<task_type>.<family>` 前缀，而表格模板按裸 `<family>` 注册，导致表格场景恒不裁剪、三个候选里两个是 LR。改为两种写法都认，候选现在是 LR / RF / HGB 三种算法（RF AUC 0.7899 成为最佳候选）。
+- **沉淀经验只活一轮**：`Curator` 原按 `run_id` 覆盖 `FailureCase`，第二次运行会删掉上一轮学到的 T1 经验。改为按 `error_signature` 复用后，同一 demo 首轮 2 轮修复、次轮 1 轮修复。
+
 ### 变更
 
 - **知识图谱边语义**：从「按列表下标轮转」改为「名称或属性文本命中才连边」，主场景 259→188 边、文本场景 33→15 边；`DEPENDS_ON` 按顶层包名匹配（`sklearn.linear_model` → `sklearn`）。
@@ -30,7 +35,7 @@
 
 ### 测试
 
-- 新增 13 个用例：确定性（正向 + 非确定性检测）、test 段隔离、终评契约、代码来源四条路径、配置生效与缺省回退、API 通用指标。全量 139 个用例通过，`ruff check` 全绿。
+- 新增 17 个用例：确定性（正向 + 非确定性检测）、test 段隔离、终评契约、代码来源四条路径、配置生效与缺省回退、API 通用指标、CLI 进程级入口（`--version` / `--check` / `run --help`）、`POST /run` 真实闭环（临时工作区）。全量 143 个用例通过，`ruff check` 全绿。
 
 ## [1.0.2] - 2026-11-09
 
