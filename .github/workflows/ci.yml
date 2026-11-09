@@ -1,0 +1,47 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  quality:
+    name: lint + 全量测试 + 端到端
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: 安装依赖（仅 requirements.txt）
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 代码规范
+        run: python -m ruff check .
+
+      - name: 全量测试
+        run: python -m unittest discover -s tests -v
+
+      # 端到端用默认 provider（Interpreter 走 committed cassette），
+      # 在无 key、无网络模型调用的 runner 上验证离线可复现。
+      - name: 端到端（信用卡违约，默认 cassette + 规则模板）
+        run: |
+          set -o pipefail
+          python -m factory run --spec "预测信用卡客户下月违约概率，时间外划分，按 5:1 成本比选阈值，禁止 ID 入模。" | tee credit.log
+          grep -q "四层全通过=True" credit.log
+
+      - name: 端到端（短信文本分类，跨场景迁移）
+        run: |
+          set -o pipefail
+          python -m factory run --spec "把短信分类为垃圾短信或正常短信，输出准确率与宏平均F1" --mock --task-config configs/verify_text.yaml --run-id text_demo --kg-out capabilities_text_after_run.json --gen-dir text | tee text.log
+          grep -q "四层全通过=True" text.log
