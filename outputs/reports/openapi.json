@@ -65,7 +65,8 @@
           },
           "run_id": {
             "default": "api",
-            "description": "运行标识，用于产物命名",
+            "description": "运行标识，用于产物命名（字母/数字/./_/-，1–64 位，禁止 ..）",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$",
             "title": "Run Id",
             "type": "string"
           },
@@ -171,7 +172,7 @@
   "info": {
     "description": "基于 AI Agent 的算法能力工厂：提交自然语言能力描述，返回生成代码、四层验证结论与图谱沉淀。",
     "title": "AlgoCap Factory API",
-    "version": "0.1.0"
+    "version": "1.0.2"
   },
   "openapi": "3.1.0",
   "paths": {

@@ -3,5 +3,5 @@
 顶层只暴露版本号，避免在未安装第三方依赖时影响 `python -m factory --version`。
 """
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 __all__ = ["__version__"]

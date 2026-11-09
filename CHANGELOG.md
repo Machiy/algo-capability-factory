@@ -3,6 +3,35 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循
 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本对应一个 annotated tag 与 GitHub Release。
 
+## [1.0.2] - 2026-11-09
+
+评审视角代码走查后的健壮性修复，不改架构与对外契约。
+
+### 修复
+
+- **`run_id` 路径穿越**：`run_id` 原样拼进 `run_<id>.md` / `trace_<id>.json`，
+  API 传 `../../x` 可写出产物目录。现在接口层用 Pydantic pattern + `..` 校验挡成 422，
+  工作流入口再兜一道（非法标识返回退出码 2），两层都不产生任何落盘。
+- **API 无错误处理**：`/run` 抛异常时只有裸 500。现在调用方错误（数据缺失 / 配置非法 /
+  标识不合法）回 400 并带可读原因，其余异常回 500 且只暴露异常类型，堆栈进日志。
+- **OpenAPI 版本号硬编码**：`FastAPI(version="0.1.0")` 与包版本脱节，改为读取
+  `factory.__version__`，并加测试断言两者一致。
+- **CLI 直接抛堆栈**：`factory run` 遇到数据缺失 / 非法标识时打印 traceback；
+  现在给出可读错误并以退出码 2 结束。
+
+### 变更
+
+- **日志初始化统一**：`build_kg.py`、`build_text_kg.py` 由各自的 `logging.basicConfig`
+  改为 `configure_logging()`，所有入口的日志格式一致。
+- **错误签名泛化**：沙箱不再只识别 `KeyError: PAY_1`，而是统一归一为 `KeyError: <列名>`
+  （同时兼容 pandas 的 `KeyError: "['X'] not in index"` 与字典的 `KeyError: 'x'`），
+  换数据集后同样的修复策略仍可命中。
+
+### 移除
+
+- `factory/agents/roles.py` 中未被引用的 `CODE_TEMPLATE` 常量（模板已由注册表按
+  `task_type` + `model_family` 解析）。
+
 ## [1.0.1] - 2026-11-09
 
 ### 变更
