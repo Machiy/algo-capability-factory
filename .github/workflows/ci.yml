@@ -45,3 +45,10 @@ jobs:
           set -o pipefail
           python -m factory run --spec "把短信分类为垃圾短信或正常短信，输出准确率与宏平均F1" --mock --task-config configs/verify_text.yaml --run-id text_demo --kg-out capabilities_text_after_run.json --gen-dir text | tee text.log
           grep -q "四层全通过=True" text.log
+
+      - name: 端到端（需求量回归，第二种任务类型）
+        run: |
+          set -o pipefail
+          python -m factory run --spec "根据多期特征预测日需求量，最小化RMSE，输出RMSE/MAE/R2" --mock --task-config configs/verify_regression.yaml --run-id regression_demo --kg-out capabilities_regression_after_run.json --gen-dir regression | tee regression.log
+
+          grep -q "四层全通过=True" regression.log

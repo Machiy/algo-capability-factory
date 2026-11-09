@@ -18,9 +18,10 @@
 |---|---|---|
 | 0 | `python -m venv .venv` → 激活（Windows `.venv\Scripts\activate`，Linux/macOS `source .venv/bin/activate`）→ `pip install -r requirements.txt` | 一次性安装完成，无需清单外依赖 |
 | 1 | `python -m ruff check .` | `All checks passed!` |
-| 2 | `python -m unittest discover -s tests` | `Ran 122 tests ... OK` |
+| 2 | `python -m unittest discover -s tests` | `Ran 127 tests ... OK` |
 | 3 | `python -m factory run --spec "预测信用卡客户下月违约概率，时间外划分，按 5:1 成本比选阈值，禁止 ID 入模。"` | `四层全通过=True 理解来源=cassette 候选=3 修复=3`；最佳候选 HGB AUC 0.7843 |
 | 4 | `python -m factory run --spec "把短信分类为垃圾短信或正常短信，输出准确率与宏平均F1" --mock --task-config configs/verify_text.yaml --run-id text_demo --kg-out capabilities_text_after_run.json --gen-dir text` | `四层全通过=True`；linear_svc accuracy 0.9803 |
+| 5 | `python -m factory run --spec "根据多期特征预测日需求量，最小化RMSE，输出RMSE/MAE/R2" --mock --task-config configs/verify_regression.yaml --run-id regression_demo --kg-out capabilities_regression_after_run.json --gen-dir regression` | `四层全通过=True`；ridge RMSE 19.31、R² 0.978 |
 
 **只看一个文件**：`outputs/reports/run_demo.md` —— 七步轨迹、检索证据、候选排名、四层结论、修复轨迹、图谱 diff 全在里面。
 **只看一处修复**：该报告第 4 节 `KeyError: PAY_1 → 按 Dataset 列名映射把 PAY_1 改为 PAY_0`（数据自带的 T1 陷阱，非人为埋 bug）。
@@ -102,7 +103,7 @@ python -m factory run --spec "预测信用卡客户下月违约概率，处理�
 | cassette 回放 | `RecordedLLM`（`BaseLLM` 层按角色 + prompt 命中） | 无 key、断网可原样回放；未命中显式报错，不静默造假 | `vcrpy` 拦截 HTTP 层，而 `provider=cassette` 根本不构造 `openai` client，无法工作；已录制的脱敏 cassette 也会失效 |
 | 四层验证 | 自研组合器 + `pytest` + 子进程沙箱 | 题目任务 5 要的是「统一验证机制」这一组合，无单一现成库覆盖；指标用 `sklearn.metrics`、报告用 `Jinja2` | 无对应单一库；组合编排属项目职责 |
 | 项目业务规则 | 时间外划分、禁 `ID` / 敏感字段、T1–T4 列名映射、成本比阈值、证据 SHA-256、`verify_*.yaml` 门槛 | 题目场景的合规约束，任何通用库都不会内置，属必须自研部分 | 无对应现成库 |
-| 算法模板 | 装饰器注册表（`factory/agents/templates.py`），内置 LR / HGB / RF | 与指标插件同一模式，新增算法族只需一个 `@register` 函数；`Coder` 按 `model_family` 渲染，三个候选因此真的代表三种算法 | 代码模板用标准库 `str.format`，不为单文件模板引入 Jinja2（Jinja2 仅用于报告） |
+| 算法模板 | 装饰器注册表（`factory/agents/templates.py`），内置表格分类（LR / HGB / RF）、文本分类（TF-IDF + LR / LinearSVC / ComplementNB）、回归（Ridge / HGBR / RFR） | 与指标插件同一模式，新增算法族只需一个 `@register` 函数；`Coder` 按 `model_family` 渲染，三个候选因此真的代表三种算法 | 代码模板用标准库 `str.format`，不为单文件模板引入 Jinja2（Jinja2 仅用于报告） |
 | 算法栈 | pandas + scikit-learn + imbalanced-learn | 全 CPU、秒级、确定性强，`Pipeline` 天然防泄漏 | — |
 | 文本特征与分类 | sklearn `TfidfVectorizer` + LogisticRegression / LinearSVC / ComplementNB | 现成库、纯 CPU、单次 2s 级；英文短信用 sklearn 默认分词即可，无需额外分词器 | `jieba` 只在中文语料必要，本场景不引入；`sentence-transformers` 需下载模型、体积与推理成本远超原型；`transformers` 微调破坏「断网秒级复现」 |
 | 接入 | Typer CLI + FastAPI | 现成 CLI / Web 框架，CLI 有 `--version` / `--check` / `run` / `api` 入口，API 有 `/health`、`/templates`、`/run` 三端点并自动导出 OpenAPI | `argparse` 已替换；Streamlit 权衡后未做——题目为「或」，多一个前端只增加依赖与演示成本，不增加评分点 |
@@ -116,9 +117,10 @@ algo-capability-factory/
 ├── .codebuddy/{CODEBUDDY.md, rules/}
 ├── configs/{default.yaml, verify_credit.yaml, verify_regression.yaml, verify_text.yaml}
 ├── scripts/{download_data.py, build_kg.py, verify_baseline.py, run_ablation.py,
-│            record_llm.py, resource_benchmark.py, extract_repo.py, prepare_text_data.py}
+│            record_llm.py, resource_benchmark.py, extract_repo.py,
+│            prepare_text_data.py, prepare_regression_data.py}
 ├── assets/
-│   ├── data/{UCI_Credit_Card.csv, sms_spam.csv}
+│   ├── data/{UCI_Credit_Card.csv, sms_spam.csv, synthetic_demand.csv}
 │   ├── docs/{data_dictionary.md, risk_policy.md, expert_rules.md,
 │   │         experiment_log.md, failure_review.md, test_report.md}
 │   ├── legacy/legacy_default_model.py
@@ -136,7 +138,7 @@ algo-capability-factory/
 │   ├── validation/{checks.py, metrics.py, split.py, report.py}
 │   └── api/app.py
 ├── outputs/{generated/{,text/}, reports/, kg/, runs/}   # runs/ 为临时轨迹，不入库
-└── tests/                      # 13 个测试文件、122 个用例
+└── tests/                      # 14 个测试文件、127 个用例
 ```
 
 `knowledge/`、`agents/`、`workflow/`、`runtime/`、`validation/`、`api/` 均已实现并入库。内部规划文档（`PLAN.md`）、原始数据包与 `_archive/` 不纳入版本控制。
@@ -281,6 +283,9 @@ python -m factory run --spec "预测信用卡客户下月违约概率，按5:1�
 # 4b) 跨场景迁移：同一套框架跑文本分类，只换 --task-config（PowerShell 单行执行）
 python -m factory run --spec "把短信分类为垃圾短信或正常短信，输出准确率与宏平均F1" --mock --task-config configs/verify_text.yaml --run-id text_demo --kg-out capabilities_text_after_run.json --gen-dir text
 
+# 4c) 第二种任务类型：回归（主指标 RMSE，direction: minimize）
+python -m factory run --spec "根据多期特征预测日需求量，最小化RMSE，输出RMSE/MAE/R2" --mock --task-config configs/verify_regression.yaml --run-id regression_demo --kg-out capabilities_regression_after_run.json --gen-dir regression
+
 # 5) 分阶段可复现入口
 python scripts/build_kg.py               # 构建能力图谱与检索产物
 python scripts/verify_baseline.py        # baseline 四层验证自检
@@ -303,7 +308,7 @@ python -m factory --check
 
 **最小依赖**：核心闭环需 `pydantic`、`PyYAML`、`pandas`、`scikit-learn`、`networkx`、`langgraph`、`rank-bm25`、`markdown-it-py`、`psutil`、`structlog`（全部为现成库，`requirements.txt` 已锁版本区间）；若只需验证数据契约与配置，可先 `pip install pydantic PyYAML` 再运行 `python -m unittest discover -s tests -v`。`pyvis`、`Jinja2`、`Typer`、`openai` 按入口加载，全量清单见 `requirements.txt`。
 
-**干净环境实测（P5 记录）**：在系统临时目录新建空 venv，仅执行一次 `pip install -r requirements.txt`（106 个包，无冲突），随后直接跑通 `ruff check`（全绿）、当时的 104 个用例与端到端 `factory run`（`四层全通过=True`、`理解来源=cassette`、退出码 0），未安装任何清单外依赖。P6 未引入任何新的第三方依赖（文本与仓库抽取均用已有的 pandas / scikit-learn / 标准库），因此该结论继续成立；补充用例后当前全量测试为 **122 个**，在项目 venv 中全部通过。
+**干净环境实测（P5 记录）**：在系统临时目录新建空 venv，仅执行一次 `pip install -r requirements.txt`（106 个包，无冲突），随后直接跑通 `ruff check`（全绿）、当时的 104 个用例与端到端 `factory run`（`四层全通过=True`、`理解来源=cassette`、退出码 0），未安装任何清单外依赖。P6 未引入任何新的第三方依赖（文本与仓库抽取均用已有的 pandas / scikit-learn / 标准库），因此该结论继续成立；补充用例后当前全量测试为 **127 个**，在项目 venv 中全部通过。
 
 **持续集成**：`.github/workflows/ci.yml` 在 Python 3.11 / 3.12 上依次执行 `ruff check`、全量单元测试、两条端到端命令（信用卡违约 + 短信文本），并对输出断言 `四层全通过=True`；端到端走默认 provider（Interpreter 用已入库 cassette），因此 CI 不依赖任何 API key。
 
@@ -321,7 +326,7 @@ python -m factory --check
 | `outputs/runs/trace_*.json` | 七步流程可回放轨迹（运行时临时产物，不入库） |
 | `assets/llm_cassettes/*.json` | 脱敏后的真实 LLM 对话与响应，供离线回放（入库） |
 
-**配置说明**：`configs/verify_credit.yaml` 定义主场景的划分策略、指标门槛与成本比；`verify_regression.yaml`、`verify_text.yaml` 用于验证「不同任务类型的验证配置」与跨场景迁移，切换配置文件不改核心代码。
+**配置说明**：三份 `verify_*.yaml` 均为 `status: active`，全部端到端跑通过——`verify_credit.yaml`（表格二分类，主指标 AUC）、`verify_text.yaml`（文本分类，主指标 accuracy）、`verify_regression.yaml`（回归，主指标 RMSE，`direction: minimize`）。切换任务只换 `--task-config`，核心验证器、沙箱与工作流代码不改。
 
 ---
 
@@ -366,7 +371,7 @@ python -m factory --check
 | 任务 | 配置 | 用途 |
 |---|---|---|
 | T-credit 信用卡违约二分类（主） | `verify_credit.yaml` | 端到端闭环演示，含 3 轮真实修复 |
-| T-regression 需求量回归 | `verify_regression.yaml` | 验证不同任务类型的验证配置：现在只到指标层 smoke（`status: contract_only`），完整 Bike Sharing 数据未入库 |
+| T-regression 需求量回归 | `verify_regression.yaml` | 第二种任务类型端到端：合成数据 3,000 条（`status: active`），主指标 RMSE，3 候选全通过，报告 `outputs/reports/run_regression_demo.md` |
 | T-text 短信垃圾文本二分类 | `verify_text.yaml` | 跨场景迁移实测：`status: active`，数据 5,574 条（正例 13.4%），3 候选全部通过，报告 `outputs/reports/run_text_demo.md` |
 
 **数据使用声明**：数据仅用于算法原型研究。敏感字段仅用于分组公平性审计，不构成任何授信或部署建议；样本来自 2005 年 4–9 月单一时段，结论不外推至当前客群。
@@ -506,6 +511,18 @@ def build_pipeline(config):
 
 差异被收敛到配置与模板两处：`verify_text.yaml` 声明 `text_column` 与 `candidates.model_families`，`factory/agents/templates.py` 注册 `text_classification.*` 模板；核心验证器、沙箱与工作流代码**未改**。修复轮次为 0——文本场景没有表格列名陷阱，失败修复能力由表格场景的 T1 轨迹证明，不在这里硬造失败。
 
+**第二种任务类型（实测，`configs/verify_regression.yaml`）**
+
+数据为 `sklearn.datasets.make_regression` 生成的合成需求量（3,000 × 8，固定种子），配置里如实标注「非真实业务数据」；主指标是 **RMSE（`direction: minimize`）**，用来验证候选排序对指标方向的处理：
+
+| 候选 | 模型族 | RMSE ↓ | MAE ↓ | R² ↑ | 四层结论 |
+|---|---|---|---|---|---|
+| plan.02 | ridge | **19.31** | 15.58 | 0.9776 | 全 PASS |
+| plan.01 | hist_gradient_boosting_regressor | 28.53 | 22.02 | 0.9511 | 全 PASS |
+| plan.03 | random_forest_regressor | 37.01 | 28.33 | 0.9177 | 全 PASS |
+
+`rmse` 越小越好，报告与 CLI 仍按「越大越靠前」的 `score` 排序——打分时对 `minimize` 指标取负号，因此 plan.02（RMSE 最低）排第一而不是最后。原始值保留在 `metrics` 里，未被符号污染。报告见 `outputs/reports/run_regression_demo.md`。
+
 ---
 
 ## 9. 遇到的挑战和解决方案
@@ -525,9 +542,10 @@ def build_pipeline(config):
 | **数据时效与分布漂移** | 用 PSI 指标 + 时间外验证量化漂移，作为「真实行业落地复杂问题」写入报告，不回避 |
 | **小数据下资源分析缺说服力** | 构造 10× 合成扩展集，记录各候选耗时 / 峰值内存 / 推理 P95 |
 | **指标口径不统一** | 成本比、KS 门槛、baseline 定义全部配置化到 `verify_*.yaml`，避免硬编码 |
-| **早期为快速打通闭环写了若干自研轻量件，与开发要求 f「可使用现成工具但需说明选择理由」有张力** | 中途把「复用优先」写进 `.codebuddy/rules/architecture.md` 作为不可裁剪规则，逐项评估现成方案后替换：自研状态机 → LangGraph `StateGraph`、`ctypes` 内存监控 → `psutil`、手写日志格式 → `structlog`、`argparse` → `Typer`、手写 Markdown 正则 → `markdown-it-py`、手写词元计数 → `rank_bm25`；`vcrpy` / `bandit` / CrewAI / LlamaIndex 评估后因粒度或契约冲突未采用，理由逐项写在第 2 节选型表。全部替换以「功能不变」验收：ruff 全绿、测试全过（当时 104 个用例，当前 122 个）、图谱仍 95 节点 / 259 边、端到端 3 候选 AUC 与修复轨迹逐字一致 |
+| **早期为快速打通闭环写了若干自研轻量件，与开发要求 f「可使用现成工具但需说明选择理由」有张力** | 中途把「复用优先」写进 `.codebuddy/rules/architecture.md` 作为不可裁剪规则，逐项评估现成方案后替换：自研状态机 → LangGraph `StateGraph`、`ctypes` 内存监控 → `psutil`、手写日志格式 → `structlog`、`argparse` → `Typer`、手写 Markdown 正则 → `markdown-it-py`、手写词元计数 → `rank_bm25`；`vcrpy` / `bandit` / CrewAI / LlamaIndex 评估后因粒度或契约冲突未采用，理由逐项写在第 2 节选型表。全部替换以「功能不变」验收：ruff 全绿、测试全过（当时 104 个用例，当前 127 个）、图谱仍 95 节点 / 259 边、端到端 3 候选 AUC 与修复轨迹逐字一致 |
 | **真实仓库的 docstring 格式不统一**：`scorecardpy` 用 `Params` 段、参数说明还跨行，部分函数完全没有结构化段 | 解析器同时接受 `Params` / `Parameters` / `Args`，跨行说明取首行；无结构化段时用签名兜底。81 个函数全部产出能力描述，其中 21 个有结构化参数——差异如实写进第 3 节，不补造内容 |
 | **跨场景迁移暴露隐藏耦合**：数据集路径写死取全局 `paths.data`，文本任务仍去读信用卡 CSV 而报 `KeyError: 'label'`；两场景都写 `outputs/generated/candidate_plan.*.py`，后跑的覆盖先跑的 | 数据集路径改为 `dataset.path` 优先、全局配置兜底；新增 `--run-id` / `--kg-out` / `--gen-dir`，让两个场景的代码、图谱、报告、轨迹互不覆盖；场景差异收敛到 `verify_*.yaml` 与 `templates.py` 两处 |
+| **候选排序默认「越大越好」**：换成回归后主指标是 RMSE，原实现会把最差候选排到第一 | 打分按指标 `direction` 归一（`minimize` 取负号），原始值仍原样存在 `metrics`；`test_end_to_end_ranks_by_minimized_metric` 用「排序后的 RMSE 必须单调不减」守住这条语义 |
 | **沉淀只写不读**：Curator 已把结果写入 `capabilities_after_run.json`，但工作流每轮都从源材料重抽，下一轮看不到上一轮经验 | 让 `Workflow` 启动时优先加载回写图谱（不存在才回退源材料），检索器优先返回本项目实测 `FailureCase`，Coder 命中 T1 历史经验时首轮即避开，Curator 按 `run_id` 去重避免膨胀。消融实测：修复轮次 2（有 KG）vs 3（无 KG）、有 KG 首轮避开 `PAY_1`、两组 AUC 完全一致 |
 
 ---

@@ -41,8 +41,12 @@ def render(model_family: str, columns: list[str], hyperparams: dict[str, Any],
         function = _REGISTRY.get(key)
         if function is not None:
             return function(columns, hyperparams)
-    logger.warning("未注册算法模板 %s，回退 logistic_regression", model_family)
-    return _REGISTRY["logistic_regression"](columns, hyperparams)
+    # 回退优先选同任务类型的模板，避免回归任务被塞进分类器
+    same_task = sorted(key for key in _REGISTRY
+                       if task_type and key.startswith(f"{task_type}."))
+    fallback = same_task[0] if same_task else "logistic_regression"
+    logger.warning("未注册算法模板 %s，回退 %s", model_family, fallback)
+    return _REGISTRY[fallback](columns, hyperparams)
 
 
 def list_templates() -> list[str]:
@@ -211,10 +215,89 @@ def _text_nb(columns: list[str], hyperparams: dict[str, Any]) -> str:
     )
 
 
+RIDGE_TEMPLATE = '''\
+from sklearn.impute import SimpleImputer
+from sklearn.linear_model import Ridge
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+
+FEATURE_COLUMNS = {columns}
+
+def build_pipeline(config):
+    return Pipeline([
+        ("imputer", SimpleImputer(strategy="median")),
+        ("scaler", StandardScaler()),
+        ("model", Ridge(alpha={alpha}, random_state=42)),
+    ])
+'''
+
+
+@register("tabular_regression.ridge")
+def _ridge(columns: list[str], hyperparams: dict[str, Any]) -> str:
+    return RIDGE_TEMPLATE.format(
+        columns=json.dumps(columns, ensure_ascii=False),
+        alpha=hyperparams.get("alpha", 1.0),
+    )
+
+
+HGB_REGRESSOR_TEMPLATE = '''\
+from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.impute import SimpleImputer
+from sklearn.pipeline import Pipeline
+
+FEATURE_COLUMNS = {columns}
+
+def build_pipeline(config):
+    return Pipeline([
+        ("imputer", SimpleImputer(strategy="median")),
+        ("model", HistGradientBoostingRegressor(
+            max_iter={max_iter}, learning_rate={learning_rate}, random_state=42)),
+    ])
+'''
+
+
+@register("tabular_regression.hist_gradient_boosting_regressor")
+def _hgb_regressor(columns: list[str], hyperparams: dict[str, Any]) -> str:
+    return HGB_REGRESSOR_TEMPLATE.format(
+        columns=json.dumps(columns, ensure_ascii=False),
+        max_iter=hyperparams.get("max_iter", 200),
+        learning_rate=hyperparams.get("learning_rate", 0.1),
+    )
+
+
+RF_REGRESSOR_TEMPLATE = '''\
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.impute import SimpleImputer
+from sklearn.pipeline import Pipeline
+
+FEATURE_COLUMNS = {columns}
+
+def build_pipeline(config):
+    return Pipeline([
+        ("imputer", SimpleImputer(strategy="median")),
+        ("model", RandomForestRegressor(
+            n_estimators={n_estimators}, max_depth={max_depth},
+            random_state=42, n_jobs=1)),
+    ])
+'''
+
+
+@register("tabular_regression.random_forest_regressor")
+def _rf_regressor(columns: list[str], hyperparams: dict[str, Any]) -> str:
+    return RF_REGRESSOR_TEMPLATE.format(
+        columns=json.dumps(columns, ensure_ascii=False),
+        n_estimators=hyperparams.get("n_estimators", 200),
+        max_depth=hyperparams.get("max_depth", 12),
+    )
+
+
 __all__ = [
     "GRADIENT_BOOSTING_TEMPLATE",
+    "HGB_REGRESSOR_TEMPLATE",
     "LOGISTIC_REGRESSION_TEMPLATE",
     "RANDOM_FOREST_TEMPLATE",
+    "RF_REGRESSOR_TEMPLATE",
+    "RIDGE_TEMPLATE",
     "TEXT_LOGISTIC_TEMPLATE",
     "TEXT_NB_TEMPLATE",
     "TEXT_SVM_TEMPLATE",

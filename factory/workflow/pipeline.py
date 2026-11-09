@@ -65,10 +65,17 @@ class _GraphState(TypedDict, total=False):
     last_repair_no_change: bool
 
 
-def _candidate_score(report: ValidationReport, metric_name: str = "auc") -> float:
-    """按任务的主指标给候选打分；该指标算不出时退化为 0，不伪造数值。"""
+def _candidate_score(report: ValidationReport, metric_name: str = "auc",
+                     direction: str = "maximize") -> float:
+    """按任务主指标给候选打分，统一成「越大越好」便于排序。
+
+    RMSE 这类 ``direction: minimize`` 的指标取负号；指标算不出时退化为 0，
+    不伪造数值（原始值仍保留在 ``metrics`` 里）。
+    """
     value = report.metric_values.get(metric_name)
-    return float(value) if isinstance(value, (int, float)) else 0.0
+    if not isinstance(value, (int, float)):
+        return 0.0
+    return float(value) if direction != "minimize" else -float(value)
 
 
 def render_run_report(trace: RunTrace, reports: list[ValidationReport],
@@ -184,7 +191,11 @@ class Workflow:
         llm = build_llm(settings.llm, root)
         self.task_type = task.task_type
         self.text_column = task.dataset.text_column
+        self.sandbox_mode = ("text" if self.text_column
+                             else "regression" if task.task_type == "tabular_regression"
+                             else "tabular")
         self.metric_name = task.metrics[0].name if task.metrics else "auc"
+        self.metric_direction = task.metrics[0].direction if task.metrics else "maximize"
         self.families = list(task.candidates.model_families)
         excluded = set(task.dataset.forbidden_features)
         excluded.update(task.sensitive_features)
@@ -212,7 +223,7 @@ class Workflow:
         self.sandbox = DatasetSandbox(
             settings.runtime, task.split, data_path,
             task.dataset.target, sorted(excluded), n_samples,
-            text_column=self.text_column,
+            text_column=self.text_column, mode=self.sandbox_mode,
         )
         group_column = task.sensitive_features[0] if task.sensitive_features else None
         if group_column:
@@ -345,7 +356,7 @@ class Workflow:
             plan_id=plan.plan_id,
             model_family=plan.model_family,
             passed=report.passed,
-            score=_candidate_score(report, self.metric_name),
+            score=_candidate_score(report, self.metric_name, self.metric_direction),
             metrics=report.metric_values,
             repair_rounds=state["repair_rounds"],
         ))

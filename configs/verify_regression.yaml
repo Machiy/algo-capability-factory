@@ -1,33 +1,39 @@
 # 第二任务类型：回归，对应进阶要求「支持不同任务类型的验证配置」
-# 现状：验证器已完全由本文件驱动，rmse / mae / r2 三个插件已注册，
-# `tests/test_validation.py::test_regression_config_switches_without_code_change`
-# 用固定数组跑通指标层 smoke，证明切换任务类型不改核心验证器。
-# 但完整 Bike Sharing 数据包未入库，端到端四层验证尚未跑，故状态为 contract_only。
-status: contract_only
+# 与信用卡场景共用同一套验证器 / 沙箱 / 工作流：差异只在本文件与算法模板。
+# 主指标是 rmse（direction: minimize），报告与候选排序据此处理方向。
+status: active
 task_type: tabular_regression
 capability_id: cap.regression.demand.v1
 
 dataset:
-  path: assets/data/bike_sharing_hour.csv
-  source: UCI Bike Sharing Dataset (CC BY 4.0)
-  # 备选：sklearn.datasets.fetch_california_housing（首次需联网）
-  target: cnt
-  expected_columns: [season, yr, mnth, hr, holiday, weekday, workingday,
-                     weathersit, temp, atemp, hum, windspeed, casual, registered, cnt]
+  path: assets/data/synthetic_demand.csv
+  # 合成数据，非真实业务数据，仅用于验证回归任务的四层链路
+  source: sklearn.datasets.make_regression(n_samples=3000, n_features=8, noise=20, random_state=42)
+  target: demand
+  id_column: ""
+  forbidden_features:
+    - demand
+  expected_rows: 3000
 
 split:
-  strategy: time_series_split
-  n_splits: 5
-  shuffle: false
+  strategy: temporal_holdout
+  train_ratio: 0.60
+  valid_ratio: 0.20
+  test_ratio: 0.20
+  random_state: 42
+  test_used_once: true
 
 constraints:
-  non_negative_prediction: true
-  no_future_features: true
+  deterministic: true          # 所有模板固定 random_state，重复运行结果一致
+  test_used_once: true
 
 metrics:
   - {name: rmse, direction: minimize, threshold: null, plugin: sklearn_metrics}
   - {name: mae, direction: minimize, threshold: null, plugin: sklearn_metrics}
-  - {name: r2, direction: maximize, threshold: 0.60, plugin: sklearn_metrics}
+  - {name: r2, direction: maximize, threshold: 0.80, plugin: sklearn_metrics}
+
+candidates:
+  model_families: [hist_gradient_boosting_regressor, ridge, random_forest_regressor]
 
 baselines:
   - dummy_mean

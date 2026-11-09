@@ -37,7 +37,8 @@ import time
 import traceback
 
 candidate, data_path, target, train_end, valid_end, forbidden_json = sys.argv[1:7]
-text_column = sys.argv[7] if len(sys.argv) > 7 else ""
+mode = sys.argv[7] if len(sys.argv) > 7 else "tabular"
+text_column = sys.argv[8] if len(sys.argv) > 8 else ""
 train_end = int(train_end)
 valid_end = int(valid_end)
 forbidden = set(json.loads(forbidden_json))
@@ -76,7 +77,7 @@ try:
     labels = frame[target]
     y_train = labels.iloc[:train_end]
     y_valid = labels.iloc[train_end:valid_end]
-    if text_column:
+    if mode == "text":
         texts = frame[text_column].astype(str)
         x_train = texts.iloc[:train_end]
         x_valid = texts.iloc[train_end:valid_end]
@@ -92,12 +93,17 @@ try:
         feature_count = len(columns)
     pipeline = namespace["build_pipeline"]({})
     pipeline.fit(x_train, y_train)
-    y_score = _predict_score(pipeline, x_valid)
     y_pred = None
-    if text_column:
-        y_pred = [value.item() if hasattr(value, "item") else value
-                  for value in pipeline.predict(x_valid)]
-    train_score = _predict_score(pipeline, x_train)
+    if mode == "regression":
+        # 回归直接产出连续值；y_score 与 y_pred 同源，供 PSI 等可选指标复用
+        y_score = [float(value) for value in pipeline.predict(x_valid)]
+        train_score = [float(value) for value in pipeline.predict(x_train)]
+    else:
+        y_score = _predict_score(pipeline, x_valid)
+        train_score = _predict_score(pipeline, x_train)
+        if mode == "text":
+            y_pred = [value.item() if hasattr(value, "item") else value
+                      for value in pipeline.predict(x_valid)]
     latencies = []
     for start in range(0, len(x_valid), 64):
         chunk = x_valid.iloc[start:start + 64]
@@ -136,12 +142,15 @@ class DatasetSandbox:
 
     def __init__(self, runtime: RuntimeSettings, split: SplitSpec,
                  data_path: Path, target: str, forbidden: list[str],
-                 n_samples: int = 30000, text_column: str = "") -> None:
+                 n_samples: int = 30000, text_column: str = "",
+                 mode: str = "") -> None:
         self.runtime = runtime
         self.data_path = data_path
         self.target = target
         self.forbidden = forbidden
         self.text_column = text_column
+        # mode 决定子进程如何取特征与产出：tabular 分类 / text 文本 / regression 回归
+        self.mode = mode or ("text" if text_column else "tabular")
         self.train_end = int(n_samples * split.train_ratio)
         self.valid_end = int(n_samples * (split.train_ratio + split.valid_ratio))
 
@@ -157,7 +166,7 @@ class DatasetSandbox:
             arguments = [
                 sys.executable, str(runner), str(candidate), str(self.data_path),
                 self.target, str(self.train_end), str(self.valid_end),
-                json.dumps(self.forbidden), self.text_column,
+                json.dumps(self.forbidden), self.mode, self.text_column,
             ]
             started = time.monotonic()
             proc = subprocess.Popen(
@@ -183,10 +192,14 @@ class DatasetSandbox:
             payload = json.loads(stdout.strip().splitlines()[-1])
         except (IndexError, ValueError):
             payload = {}
-        # 文本任务由子进程直接给出预测标签；表格任务由概率按 0.5 阈值派生
-        predicted = payload.get("y_pred") or [
-            int(value >= 0.5) for value in payload.get("y_score", [])
-        ]
+        # 文本任务由子进程直接给出预测标签；回归任务预测值即输出；
+        # 表格分类任务由概率按 0.5 阈值派生
+        if self.mode == "regression":
+            predicted = payload.get("y_score", [])
+        else:
+            predicted = payload.get("y_pred") or [
+                int(value >= 0.5) for value in payload.get("y_score", [])
+            ]
         context = {
             "y_true": payload.get("y_true", []),
             "y_score": payload.get("y_score") or [],

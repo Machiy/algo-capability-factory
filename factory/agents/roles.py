@@ -69,6 +69,16 @@ HYPERPARAM_PRESETS: dict[str, list[dict[str, float]]] = {
     # 文本分类族：TF-IDF 管线，超参与表格族互不复用
     "linear_svc": [{"C": 0.5}, {"C": 1.0}],
     "complement_nb": [{"alpha": 0.5}, {"alpha": 1.0}],
+    # 回归族：同样是全部署在 sklearn.Pipeline 内
+    "ridge": [{"alpha": 1.0}, {"alpha": 5.0}],
+    "hist_gradient_boosting_regressor": [
+        {"max_iter": 200, "learning_rate": 0.1},
+        {"max_iter": 400, "learning_rate": 0.05},
+    ],
+    "random_forest_regressor": [
+        {"n_estimators": 200, "max_depth": 12},
+        {"n_estimators": 300, "max_depth": 16},
+    ],
 }
 
 
