@@ -18,7 +18,7 @@
 |---|---|---|
 | 0 | `python -m venv .venv` → 激活（Windows `.venv\Scripts\activate`，Linux/macOS `source .venv/bin/activate`）→ `pip install -r requirements.txt` | 一次性安装完成，无需清单外依赖 |
 | 1 | `python -m ruff check .` | `All checks passed!` |
-| 2 | `python -m unittest discover -s tests` | `Ran 127 tests ... OK` |
+| 2 | `python -m unittest discover -s tests` | `Ran 128 tests ... OK` |
 | 3 | `python -m factory run --spec "预测信用卡客户下月违约概率，时间外划分，按 5:1 成本比选阈值，禁止 ID 入模。"` | `四层全通过=True 理解来源=cassette 候选=3 修复=3`；最佳候选 HGB AUC 0.7843 |
 | 4 | `python -m factory run --spec "把短信分类为垃圾短信或正常短信，输出准确率与宏平均F1" --mock --task-config configs/verify_text.yaml --run-id text_demo --kg-out capabilities_text_after_run.json --gen-dir text` | `四层全通过=True`；linear_svc accuracy 0.9803 |
 | 5 | `python -m factory run --spec "根据多期特征预测日需求量，最小化RMSE，输出RMSE/MAE/R2" --mock --task-config configs/verify_regression.yaml --run-id regression_demo --kg-out capabilities_regression_after_run.json --gen-dir regression` | `四层全通过=True`；ridge RMSE 19.31、R² 0.978 |
@@ -118,11 +118,12 @@ algo-capability-factory/
 ├── configs/{default.yaml, verify_credit.yaml, verify_regression.yaml, verify_text.yaml}
 ├── scripts/{download_data.py, build_kg.py, verify_baseline.py, run_ablation.py,
 │            record_llm.py, resource_benchmark.py, extract_repo.py,
-│            prepare_text_data.py, prepare_regression_data.py}
+│            prepare_text_data.py, prepare_regression_data.py, build_text_kg.py}
 ├── assets/
 │   ├── data/{UCI_Credit_Card.csv, sms_spam.csv, synthetic_demand.csv}
 │   ├── docs/{data_dictionary.md, risk_policy.md, expert_rules.md,
-│   │         experiment_log.md, failure_review.md, test_report.md}
+│   │   │     experiment_log.md, failure_review.md, test_report.md}
+│   │   └── text/{sms_data_dictionary.md, sms_policy.md, sms_failure_review.md}
 │   ├── legacy/legacy_default_model.py
 │   ├── repo/scorecardpy/       # 真实开源仓库快照（MIT），见 PROVENANCE.md
 │   └── llm_cassettes/          # 脱敏后的真实 LLM 对话与响应，入库
@@ -138,7 +139,7 @@ algo-capability-factory/
 │   ├── validation/{checks.py, metrics.py, split.py, report.py}
 │   └── api/app.py
 ├── outputs/{generated/{,text/}, reports/, kg/, runs/}   # runs/ 为临时轨迹，不入库
-└── tests/                      # 14 个测试文件、127 个用例
+└── tests/                      # 14 个测试文件、128 个用例
 ```
 
 `knowledge/`、`agents/`、`workflow/`、`runtime/`、`validation/`、`api/` 均已实现并入库。内部规划文档（`PLAN.md`）、原始数据包与 `_archive/` 不纳入版本控制。
@@ -197,6 +198,17 @@ algo-capability-factory/
 ```
 
 抽取结果导出为 `outputs/kg/capabilities.json`、`capabilities.csv` 与 `graph.graphml`，可用 `outputs/kg/kg.html` 直接打开可视化。
+
+### 按场景拆分子图
+
+能力知识不混在一张图里：`verify_*.yaml` 的 `knowledge.docs` 指向该场景的材料目录，工作流从中抽独立子图，检索只命中本场景的约束与失败经验——避免「文本任务拿到 `PAY_1` 列名约束」这类跨域噪声。
+
+| 场景 | 材料目录 | 子图规模 | 产物 |
+|---|---|---|---|
+| 信用卡违约（主） | `assets/docs/` + `assets/legacy/` | 95 节点 / 259 边 / 36 类能力 | `capabilities.json`、`graph.graphml`、`kg.html` |
+| 短信垃圾过滤 | `assets/docs/text/` | 17 节点 / 33 边 / 10 类能力 / 2 个 `FailureCase` | `text_capabilities.json`、`text_graph.graphml`、`text_kg.html` |
+
+文本子图复现：`python scripts/build_text_kg.py`。两套材料结构一致（适用条件表、验收门槛表、`FR-xx` 复盘小节），因此**抽取器与检索器代码一行未改**。
 
 **真实开源仓库抽取（`RepoExtractor`）**
 
@@ -287,7 +299,8 @@ python -m factory run --spec "把短信分类为垃圾短信或正常短信，�
 python -m factory run --spec "根据多期特征预测日需求量，最小化RMSE，输出RMSE/MAE/R2" --mock --task-config configs/verify_regression.yaml --run-id regression_demo --kg-out capabilities_regression_after_run.json --gen-dir regression
 
 # 5) 分阶段可复现入口
-python scripts/build_kg.py               # 构建能力图谱与检索产物
+python scripts/build_kg.py               # 构建主场景能力图谱与检索产物
+python scripts/build_text_kg.py          # 构建文本场景子图（outputs/kg/text_*）
 python scripts/verify_baseline.py        # baseline 四层验证自检
 python scripts/run_ablation.py           # 有 KG / 无 KG 消融对比
 python scripts/resource_benchmark.py     # 1× / 10× 资源消耗与性能基准
@@ -308,7 +321,7 @@ python -m factory --check
 
 **最小依赖**：核心闭环需 `pydantic`、`PyYAML`、`pandas`、`scikit-learn`、`networkx`、`langgraph`、`rank-bm25`、`markdown-it-py`、`psutil`、`structlog`（全部为现成库，`requirements.txt` 已锁版本区间）；若只需验证数据契约与配置，可先 `pip install pydantic PyYAML` 再运行 `python -m unittest discover -s tests -v`。`pyvis`、`Jinja2`、`Typer`、`openai` 按入口加载，全量清单见 `requirements.txt`。
 
-**干净环境实测（P5 记录）**：在系统临时目录新建空 venv，仅执行一次 `pip install -r requirements.txt`（106 个包，无冲突），随后直接跑通 `ruff check`（全绿）、当时的 104 个用例与端到端 `factory run`（`四层全通过=True`、`理解来源=cassette`、退出码 0），未安装任何清单外依赖。P6 未引入任何新的第三方依赖（文本与仓库抽取均用已有的 pandas / scikit-learn / 标准库），因此该结论继续成立；补充用例后当前全量测试为 **127 个**，在项目 venv 中全部通过。
+**干净环境实测（P5 记录）**：在系统临时目录新建空 venv，仅执行一次 `pip install -r requirements.txt`（106 个包，无冲突），随后直接跑通 `ruff check`（全绿）、当时的 104 个用例与端到端 `factory run`（`四层全通过=True`、`理解来源=cassette`、退出码 0），未安装任何清单外依赖。P6 未引入任何新的第三方依赖（文本与仓库抽取均用已有的 pandas / scikit-learn / 标准库），因此该结论继续成立；补充用例后当前全量测试为 **128 个**，在项目 venv 中全部通过。
 
 **持续集成**：`.github/workflows/ci.yml` 在 Python 3.11 / 3.12 上依次执行 `ruff check`、全量单元测试、两条端到端命令（信用卡违约 + 短信文本），并对输出断言 `四层全通过=True`；端到端走默认 provider（Interpreter 用已入库 cassette），因此 CI 不依赖任何 API key。
 
@@ -356,6 +369,8 @@ python -m factory --check
 | `docs/expert_rules.md` | 专家经验 | WOE 分箱、还款状态衍生、阈值经验 |
 | `docs/experiment_log.md` | 实验记录 | 历史模型与调参结果 |
 | `docs/test_report.md`、`docs/failure_review.md` | 测试报告 / 失败复盘 | 失败案例、泄漏事故、评价指标口径 |
+
+**文本场景材料（3 份，`assets/docs/text/`）**：`sms_data_dictionary.md`（字段与 ST1–ST4 数据问题）、`sms_policy.md`（S1–S6 适用条件与 accuracy / macro-F1 门槛）、`sms_failure_review.md`（FR-01 词表泄漏、FR-02 只看 accuracy 掩盖少数类误杀）。结构与主场景一致，因此复用同一抽取与检索路径。
 
 **已知数据陷阱**（本项目的核心领域知识与真实失败案例来源）
 
@@ -509,7 +524,9 @@ def build_pipeline(config):
 | plan.01 | logistic_regression（TF-IDF + LR） | 0.9785 | 0.9535 | 全 PASS |
 | plan.03 | complement_nb（TF-IDF + ComplementNB） | 0.9731 | 0.9447 | 全 PASS |
 
-差异被收敛到配置与模板两处：`verify_text.yaml` 声明 `text_column` 与 `candidates.model_families`，`factory/agents/templates.py` 注册 `text_classification.*` 模板；核心验证器、沙箱与工作流代码**未改**。修复轮次为 0——文本场景没有表格列名陷阱，失败修复能力由表格场景的 T1 轨迹证明，不在这里硬造失败。
+差异被收敛到配置与模板两处：`verify_text.yaml` 声明 `text_column`、`knowledge.docs` 与 `candidates.model_families`，`factory/agents/templates.py` 注册 `text_classification.*` 模板；核心验证器、沙箱与工作流代码**未改**。修复轮次为 0——文本场景没有表格列名陷阱，失败修复能力由表格场景的 T1 轨迹证明，不在这里硬造失败。
+
+检索证据也已按场景隔离：报告第 1 节列出的是 `S1 文本长度`、`S3 类别严重不平衡`、`LeakageDetected → 向量器进 Pipeline` 等短信域约束与失败项，不再是信用卡的 `PAY_*` 约束——这是 `knowledge.docs` 拆分子图的直接效果。
 
 **第二种任务类型（实测，`configs/verify_regression.yaml`）**
 
@@ -542,10 +559,11 @@ def build_pipeline(config):
 | **数据时效与分布漂移** | 用 PSI 指标 + 时间外验证量化漂移，作为「真实行业落地复杂问题」写入报告，不回避 |
 | **小数据下资源分析缺说服力** | 构造 10× 合成扩展集，记录各候选耗时 / 峰值内存 / 推理 P95 |
 | **指标口径不统一** | 成本比、KS 门槛、baseline 定义全部配置化到 `verify_*.yaml`，避免硬编码 |
-| **早期为快速打通闭环写了若干自研轻量件，与开发要求 f「可使用现成工具但需说明选择理由」有张力** | 中途把「复用优先」写进 `.codebuddy/rules/architecture.md` 作为不可裁剪规则，逐项评估现成方案后替换：自研状态机 → LangGraph `StateGraph`、`ctypes` 内存监控 → `psutil`、手写日志格式 → `structlog`、`argparse` → `Typer`、手写 Markdown 正则 → `markdown-it-py`、手写词元计数 → `rank_bm25`；`vcrpy` / `bandit` / CrewAI / LlamaIndex 评估后因粒度或契约冲突未采用，理由逐项写在第 2 节选型表。全部替换以「功能不变」验收：ruff 全绿、测试全过（当时 104 个用例，当前 127 个）、图谱仍 95 节点 / 259 边、端到端 3 候选 AUC 与修复轨迹逐字一致 |
+| **早期为快速打通闭环写了若干自研轻量件，与开发要求 f「可使用现成工具但需说明选择理由」有张力** | 中途把「复用优先」写进 `.codebuddy/rules/architecture.md` 作为不可裁剪规则，逐项评估现成方案后替换：自研状态机 → LangGraph `StateGraph`、`ctypes` 内存监控 → `psutil`、手写日志格式 → `structlog`、`argparse` → `Typer`、手写 Markdown 正则 → `markdown-it-py`、手写词元计数 → `rank_bm25`；`vcrpy` / `bandit` / CrewAI / LlamaIndex 评估后因粒度或契约冲突未采用，理由逐项写在第 2 节选型表。全部替换以「功能不变」验收：ruff 全绿、测试全过（当时 104 个用例，当前 128 个）、图谱仍 95 节点 / 259 边、端到端 3 候选 AUC 与修复轨迹逐字一致 |
 | **真实仓库的 docstring 格式不统一**：`scorecardpy` 用 `Params` 段、参数说明还跨行，部分函数完全没有结构化段 | 解析器同时接受 `Params` / `Parameters` / `Args`，跨行说明取首行；无结构化段时用签名兜底。81 个函数全部产出能力描述，其中 21 个有结构化参数——差异如实写进第 3 节，不补造内容 |
 | **跨场景迁移暴露隐藏耦合**：数据集路径写死取全局 `paths.data`，文本任务仍去读信用卡 CSV 而报 `KeyError: 'label'`；两场景都写 `outputs/generated/candidate_plan.*.py`，后跑的覆盖先跑的 | 数据集路径改为 `dataset.path` 优先、全局配置兜底；新增 `--run-id` / `--kg-out` / `--gen-dir`，让两个场景的代码、图谱、报告、轨迹互不覆盖；场景差异收敛到 `verify_*.yaml` 与 `templates.py` 两处 |
 | **候选排序默认「越大越好」**：换成回归后主指标是 RMSE，原实现会把最差候选排到第一 | 打分按指标 `direction` 归一（`minimize` 取负号），原始值仍原样存在 `metrics`；`test_end_to_end_ranks_by_minimized_metric` 用「排序后的 RMSE 必须单调不减」守住这条语义 |
+| **知识图谱一开始是单场景的**：文本任务检索到的是信用卡域约束，`PAY_0`、成本比 5:1 这些噪音会进 Planner / Coder prompt | `verify_*.yaml` 增加 `knowledge.docs`，工作流按场景抽独立子图；两套材料结构一致（适用条件表 / 验收门槛表 / `FR-xx`），抽取器与检索器代码零改动即支持第二领域 |
 | **沉淀只写不读**：Curator 已把结果写入 `capabilities_after_run.json`，但工作流每轮都从源材料重抽，下一轮看不到上一轮经验 | 让 `Workflow` 启动时优先加载回写图谱（不存在才回退源材料），检索器优先返回本项目实测 `FailureCase`，Coder 命中 T1 历史经验时首轮即避开，Curator 按 `run_id` 去重避免膨胀。消融实测：修复轮次 2（有 KG）vs 3（无 KG）、有 KG 首轮避开 `PAY_1`、两组 AUC 完全一致 |
 
 ---

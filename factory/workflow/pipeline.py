@@ -181,7 +181,11 @@ class Workflow:
         after_run = root / settings.paths.kg / kg_filename
         loaded = load_graph(after_run) if use_knowledge else None
         if loaded is None:
-            sources = read_sources(root, settings.paths.docs, settings.paths.legacy)
+            # 场景自带能力材料时抽自己的子图，避免把其他领域的约束注入 prompt
+            docs_dir = task.knowledge.docs or settings.paths.docs
+            legacy_dir = (task.knowledge.legacy if task.knowledge.docs
+                          else settings.paths.legacy)
+            sources = read_sources(root, docs_dir, legacy_dir)
             graph = MockExtractor().extract(sources)
             self.graph_source = "sources"
         else:

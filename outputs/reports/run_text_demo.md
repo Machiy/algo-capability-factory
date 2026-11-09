@@ -19,23 +19,20 @@
 
 ```text
 # 检索证据（query=把短信分类为垃圾短信或正常短信，输出准确率与宏平均F1）
-- [0.375] [T1] 最近一期列名是 PAY_0，不存在 PAY_1 (cap.data_dictionary.T1)
-- [0.375] [T2] 存在未文档化类别 (cap.data_dictionary.T2)
-- [0.375] [T2b] 还款状态含未文档化值 (cap.data_dictionary.T2b)
-- [0.375] [T3] 账单金额为负 (cap.data_dictionary.T3)
-- [0.375] [T3b] 期次错位 (cap.data_dictionary.T3b)
+- [0.375] [ST1] 大小写与标点不统一 (cap.sms_data_dictionary.ST1)
+- [0.375] [ST2] 正文含电话号码与短链接 (cap.sms_data_dictionary.ST2)
+- [0.375] [ST3] 极短文本与重复文本 (cap.sms_data_dictionary.ST3)
+- [0.375] [ST4] 标签分布偏斜 (cap.sms_data_dictionary.ST4)
+- [0.375] [S1] 文本长度 (cap.sms_policy.S1)
 ## 适用条件
-- [C1] 客群范围：仅适用于持有 ≥6 期账单历史的存量客户；新客无 `PAY_*` / `BILL_AMT*` 序列，不在适用范围内
-- [C2] 额度区间：`LIMIT_BAL` 在本样本覆盖区间内；超出区间需人工复核
-- [C3] 时间范围：训练样本观测期为 2005-04 至 2005-09；上线前须做 PSI 群体稳定性检查，PSI > 0.25 触发重训
-- [C4] 划分方式：必须时间外划分，禁止随机打乱；所有预处理在训练集内 fit
-- [C5] 敏感字段：`SEX` / `AGE` / `EDUCATION` / `MARRIAGE` 不得进入模型特征，仅用于分组公平性审计
+- [S1] 文本长度：少于 3 个字符的样本不参与训练，避免噪声主导词表
+- [S2] 语言范围：当前仅覆盖英文短信；中文短信需要另行分词，不能直接复用本词表
+- [S3] 类别严重不平衡：spam 约 13.4%，评估必须同时看 macro-F1，禁止只看 accuracy
+- [S4] 词表边界：向量器只能在训练集 fit，禁止在验证集 / 测试集上统计词表
+- [S5] 号码与链接：电话、URL 用占位符替换，禁止让模型记住具体号码
 ## 历史失败规避项
-- KeyError → 按 `Dataset` 节点的列名映射表替换为 `PAY_0`、`PAY_2`…`PAY_6`；禁止按序号硬编码列名
-- SchemaError → 0/5/6 归入「其他」类别；`PAY_* = -2` 保留为独立类别；编码前做取值域校验
-- LeakageDetected → 改时间外划分；强制 `sklearn.Pipeline` 且所有预处理器仅 on train fit；按 `PRECEDES` 约束检查期次
-- CostLossAboveBaseline → 在验证集上按成本加权损失网格搜索最优阈值，测试集不参与调阈
-- LeakageDetected → 采样仅在训练集内、且在 Pipeline 内执行
+- LeakageDetected → 向量器放进 `sklearn.Pipeline`，只在训练集 fit；划分前不触碰测试集
+- MetricBelowThreshold → 主指标改为 macro-F1 与 spam 召回，配合 `class_weight="balanced"`
 ```
 
 ## 2. 候选方案比较（Beam Top-3，主指标 accuracy）
@@ -59,7 +56,7 @@
 - 无失败轮次
 
 ## 设计依据
-- 检索证据条目：18
+- 检索证据条目：15
 - 候选排名：plan.02 > plan.01 > plan.03
 - 修复轨迹：无
 - 依据：检索到的适用条件约束候选方案，历史失败规避项触发列名映射修复。

@@ -31,6 +31,12 @@ constraints:
   no_test_vocabulary_leakage: true   # 向量器只在训练集 fit，由 Pipeline 保证
   positive_ratio: 0.134
 
+knowledge:
+  # 文本场景用自己的能力材料抽独立子图：检索到的是短信领域的约束与失败经验，
+  # 不是信用卡场景的 PAY_* 列名约束
+  docs: assets/docs/text
+  legacy: ""
+
 metrics:
   - {name: accuracy, direction: maximize, threshold: 0.95, plugin: sklearn_metrics}
   - {name: macro_f1, direction: maximize, threshold: 0.90, plugin: sklearn_metrics}

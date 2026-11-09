@@ -1,0 +1,378 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d27" for="edge" attr.name="edge_type" attr.type="string" />
+  <key id="d26" for="node" attr.name="attr_口径" attr.type="string" />
+  <key id="d25" for="node" attr.name="attr_门槛" attr.type="string" />
+  <key id="d24" for="node" attr.name="attr_指标" attr.type="string" />
+  <key id="d23" for="node" attr.name="attr_说明" attr.type="string" />
+  <key id="d22" for="node" attr.name="attr_约束" attr.type="string" />
+  <key id="d21" for="node" attr.name="attr_error_signature" attr.type="string" />
+  <key id="d20" for="node" attr.name="attr_可复用经验" attr.type="string" />
+  <key id="d19" for="node" attr.name="attr_修复策略" attr.type="string" />
+  <key id="d18" for="node" attr.name="attr_错误签名" attr.type="string" />
+  <key id="d17" for="node" attr.name="attr_根因" attr.type="string" />
+  <key id="d16" for="node" attr.name="attr_现象" attr.type="string" />
+  <key id="d15" for="node" attr.name="attr_metrics" attr.type="string" />
+  <key id="d14" for="node" attr.name="attr_处理方式" attr.type="string" />
+  <key id="d13" for="node" attr.name="attr_问题" attr.type="string" />
+  <key id="d12" for="node" attr.name="attr_编号" attr.type="string" />
+  <key id="d11" for="node" attr.name="attr_section" attr.type="string" />
+  <key id="d10" for="node" attr.name="attr_source_id" attr.type="string" />
+  <key id="d9" for="node" attr.name="attr_file_sha256" attr.type="string" />
+  <key id="d8" for="node" attr.name="attr_doc_type" attr.type="string" />
+  <key id="d7" for="node" attr.name="attr_path" attr.type="string" />
+  <key id="d6" for="node" attr.name="evidence_count" attr.type="long" />
+  <key id="d5" for="node" attr.name="status" attr.type="string" />
+  <key id="d4" for="node" attr.name="task_type" attr.type="string" />
+  <key id="d3" for="node" attr.name="version" attr.type="string" />
+  <key id="d2" for="node" attr.name="name" attr.type="string" />
+  <key id="d1" for="node" attr.name="node_type" attr.type="string" />
+  <key id="d0" for="node" attr.name="node_id" attr.type="string" />
+  <graph edgedefault="directed">
+    <node id="evidence.sms_data_dictionary">
+      <data key="d0">evidence.sms_data_dictionary</data>
+      <data key="d1">Evidence</data>
+      <data key="d2">证据源：assets/docs/text/sms_data_dictionary.md</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d7">assets/docs/text/sms_data_dictionary.md</data>
+      <data key="d8">业务文档</data>
+      <data key="d9">c33f877a47ef29b52673b949a556d32e81ade82759a24cacc4fb930632451176</data>
+    </node>
+    <node id="cap.sms_data_dictionary.ST1">
+      <data key="d0">cap.sms_data_dictionary.ST1</data>
+      <data key="d1">Capability</data>
+      <data key="d2">[ST1] 大小写与标点不统一</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">ST1</data>
+      <data key="d11">2. 已知数据问题</data>
+      <data key="d12">ST1</data>
+      <data key="d13">大小写与标点不统一</data>
+      <data key="d14">统一小写后再做 TF-IDF，数字保留</data>
+      <data key="d15">{"编号": 1.0}</data>
+    </node>
+    <node id="cap.sms_data_dictionary.ST2">
+      <data key="d0">cap.sms_data_dictionary.ST2</data>
+      <data key="d1">Capability</data>
+      <data key="d2">[ST2] 正文含电话号码与短链接</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">ST2</data>
+      <data key="d11">2. 已知数据问题</data>
+      <data key="d12">ST2</data>
+      <data key="d13">正文含电话号码与短链接</data>
+      <data key="d14">替换为 `phone` / `url` 占位符，避免记忆具体号码</data>
+      <data key="d15">{"编号": 2.0}</data>
+    </node>
+    <node id="cap.sms_data_dictionary.ST3">
+      <data key="d0">cap.sms_data_dictionary.ST3</data>
+      <data key="d1">Capability</data>
+      <data key="d2">[ST3] 极短文本与重复文本</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">ST3</data>
+      <data key="d11">2. 已知数据问题</data>
+      <data key="d12">ST3</data>
+      <data key="d13">极短文本与重复文本</data>
+      <data key="d14">长度 &lt; 3 的样本剔除；重复文本只在训练集保留一份</data>
+      <data key="d15">{"处理方式": 3.0, "编号": 3.0}</data>
+    </node>
+    <node id="cap.sms_data_dictionary.ST4">
+      <data key="d0">cap.sms_data_dictionary.ST4</data>
+      <data key="d1">Capability</data>
+      <data key="d2">[ST4] 标签分布偏斜</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">ST4</data>
+      <data key="d11">2. 已知数据问题</data>
+      <data key="d12">ST4</data>
+      <data key="d13">标签分布偏斜</data>
+      <data key="d14">spam 13.4%，评估用 macro-F1，必要时在 Pipeline 内做类别权重</data>
+      <data key="d15">{"编号": 4.0}</data>
+    </node>
+    <node id="evidence.sms_failure_review">
+      <data key="d0">evidence.sms_failure_review</data>
+      <data key="d1">Evidence</data>
+      <data key="d2">证据源：assets/docs/text/sms_failure_review.md</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d7">assets/docs/text/sms_failure_review.md</data>
+      <data key="d8">失败复盘</data>
+      <data key="d9">248b9ca40f057691a43ba0cfbb7f3880cb7426259c6046ab9018a9f53cfc062b</data>
+    </node>
+    <node id="fail.sms_failure_review.FR-01">
+      <data key="d0">fail.sms_failure_review.FR-01</data>
+      <data key="d1">FailureCase</data>
+      <data key="d2">[FR-01] 向量器在测试集上 fit 导致指标虚高</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d16">accuracy 0.997、macro-F1 0.985，上线后掉到 0.94</data>
+      <data key="d17">划分前对全量文本 `TfidfVectorizer.fit`，测试集词表与 IDF 泄漏进训练</data>
+      <data key="d18">`LeakageDetected`</data>
+      <data key="d19">向量器放进 `sklearn.Pipeline`，只在训练集 fit；划分前不触碰测试集</data>
+      <data key="d20">文本任务的泄漏比表格更隐蔽，必须由 Pipeline 结构保证，而不是靠人工纪律</data>
+      <data key="d21">LeakageDetected</data>
+    </node>
+    <node id="fail.sms_failure_review.FR-02">
+      <data key="d0">fail.sms_failure_review.FR-02</data>
+      <data key="d1">FailureCase</data>
+      <data key="d2">[FR-02] 只看 accuracy 掩盖少数类误杀</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d16">accuracy 0.98 看似达标，但 spam 召回只有 0.71，大量垃圾短信漏过</data>
+      <data key="d17">正例仅 13.4%，全判 ham 也能拿到 0.866 的 accuracy</data>
+      <data key="d18">`MetricBelowThreshold`</data>
+      <data key="d19">主指标改为 macro-F1 与 spam 召回，配合 `class_weight="balanced"`</data>
+      <data key="d20">类别不平衡场景禁止用 accuracy 单独验收</data>
+      <data key="d21">MetricBelowThreshold</data>
+    </node>
+    <node id="evidence.sms_policy">
+      <data key="d0">evidence.sms_policy</data>
+      <data key="d1">Evidence</data>
+      <data key="d2">证据源：assets/docs/text/sms_policy.md</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d7">assets/docs/text/sms_policy.md</data>
+      <data key="d8">风控策略</data>
+      <data key="d9">45cb52fd9dc68b75110e3eb1f504716afeb2a87099db02585d25aefb529b7506</data>
+    </node>
+    <node id="cap.sms_policy.S1">
+      <data key="d0">cap.sms_policy.S1</data>
+      <data key="d1">Capability</data>
+      <data key="d2">[S1] 文本长度</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">S1</data>
+      <data key="d11">2. 适用条件（约束）</data>
+      <data key="d12">S1</data>
+      <data key="d22">文本长度</data>
+      <data key="d23">少于 3 个字符的样本不参与训练，避免噪声主导词表</data>
+      <data key="d15">{"编号": 1.0, "说明": 3.0}</data>
+    </node>
+    <node id="cap.sms_policy.S2">
+      <data key="d0">cap.sms_policy.S2</data>
+      <data key="d1">Capability</data>
+      <data key="d2">[S2] 语言范围</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">S2</data>
+      <data key="d11">2. 适用条件（约束）</data>
+      <data key="d12">S2</data>
+      <data key="d22">语言范围</data>
+      <data key="d23">当前仅覆盖英文短信；中文短信需要另行分词，不能直接复用本词表</data>
+      <data key="d15">{"编号": 2.0}</data>
+    </node>
+    <node id="cap.sms_policy.S3">
+      <data key="d0">cap.sms_policy.S3</data>
+      <data key="d1">Capability</data>
+      <data key="d2">[S3] 类别严重不平衡</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">S3</data>
+      <data key="d11">2. 适用条件（约束）</data>
+      <data key="d12">S3</data>
+      <data key="d22">类别严重不平衡</data>
+      <data key="d23">spam 约 13.4%，评估必须同时看 macro-F1，禁止只看 accuracy</data>
+      <data key="d15">{"编号": 3.0}</data>
+    </node>
+    <node id="cap.sms_policy.S4">
+      <data key="d0">cap.sms_policy.S4</data>
+      <data key="d1">Capability</data>
+      <data key="d2">[S4] 词表边界</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">S4</data>
+      <data key="d11">2. 适用条件（约束）</data>
+      <data key="d12">S4</data>
+      <data key="d22">词表边界</data>
+      <data key="d23">向量器只能在训练集 fit，禁止在验证集 / 测试集上统计词表</data>
+      <data key="d15">{"编号": 4.0}</data>
+    </node>
+    <node id="cap.sms_policy.S5">
+      <data key="d0">cap.sms_policy.S5</data>
+      <data key="d1">Capability</data>
+      <data key="d2">[S5] 号码与链接</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">S5</data>
+      <data key="d11">2. 适用条件（约束）</data>
+      <data key="d12">S5</data>
+      <data key="d22">号码与链接</data>
+      <data key="d23">电话、URL 用占位符替换，禁止让模型记住具体号码</data>
+      <data key="d15">{"编号": 5.0}</data>
+    </node>
+    <node id="cap.sms_policy.S6">
+      <data key="d0">cap.sms_policy.S6</data>
+      <data key="d1">Capability</data>
+      <data key="d2">[S6] 判定阈值</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">S6</data>
+      <data key="d11">2. 适用条件（约束）</data>
+      <data key="d12">S6</data>
+      <data key="d22">判定阈值</data>
+      <data key="d23">默认 0.5；业务可通过调阈值控制误杀率，调阈只在验证集做</data>
+      <data key="d15">{"编号": 6.0, "说明": 0.5}</data>
+    </node>
+    <node id="metric.sms_policy.r01">
+      <data key="d0">metric.sms_policy.r01</data>
+      <data key="d1">Metric</data>
+      <data key="d2">[r01] 0.95</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">r01</data>
+      <data key="d11">3. 验收门槛</data>
+      <data key="d24">accuracy</data>
+      <data key="d25">0.95</data>
+      <data key="d26">验证集，固定种子随机切分</data>
+      <data key="d15">{"门槛": 0.95}</data>
+    </node>
+    <node id="metric.sms_policy.macro_f1">
+      <data key="d0">metric.sms_policy.macro_f1</data>
+      <data key="d1">Metric</data>
+      <data key="d2">[macro_f1] 0.90</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">macro_f1</data>
+      <data key="d11">3. 验收门槛</data>
+      <data key="d24">macro_f1</data>
+      <data key="d25">0.90</data>
+      <data key="d26">验证集，兼顾 spam 少数类</data>
+      <data key="d15">{"指标": 1.0, "门槛": 0.9}</data>
+    </node>
+    <edge source="cap.sms_data_dictionary.ST1" target="evidence.sms_data_dictionary" id="0">
+      <data key="d27">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.sms_data_dictionary.ST1" target="metric.sms_policy.r01" id="0">
+      <data key="d27">EVALUATED_BY</data>
+    </edge>
+    <edge source="cap.sms_data_dictionary.ST1" target="cap.sms_data_dictionary.ST2" id="0">
+      <data key="d27">SIMILAR_TO</data>
+    </edge>
+    <edge source="cap.sms_data_dictionary.ST1" target="cap.sms_policy.S1" id="0">
+      <data key="d27">TRANSFERABLE_TO</data>
+    </edge>
+    <edge source="cap.sms_data_dictionary.ST2" target="evidence.sms_data_dictionary" id="0">
+      <data key="d27">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.sms_data_dictionary.ST2" target="metric.sms_policy.macro_f1" id="0">
+      <data key="d27">EVALUATED_BY</data>
+    </edge>
+    <edge source="cap.sms_data_dictionary.ST2" target="cap.sms_data_dictionary.ST1" id="0">
+      <data key="d27">DERIVED_FROM</data>
+    </edge>
+    <edge source="cap.sms_data_dictionary.ST2" target="cap.sms_data_dictionary.ST3" id="0">
+      <data key="d27">SIMILAR_TO</data>
+    </edge>
+    <edge source="cap.sms_data_dictionary.ST3" target="evidence.sms_data_dictionary" id="0">
+      <data key="d27">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.sms_data_dictionary.ST3" target="metric.sms_policy.r01" id="0">
+      <data key="d27">EVALUATED_BY</data>
+    </edge>
+    <edge source="cap.sms_data_dictionary.ST3" target="cap.sms_data_dictionary.ST1" id="0">
+      <data key="d27">DERIVED_FROM</data>
+    </edge>
+    <edge source="cap.sms_data_dictionary.ST3" target="cap.sms_data_dictionary.ST4" id="0">
+      <data key="d27">SIMILAR_TO</data>
+    </edge>
+    <edge source="cap.sms_data_dictionary.ST4" target="evidence.sms_data_dictionary" id="0">
+      <data key="d27">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.sms_data_dictionary.ST4" target="metric.sms_policy.macro_f1" id="0">
+      <data key="d27">EVALUATED_BY</data>
+    </edge>
+    <edge source="cap.sms_data_dictionary.ST4" target="cap.sms_data_dictionary.ST1" id="0">
+      <data key="d27">DERIVED_FROM</data>
+    </edge>
+    <edge source="fail.sms_failure_review.FR-01" target="evidence.sms_failure_review" id="0">
+      <data key="d27">EVIDENCED_BY</data>
+    </edge>
+    <edge source="fail.sms_failure_review.FR-01" target="cap.sms_data_dictionary.ST1" id="0">
+      <data key="d27">FIXED_BY</data>
+    </edge>
+    <edge source="fail.sms_failure_review.FR-02" target="evidence.sms_failure_review" id="0">
+      <data key="d27">EVIDENCED_BY</data>
+    </edge>
+    <edge source="fail.sms_failure_review.FR-02" target="cap.sms_data_dictionary.ST1" id="0">
+      <data key="d27">FIXED_BY</data>
+    </edge>
+    <edge source="cap.sms_policy.S1" target="evidence.sms_policy" id="0">
+      <data key="d27">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.sms_policy.S1" target="metric.sms_policy.r01" id="0">
+      <data key="d27">EVALUATED_BY</data>
+    </edge>
+    <edge source="cap.sms_policy.S2" target="evidence.sms_policy" id="0">
+      <data key="d27">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.sms_policy.S2" target="metric.sms_policy.macro_f1" id="0">
+      <data key="d27">EVALUATED_BY</data>
+    </edge>
+    <edge source="cap.sms_policy.S3" target="evidence.sms_policy" id="0">
+      <data key="d27">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.sms_policy.S3" target="metric.sms_policy.r01" id="0">
+      <data key="d27">EVALUATED_BY</data>
+    </edge>
+    <edge source="cap.sms_policy.S4" target="evidence.sms_policy" id="0">
+      <data key="d27">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.sms_policy.S4" target="metric.sms_policy.macro_f1" id="0">
+      <data key="d27">EVALUATED_BY</data>
+    </edge>
+    <edge source="cap.sms_policy.S5" target="evidence.sms_policy" id="0">
+      <data key="d27">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.sms_policy.S5" target="metric.sms_policy.r01" id="0">
+      <data key="d27">EVALUATED_BY</data>
+    </edge>
+    <edge source="cap.sms_policy.S6" target="evidence.sms_policy" id="0">
+      <data key="d27">EVIDENCED_BY</data>
+    </edge>
+    <edge source="cap.sms_policy.S6" target="metric.sms_policy.macro_f1" id="0">
+      <data key="d27">EVALUATED_BY</data>
+    </edge>
+    <edge source="metric.sms_policy.r01" target="evidence.sms_policy" id="0">
+      <data key="d27">EVIDENCED_BY</data>
+    </edge>
+    <edge source="metric.sms_policy.macro_f1" target="evidence.sms_policy" id="0">
+      <data key="d27">EVIDENCED_BY</data>
+    </edge>
+  </graph>
+</graphml>

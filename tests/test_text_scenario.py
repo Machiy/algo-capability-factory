@@ -14,8 +14,9 @@ from pathlib import Path
 from factory.agents import Coder, Planner
 from factory.agents.templates import list_templates
 from factory.config import load_settings, load_task_settings
-from factory.contracts.knowledge import RetrievalResult
+from factory.contracts.knowledge import NodeType, RetrievalResult
 from factory.contracts.models import CapabilitySpec, TaskType
+from factory.knowledge import MockExtractor, read_sources
 from factory.llm import MockLLM
 from factory.runtime import StaticChecker
 from factory.runtime.dataset_sandbox import DatasetSandbox
@@ -26,6 +27,24 @@ TEXT_CONFIG = ROOT / "configs/verify_text.yaml"
 CREDIT_CONFIG = ROOT / "configs/verify_credit.yaml"
 SPEC = CapabilitySpec(spec_id="spec.text.spam", description="把短信分类为垃圾短信或正常短信",
                       task_type=TaskType.TEXT_CLASSIFICATION)
+
+
+class TextKnowledgeTests(unittest.TestCase):
+    """场景子图：文本任务从自己的材料抽能力，不混入信用卡域约束。"""
+
+    def test_text_sources_produce_own_subgraph(self) -> None:
+        task = load_task_settings(TEXT_CONFIG)
+        self.assertEqual(task.knowledge.docs, "assets/docs/text")
+        sources = read_sources(ROOT, task.knowledge.docs, task.knowledge.legacy)
+        self.assertEqual(len(sources), 3)
+        graph = MockExtractor().extract(sources)
+        capabilities = graph.by_type(NodeType.CAPABILITY)
+        self.assertGreaterEqual(len(capabilities), 8)
+        self.assertTrue(all("sms_" in node.node_id for node in capabilities))
+        signatures = {node.attributes.get("error_signature")
+                      for node in graph.by_type(NodeType.FAILURE_CASE)}
+        self.assertIn("LeakageDetected", signatures)
+        self.assertIn("MetricBelowThreshold", signatures)
 
 
 class TextConfigTests(unittest.TestCase):
@@ -138,6 +157,9 @@ class TextWorkflowTests(unittest.TestCase):
             families = {item.model_family for item in trace.candidates}
             self.assertEqual(families, {"logistic_regression", "linear_svc",
                                         "complement_nb"})
+            # 检索证据必须来自文本域子图，不能混入信用卡列名约束
+            self.assertIn("词表", trace.retrieval_prompt)
+            self.assertNotIn("PAY_1", trace.retrieval_prompt)
             for item in trace.candidates:
                 self.assertGreater(item.metrics.get("accuracy") or 0.0, 0.90)
             report = root / trace.report_path

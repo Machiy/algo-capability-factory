@@ -1,0 +1,637 @@
+{
+  "nodes": [
+    {
+      "node_id": "evidence.sms_data_dictionary",
+      "node_type": "Evidence",
+      "name": "证据源：assets/docs/text/sms_data_dictionary.md",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "path": "assets/docs/text/sms_data_dictionary.md",
+        "doc_type": "业务文档",
+        "file_sha256": "c33f877a47ef29b52673b949a556d32e81ade82759a24cacc4fb930632451176"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/text/sms_data_dictionary.md",
+          "excerpt": "# 短信数据集字典与已知问题（能力抽取源 · 模拟业务材料）\n\n> 对应 `assets/data/sms_spam.csv`（UCI SMS Spam Collection，dataset 228，CC BY 4.0）。\n> 只登记文本场景特有的数据问题，不写「已知数据问题」以外的章节，\n> 避免抽取出与文本无关的表格数据集节点。\n\n## 1. 字段定义\n\n| 字段 | 类型 | 含义 |\n|-",
+          "sha256": "06efb59e018ef6cd415306900345be832e4960845d8d3461acadf577706766f5",
+          "doc_type": "业务文档"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.sms_data_dictionary.ST1",
+      "node_type": "Capability",
+      "name": "[ST1] 大小写与标点不统一",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "ST1",
+        "section": "2. 已知数据问题",
+        "编号": "ST1",
+        "问题": "大小写与标点不统一",
+        "处理方式": "统一小写后再做 TF-IDF，数字保留",
+        "metrics": {
+          "编号": 1.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/text/sms_data_dictionary.md",
+          "excerpt": "| ST1 | 大小写与标点不统一 | 统一小写后再做 TF-IDF，数字保留 |",
+          "sha256": "6e034757e1a86720190faf58c88019176ae87abac829c4b06b18671b1df77957",
+          "doc_type": "业务文档"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.sms_data_dictionary.ST2",
+      "node_type": "Capability",
+      "name": "[ST2] 正文含电话号码与短链接",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "ST2",
+        "section": "2. 已知数据问题",
+        "编号": "ST2",
+        "问题": "正文含电话号码与短链接",
+        "处理方式": "替换为 `phone` / `url` 占位符，避免记忆具体号码",
+        "metrics": {
+          "编号": 2.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/text/sms_data_dictionary.md",
+          "excerpt": "| ST2 | 正文含电话号码与短链接 | 替换为 `phone` / `url` 占位符，避免记忆具体号码 |",
+          "sha256": "c2ba1e01ea73bf87f002f04f5329294bb16b37d4184ab7f9bfe4cfa3c8a34605",
+          "doc_type": "业务文档"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.sms_data_dictionary.ST3",
+      "node_type": "Capability",
+      "name": "[ST3] 极短文本与重复文本",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "ST3",
+        "section": "2. 已知数据问题",
+        "编号": "ST3",
+        "问题": "极短文本与重复文本",
+        "处理方式": "长度 < 3 的样本剔除；重复文本只在训练集保留一份",
+        "metrics": {
+          "编号": 3.0,
+          "处理方式": 3.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/text/sms_data_dictionary.md",
+          "excerpt": "| ST3 | 极短文本与重复文本 | 长度 < 3 的样本剔除；重复文本只在训练集保留一份 |",
+          "sha256": "366a43cf109e1ffbddca4cff4e8c97197748f9fb8bfbc8afe4a11e1c6ee58842",
+          "doc_type": "业务文档"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.sms_data_dictionary.ST4",
+      "node_type": "Capability",
+      "name": "[ST4] 标签分布偏斜",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "ST4",
+        "section": "2. 已知数据问题",
+        "编号": "ST4",
+        "问题": "标签分布偏斜",
+        "处理方式": "spam 13.4%，评估用 macro-F1，必要时在 Pipeline 内做类别权重",
+        "metrics": {
+          "编号": 4.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/text/sms_data_dictionary.md",
+          "excerpt": "| ST4 | 标签分布偏斜 | spam 13.4%，评估用 macro-F1，必要时在 Pipeline 内做类别权重 |",
+          "sha256": "ada042aa734b4d9a5188f0aa77f383d3706b81415f363d2183a4ca5491afdd38",
+          "doc_type": "业务文档"
+        }
+      ]
+    },
+    {
+      "node_id": "evidence.sms_failure_review",
+      "node_type": "Evidence",
+      "name": "证据源：assets/docs/text/sms_failure_review.md",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "path": "assets/docs/text/sms_failure_review.md",
+        "doc_type": "失败复盘",
+        "file_sha256": "248b9ca40f057691a43ba0cfbb7f3880cb7426259c6046ab9018a9f53cfc062b"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/text/sms_failure_review.md",
+          "excerpt": "# 短信分类失败复盘（能力抽取源 · 模拟业务材料）\n\n> 用于演示「失败经验沉淀为可复用知识」在文本场景同样成立：\n> `FR-xx` 小节会被抽成 `FailureCase` 节点，并在下一轮检索时作为规避项注入 Planner / Coder prompt。\n\n## FR-01 向量器在测试集上 fit 导致指标虚高\n\n| 项 | 内容 |\n|---|---|\n| 现象 | accuracy",
+          "sha256": "646ea039a4a1176fd7297451e816e88bf0edfadfcf1d49461fba825ba7ed44b7",
+          "doc_type": "失败复盘"
+        }
+      ]
+    },
+    {
+      "node_id": "fail.sms_failure_review.FR-01",
+      "node_type": "FailureCase",
+      "name": "[FR-01] 向量器在测试集上 fit 导致指标虚高",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "现象": "accuracy 0.997、macro-F1 0.985，上线后掉到 0.94",
+        "根因": "划分前对全量文本 `TfidfVectorizer.fit`，测试集词表与 IDF 泄漏进训练",
+        "错误签名": "`LeakageDetected`",
+        "修复策略": "向量器放进 `sklearn.Pipeline`，只在训练集 fit；划分前不触碰测试集",
+        "可复用经验": "文本任务的泄漏比表格更隐蔽，必须由 Pipeline 结构保证，而不是靠人工纪律",
+        "error_signature": "LeakageDetected"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/text/sms_failure_review.md",
+          "excerpt": "| 项 | 内容 |\n|---|---|\n| 现象 | accuracy 0.997、macro-F1 0.985，上线后掉到 0.94 |\n| 根因 | 划分前对全量文本 `TfidfVectorizer.fit`，测试集词表与 IDF 泄漏进训练 |\n| 错误签名 | `LeakageDetected` |\n| 修复策略 | 向量器放进 `sklearn.Pipeline`，只在训练集 fit；划分前不触碰测试集 |\n| 可复用经验 | 文本任务的泄漏比表格更隐蔽，必须由 Pipeline 结构保证，而不是靠人工纪律 |",
+          "sha256": "2fd6ff51081d903fe8250a4d7d0c1973916c72ee2d19087bb872e2a311070158",
+          "doc_type": "失败复盘"
+        }
+      ]
+    },
+    {
+      "node_id": "fail.sms_failure_review.FR-02",
+      "node_type": "FailureCase",
+      "name": "[FR-02] 只看 accuracy 掩盖少数类误杀",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "现象": "accuracy 0.98 看似达标，但 spam 召回只有 0.71，大量垃圾短信漏过",
+        "根因": "正例仅 13.4%，全判 ham 也能拿到 0.866 的 accuracy",
+        "错误签名": "`MetricBelowThreshold`",
+        "修复策略": "主指标改为 macro-F1 与 spam 召回，配合 `class_weight=\"balanced\"`",
+        "可复用经验": "类别不平衡场景禁止用 accuracy 单独验收",
+        "error_signature": "MetricBelowThreshold"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/text/sms_failure_review.md",
+          "excerpt": "| 项 | 内容 |\n|---|---|\n| 现象 | accuracy 0.98 看似达标，但 spam 召回只有 0.71，大量垃圾短信漏过 |\n| 根因 | 正例仅 13.4%，全判 ham 也能拿到 0.866 的 accuracy |\n| 错误签名 | `MetricBelowThreshold` |\n| 修复策略 | 主指标改为 macro-F1 与 spam 召回，配合 `class_weight=\"balanced\"` |\n| 可复用经验 | 类别不平衡场景禁止用 accuracy 单独验收 |",
+          "sha256": "8b07f32ece7019817cf90ea66276622ba93ad3b40c23515594d37f7e16725ea7",
+          "doc_type": "失败复盘"
+        }
+      ]
+    },
+    {
+      "node_id": "evidence.sms_policy",
+      "node_type": "Evidence",
+      "name": "证据源：assets/docs/text/sms_policy.md",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "path": "assets/docs/text/sms_policy.md",
+        "doc_type": "风控策略",
+        "file_sha256": "45cb52fd9dc68b75110e3eb1f504716afeb2a87099db02585d25aefb529b7506"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/text/sms_policy.md",
+          "excerpt": "# 短信垃圾过滤 · 策略与适用条件（能力抽取源 · 模拟业务材料）\n\n> 本文件为本项目构造的模拟业务材料，用于演示「换一个行业场景后，同一套抽取与检索仍然成立」。\n> 结构与主场景的 `risk_policy.md` 一致：适用条件抽为 `Capability`，验收门槛抽为 `Metric`。\n\n## 1. 业务目标\n\n在短信下发前判断是否为垃圾/欺诈短信，用于运营侧拦截与人工复核排队。模型",
+          "sha256": "34557ac31a513882f6a81f4c1a08bfd00d35ff85f44fe4458765c34782bbef05",
+          "doc_type": "风控策略"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.sms_policy.S1",
+      "node_type": "Capability",
+      "name": "[S1] 文本长度",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "S1",
+        "section": "2. 适用条件（约束）",
+        "编号": "S1",
+        "约束": "文本长度",
+        "说明": "少于 3 个字符的样本不参与训练，避免噪声主导词表",
+        "metrics": {
+          "编号": 1.0,
+          "说明": 3.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/text/sms_policy.md",
+          "excerpt": "| S1 | 文本长度 | 少于 3 个字符的样本不参与训练，避免噪声主导词表 |",
+          "sha256": "7380d361342b0e0b27cc1597b16165384040360a149e54063d82a67991782bee",
+          "doc_type": "风控策略"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.sms_policy.S2",
+      "node_type": "Capability",
+      "name": "[S2] 语言范围",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "S2",
+        "section": "2. 适用条件（约束）",
+        "编号": "S2",
+        "约束": "语言范围",
+        "说明": "当前仅覆盖英文短信；中文短信需要另行分词，不能直接复用本词表",
+        "metrics": {
+          "编号": 2.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/text/sms_policy.md",
+          "excerpt": "| S2 | 语言范围 | 当前仅覆盖英文短信；中文短信需要另行分词，不能直接复用本词表 |",
+          "sha256": "404a3fcfde764e7e7a05aa6b0a2210e80db991694ad66b08e8c51b1ed4d6aeb8",
+          "doc_type": "风控策略"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.sms_policy.S3",
+      "node_type": "Capability",
+      "name": "[S3] 类别严重不平衡",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "S3",
+        "section": "2. 适用条件（约束）",
+        "编号": "S3",
+        "约束": "类别严重不平衡",
+        "说明": "spam 约 13.4%，评估必须同时看 macro-F1，禁止只看 accuracy",
+        "metrics": {
+          "编号": 3.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/text/sms_policy.md",
+          "excerpt": "| S3 | 类别严重不平衡 | spam 约 13.4%，评估必须同时看 macro-F1，禁止只看 accuracy |",
+          "sha256": "581be9f4decf96dff04216faf1d38b0b41e7b7a5efd23e8a7ecad1c8b617bbf9",
+          "doc_type": "风控策略"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.sms_policy.S4",
+      "node_type": "Capability",
+      "name": "[S4] 词表边界",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "S4",
+        "section": "2. 适用条件（约束）",
+        "编号": "S4",
+        "约束": "词表边界",
+        "说明": "向量器只能在训练集 fit，禁止在验证集 / 测试集上统计词表",
+        "metrics": {
+          "编号": 4.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/text/sms_policy.md",
+          "excerpt": "| S4 | 词表边界 | 向量器只能在训练集 fit，禁止在验证集 / 测试集上统计词表 |",
+          "sha256": "e71d8f87b8d1c5d7e5554c8906b45caa660bb807173a09083ad4ba45f58652bf",
+          "doc_type": "风控策略"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.sms_policy.S5",
+      "node_type": "Capability",
+      "name": "[S5] 号码与链接",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "S5",
+        "section": "2. 适用条件（约束）",
+        "编号": "S5",
+        "约束": "号码与链接",
+        "说明": "电话、URL 用占位符替换，禁止让模型记住具体号码",
+        "metrics": {
+          "编号": 5.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/text/sms_policy.md",
+          "excerpt": "| S5 | 号码与链接 | 电话、URL 用占位符替换，禁止让模型记住具体号码 |",
+          "sha256": "b59cf5f52c369b441498acd050315b91851712d6bfe2e059500ef25dac6a0869",
+          "doc_type": "风控策略"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.sms_policy.S6",
+      "node_type": "Capability",
+      "name": "[S6] 判定阈值",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "S6",
+        "section": "2. 适用条件（约束）",
+        "编号": "S6",
+        "约束": "判定阈值",
+        "说明": "默认 0.5；业务可通过调阈值控制误杀率，调阈只在验证集做",
+        "metrics": {
+          "编号": 6.0,
+          "说明": 0.5
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/text/sms_policy.md",
+          "excerpt": "| S6 | 判定阈值 | 默认 0.5；业务可通过调阈值控制误杀率，调阈只在验证集做 |",
+          "sha256": "dd2d7d8fab02f3cd9af44ce64183b7ccdb1b60609d3b8487e200bf94d3eb351f",
+          "doc_type": "风控策略"
+        }
+      ]
+    },
+    {
+      "node_id": "metric.sms_policy.r01",
+      "node_type": "Metric",
+      "name": "[r01] 0.95",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "r01",
+        "section": "3. 验收门槛",
+        "指标": "accuracy",
+        "门槛": "0.95",
+        "口径": "验证集，固定种子随机切分",
+        "metrics": {
+          "门槛": 0.95
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/text/sms_policy.md",
+          "excerpt": "| accuracy | 0.95 | 验证集，固定种子随机切分 |",
+          "sha256": "4557a896a837a905ed44c58f86136674d107e75dd1ecee95f3379848928c8c7f",
+          "doc_type": "风控策略"
+        }
+      ]
+    },
+    {
+      "node_id": "metric.sms_policy.macro_f1",
+      "node_type": "Metric",
+      "name": "[macro_f1] 0.90",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "macro_f1",
+        "section": "3. 验收门槛",
+        "指标": "macro_f1",
+        "门槛": "0.90",
+        "口径": "验证集，兼顾 spam 少数类",
+        "metrics": {
+          "指标": 1.0,
+          "门槛": 0.9
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/text/sms_policy.md",
+          "excerpt": "| macro_f1 | 0.90 | 验证集，兼顾 spam 少数类 |",
+          "sha256": "94909ed9148cd15f6ba56cb55e995306313892ce7f893874e90b23d78669f9a6",
+          "doc_type": "风控策略"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "source": "cap.sms_data_dictionary.ST1",
+      "target": "evidence.sms_data_dictionary",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_data_dictionary.ST2",
+      "target": "evidence.sms_data_dictionary",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_data_dictionary.ST3",
+      "target": "evidence.sms_data_dictionary",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_data_dictionary.ST4",
+      "target": "evidence.sms_data_dictionary",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "fail.sms_failure_review.FR-01",
+      "target": "evidence.sms_failure_review",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "fail.sms_failure_review.FR-02",
+      "target": "evidence.sms_failure_review",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_policy.S1",
+      "target": "evidence.sms_policy",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_policy.S2",
+      "target": "evidence.sms_policy",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_policy.S3",
+      "target": "evidence.sms_policy",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_policy.S4",
+      "target": "evidence.sms_policy",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_policy.S5",
+      "target": "evidence.sms_policy",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_policy.S6",
+      "target": "evidence.sms_policy",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "metric.sms_policy.r01",
+      "target": "evidence.sms_policy",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "metric.sms_policy.macro_f1",
+      "target": "evidence.sms_policy",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_data_dictionary.ST1",
+      "target": "metric.sms_policy.r01",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_data_dictionary.ST2",
+      "target": "metric.sms_policy.macro_f1",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_data_dictionary.ST3",
+      "target": "metric.sms_policy.r01",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_data_dictionary.ST4",
+      "target": "metric.sms_policy.macro_f1",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_policy.S1",
+      "target": "metric.sms_policy.r01",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_policy.S2",
+      "target": "metric.sms_policy.macro_f1",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_policy.S3",
+      "target": "metric.sms_policy.r01",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_policy.S4",
+      "target": "metric.sms_policy.macro_f1",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_policy.S5",
+      "target": "metric.sms_policy.r01",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_policy.S6",
+      "target": "metric.sms_policy.macro_f1",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_data_dictionary.ST2",
+      "target": "cap.sms_data_dictionary.ST1",
+      "edge_type": "DERIVED_FROM",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_data_dictionary.ST3",
+      "target": "cap.sms_data_dictionary.ST1",
+      "edge_type": "DERIVED_FROM",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_data_dictionary.ST4",
+      "target": "cap.sms_data_dictionary.ST1",
+      "edge_type": "DERIVED_FROM",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_data_dictionary.ST1",
+      "target": "cap.sms_data_dictionary.ST2",
+      "edge_type": "SIMILAR_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_data_dictionary.ST2",
+      "target": "cap.sms_data_dictionary.ST3",
+      "edge_type": "SIMILAR_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_data_dictionary.ST3",
+      "target": "cap.sms_data_dictionary.ST4",
+      "edge_type": "SIMILAR_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.sms_data_dictionary.ST1",
+      "target": "cap.sms_policy.S1",
+      "edge_type": "TRANSFERABLE_TO",
+      "attributes": {}
+    },
+    {
+      "source": "fail.sms_failure_review.FR-01",
+      "target": "cap.sms_data_dictionary.ST1",
+      "edge_type": "FIXED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "fail.sms_failure_review.FR-02",
+      "target": "cap.sms_data_dictionary.ST1",
+      "edge_type": "FIXED_BY",
+      "attributes": {}
+    }
+  ],
+  "source_files": [
+    "assets/docs/text/sms_data_dictionary.md",
+    "assets/docs/text/sms_failure_review.md",
+    "assets/docs/text/sms_policy.md"
+  ],
+  "content_sha256": "6a5a44c675a92f62b4d2e0a9af27c61c6bccf3b4e16fbf4acb043624f93795ab"
+}

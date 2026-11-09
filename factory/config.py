@@ -113,6 +113,17 @@ class CandidateSettings(_ConfigModel):
     model_families: list[str] = Field(default_factory=list)
 
 
+class KnowledgeSourceSettings(_ConfigModel):
+    """``verify_*.yaml`` 的 knowledge 段：该场景的能力材料目录。
+
+    留空表示沿用 ``default.yaml`` 的全局路径；指定后该任务从自己的材料
+    抽取独立子图，避免跨领域检索把无关约束注入 prompt。
+    """
+
+    docs: str = ""
+    legacy: str = ""
+
+
 class TaskSettings(_ConfigModel):
     """任务级验证配置：换任务只改 ``verify_*.yaml``，不改核心验证器。"""
 
@@ -122,6 +133,7 @@ class TaskSettings(_ConfigModel):
     metrics: list[MetricSpec] = Field(default_factory=list)
     constraints: dict[str, Any] = Field(default_factory=dict)
     candidates: CandidateSettings = Field(default_factory=CandidateSettings)
+    knowledge: KnowledgeSourceSettings = Field(default_factory=KnowledgeSourceSettings)
 
     @property
     def sensitive_features(self) -> list[str]:

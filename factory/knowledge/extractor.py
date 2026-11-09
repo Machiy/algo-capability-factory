@@ -43,6 +43,10 @@ DOC_TYPE_BY_FILENAME: dict[str, str] = {
     "experiment_log.md": "实验记录",
     "test_report.md": "测试报告",
     "failure_review.md": "失败复盘",
+    # 文本场景材料（assets/docs/text/）：结构与主场景一致，复用同一解析路径
+    "sms_data_dictionary.md": "业务文档",
+    "sms_policy.md": "风控策略",
+    "sms_failure_review.md": "失败复盘",
 }
 LEGACY_DOC_TYPE = "历史代码"
 
@@ -50,7 +54,7 @@ _ID_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_-]*\d+[a-z]?$")
 _DEFECT_RE = re.compile(r"#\s*缺陷\s*\d+[：:]\s*(.+)")
 _SIGNATURE_RE = re.compile(
     r"KeyError|SchemaError|LeakageDetected|MetricSuspiciouslyHigh|"
-    r"Nondeterminism|Timeout|CostLossAboveBaseline"
+    r"MetricBelowThreshold|Nondeterminism|Timeout|CostLossAboveBaseline"
 )
 _PREFIX_BY_TYPE: dict[NodeType, str] = {
     NodeType.CAPABILITY: "cap",
@@ -144,7 +148,11 @@ def _name_from_row(cells: tuple[str, ...], item_id: str) -> str:
 
 
 def read_sources(root: Path, docs_dir: str, legacy_dir: str) -> list[SourceDocument]:
-    """读取 6 份业务材料与历史代码，返回带整文件哈希的契约对象。"""
+    """读取业务材料与历史代码，返回带整文件哈希的契约对象。
+
+    ``legacy_dir`` 传空字符串表示该场景没有历史代码（如纯文本任务），
+    不会被误判为「材料缺失」。
+    """
     sources: list[SourceDocument] = []
     docs = root / docs_dir
     if not docs.is_dir():
@@ -157,8 +165,8 @@ def read_sources(root: Path, docs_dir: str, legacy_dir: str) -> list[SourceDocum
             content=content,
             sha256=sha256_text(content),
         ))
-    legacy = root / legacy_dir
-    for path in sorted(legacy.glob("*.py")):
+    legacy = root / legacy_dir if legacy_dir else None
+    for path in sorted(legacy.glob("*.py")) if legacy else []:
         content = path.read_text(encoding="utf-8")
         sources.append(SourceDocument(
             path=path.relative_to(root).as_posix(),

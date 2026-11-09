@@ -17,13 +17,31 @@ from factory.knowledge.visualize import render_html
 logger = logging.getLogger(__name__)
 
 
-def build_knowledge_graph(settings: Settings, root: Path) -> KnowledgeGraph:
-    """构建知识图谱并产出全部交付物，返回图谱契约供检索器消费。"""
-    sources = read_sources(root, settings.paths.docs, settings.paths.legacy)
+def build_knowledge_graph(settings: Settings, root: Path,
+                          docs_dir: str | None = None,
+                          legacy_dir: str | None = None,
+                          prefix: str = "") -> KnowledgeGraph:
+    """构建知识图谱并产出全部交付物，返回图谱契约供检索器消费。
+
+    ``docs_dir`` / ``legacy_dir`` 覆盖全局路径，用于为不同场景构建独立子图；
+    ``prefix`` 给产物加前缀，避免第二个场景覆盖主场景的 JSON / CSV / GraphML。
+    """
+    docs = docs_dir or settings.paths.docs
+    legacy = settings.paths.legacy if legacy_dir is None else legacy_dir
+    sources = read_sources(root, docs, legacy)
     graph = MockExtractor().extract(sources)
     store = KnowledgeGraphStore(graph)
-    exported = store.export_all(settings, root)
-    render_html(graph, root / settings.paths.kg / "kg.html")
+    kg_dir = root / settings.paths.kg
+    if prefix:
+        exported: dict[str, Path] = {
+            "json": store.export_json(kg_dir / f"{prefix}capabilities.json"),
+            "csv": store.export_csv(kg_dir / f"{prefix}capabilities.csv"),
+            "graphml": store.export_graphml(kg_dir / f"{prefix}graph.graphml"),
+            "sqlite": store.persist_sqlite(kg_dir / f"{prefix}kg.db"),
+        }
+    else:
+        exported = store.export_all(settings, root)
+    render_html(graph, kg_dir / f"{prefix}kg.html")
     for name, path in exported.items():
         logger.info("产物 %s -> %s", name, path.relative_to(root))
     return graph
