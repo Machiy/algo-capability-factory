@@ -32,7 +32,7 @@ def main() -> int:
                         help="用复测 prompt 新增一条录制，不覆盖首次证据")
     args = parser.parse_args()
     configure_logging()
-    settings = load_settings(ROOT / "configs/default.yaml")
+    settings = load_settings(ROOT / "configs/default.yaml", apply_env=True)
     llm_settings = settings.llm.model_copy(update={
         "cassette": settings.llm.cassette.model_copy(update={"record": True}),
     })

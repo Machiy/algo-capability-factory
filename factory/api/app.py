@@ -100,7 +100,8 @@ def create_app(root: Path | None = None) -> Any:
         from factory.config import load_settings, load_task_settings
         from factory.workflow import Workflow
 
-        settings = load_settings(base / "configs/default.yaml")
+        settings = load_settings(base / "configs/default.yaml",
+                                 apply_env=not payload.mock)
         task = load_task_settings(base / "configs/verify_credit.yaml")
         if payload.mock:
             settings.llm = settings.llm.model_copy(

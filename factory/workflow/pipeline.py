@@ -507,7 +507,9 @@ def run_from_cli(spec_text: str, mock: bool = False,
     from factory.logging_setup import configure_logging
     root = root or Path.cwd()
     configure_logging()
-    settings = load_settings(root / "configs/default.yaml")
+    # --mock 时不读 .env，保证离线路径确定；不带 --mock 才让 .env 里的
+    # LLM_PROVIDER / LLM_MODEL 等真正生效（此前这些变量写了也没人读）
+    settings = load_settings(root / "configs/default.yaml", apply_env=not mock)
     task = load_task_settings(root / task_config)
     if mock:
         # --mock 表示全链路规则模板，按角色路由也一并关闭

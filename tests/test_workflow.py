@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from factory.agents import Coder, Curator, Planner, Repairer, Reviewer
 from factory.config import load_settings, load_task_settings
@@ -341,6 +343,27 @@ class WorkflowConfigTests(unittest.TestCase):
             workflow = Workflow(settings, task, ROOT)
         self.assertEqual(workflow.max_rounds, 1)
         self.assertEqual(workflow.planner.beam_width, 1)
+
+    def test_env_overrides_apply_only_when_requested(self) -> None:
+        """`.env` 的 LLM_PROVIDER 只在显式要求时生效。
+
+        默认不读环境变量，否则开发者本地填了真实后端后，一跑单测就会
+        产生真实请求与费用。
+        """
+        with patch.dict(os.environ, {"LLM_PROVIDER": "openai_compat",
+                                     "LLM_MODEL": "unit-model",
+                                     "LLM_MAX_TOKENS": "1234"}):
+            default = load_settings(CONFIG)
+            applied = load_settings(CONFIG, apply_env=True)
+        self.assertEqual(default.llm.provider, "mock")
+        self.assertEqual(applied.llm.provider, "openai_compat")
+        self.assertEqual(applied.llm.model, "unit-model")
+        self.assertEqual(applied.llm.max_tokens, 1234)
+
+    def test_invalid_env_value_is_ignored(self) -> None:
+        with patch.dict(os.environ, {"LLM_MAX_TOKENS": "not-a-number"}):
+            settings = load_settings(CONFIG, apply_env=True)
+        self.assertEqual(settings.llm.max_tokens, 8192)
 
     def test_missing_workflow_section_falls_back_to_defaults(self) -> None:
         import yaml

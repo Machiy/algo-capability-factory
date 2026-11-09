@@ -6,6 +6,9 @@
 
 from __future__ import annotations
 
+import logging
+import os
+from contextlib import suppress
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +16,44 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
 from factory.contracts.validation import MetricSpec, SplitSpec
+
+logger = logging.getLogger(__name__)
+
+# ``.env`` / 环境变量可覆盖的 LLM 字段：键为环境变量名，值为 (字段名, 解析函数)。
+# ``.env.example`` 一直在文档里承诺这些开关，但此前只有 ``LLM_API_KEY`` 被真正读取，
+# 改 ``LLM_PROVIDER`` 不会切换后端，容易出现「填了 key 却没有请求」的错觉。
+_ENV_LLM_FIELDS: dict[str, tuple[str, Any]] = {
+    "LLM_PROVIDER": ("provider", str),
+    "LLM_BASE_URL": ("base_url", str),
+    "LLM_MODEL": ("model", str),
+    "LLM_TEMPERATURE": ("temperature", float),
+    "LLM_MAX_TOKENS": ("max_tokens", int),
+    "LLM_TIMEOUT_SECONDS": ("timeout_seconds", float),
+    "LLM_REASONING_EFFORT": ("reasoning_effort", str),
+    "LLM_THINKING": ("thinking", str),
+    "LLM_CONTEXT_BUDGET_TOKENS": ("context_budget_tokens", int),
+}
+
+
+def _load_dotenv() -> None:
+    """可选加载 ``.env``；未安装 ``python-dotenv`` 时静默跳过。"""
+    with suppress(ImportError):
+        from dotenv import load_dotenv
+        load_dotenv()
+
+
+def _env_llm_overrides() -> dict[str, Any]:
+    """读取环境变量中的 LLM 覆盖项；无法解析的项记 warning 后忽略。"""
+    overrides: dict[str, Any] = {}
+    for env_key, (field, cast) in _ENV_LLM_FIELDS.items():
+        raw = os.environ.get(env_key, "").strip()
+        if not raw:
+            continue
+        try:
+            overrides[field] = cast(raw)
+        except (TypeError, ValueError):
+            logger.warning("环境变量 %s=%r 无法解析，已忽略", env_key, raw)
+    return overrides
 
 
 class _ConfigModel(BaseModel):
@@ -196,17 +237,34 @@ def _read_mapping(path: Path) -> dict:
     return payload
 
 
-def load_settings(config_path: str | Path) -> Settings:
-    """读取全局配置，返回强类型配置契约。"""
+def load_settings(config_path: str | Path, apply_env: bool = False) -> Settings:
+    """读取全局配置，返回强类型配置契约。
+
+    ``apply_env=True`` 时再用 ``.env`` / 环境变量覆盖 LLM 段。默认关闭，
+    保证单测与 CI 不被开发者本地的真实后端配置影响——否则本地填了 key 的
+    开发者一跑测试就会产生真实请求与费用。
+    """
     payload = _read_mapping(Path(config_path))
     for section in ("knowledge", "paths"):
         if section not in payload:
             raise ValueError(f"配置缺少 {section} 段：{config_path}")
+    llm_payload = dict(payload.get("llm", {}))
+    if apply_env:
+        _load_dotenv()
+        llm_payload.update(_env_llm_overrides())
+        cassette = dict(llm_payload.get("cassette", {}))
+        record = os.environ.get("FACTORY_LLM_RECORD", "").strip().lower()
+        if record:
+            cassette["record"] = record in {"1", "true", "yes", "on"}
+        cassette_dir = os.environ.get("FACTORY_LLM_CASSETTE_DIR", "").strip()
+        if cassette_dir:
+            cassette["dir"] = cassette_dir
+        llm_payload["cassette"] = cassette
     return Settings(
         knowledge=KnowledgeSettings(**payload["knowledge"]),
         paths=PathsSettings(**payload["paths"]),
         runtime=RuntimeSettings(**payload.get("runtime", {})),
-        llm=LLMSettings(**payload.get("llm", {})),
+        llm=LLMSettings(**llm_payload),
         workflow=WorkflowSettings(**payload.get("workflow", {})),
     )
 
