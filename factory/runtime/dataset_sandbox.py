@@ -37,6 +37,7 @@ import time
 import traceback
 
 candidate, data_path, target, train_end, valid_end, forbidden_json = sys.argv[1:7]
+text_column = sys.argv[7] if len(sys.argv) > 7 else ""
 train_end = int(train_end)
 valid_end = int(valid_end)
 forbidden = set(json.loads(forbidden_json))
@@ -48,37 +49,69 @@ def _percentile(values, ratio):
     index = min(len(ordered) - 1, max(0, int(round(ratio * (len(ordered) - 1)))))
     return round(ordered[index], 4)
 
+def _predict_score(pipeline, features):
+    """二分类概率优先；无 predict_proba 的模型退回 decision_function。"""
+    try:
+        proba = pipeline.predict_proba(features)
+        if getattr(proba, "ndim", 0) == 2 and proba.shape[1] == 2:
+            return [float(value) for value in proba[:, 1]]
+    except (AttributeError, NotImplementedError):
+        pass
+    try:
+        decision = pipeline.decision_function(features)
+        return [float(value) for value in decision]
+    except (AttributeError, NotImplementedError):
+        return []
+
+def _warm_predict(pipeline, features):
+    """推理延迟探针：优先 predict_proba，没有就 predict。"""
+    if hasattr(pipeline, "predict_proba"):
+        return pipeline.predict_proba(features)
+    return pipeline.predict(features)
+
 try:
     import pandas as pd
     namespace = runpy.run_path(candidate)
-    columns = namespace["FEATURE_COLUMNS"]
-    overlap = forbidden.intersection(columns)
-    if overlap:
-        raise ValueError("ForbiddenFeature: " + ",".join(sorted(overlap)))
     frame = pd.read_csv(data_path)
-    features = frame[columns]
     labels = frame[target]
-    x_train = features.iloc[:train_end]
     y_train = labels.iloc[:train_end]
-    x_valid = features.iloc[train_end:valid_end]
     y_valid = labels.iloc[train_end:valid_end]
+    if text_column:
+        texts = frame[text_column].astype(str)
+        x_train = texts.iloc[:train_end]
+        x_valid = texts.iloc[train_end:valid_end]
+        feature_count = 1
+    else:
+        columns = namespace["FEATURE_COLUMNS"]
+        overlap = forbidden.intersection(columns)
+        if overlap:
+            raise ValueError("ForbiddenFeature: " + ",".join(sorted(overlap)))
+        features = frame[columns]
+        x_train = features.iloc[:train_end]
+        x_valid = features.iloc[train_end:valid_end]
+        feature_count = len(columns)
     pipeline = namespace["build_pipeline"]({})
     pipeline.fit(x_train, y_train)
-    valid_score = pipeline.predict_proba(x_valid)[:, 1]
-    train_score = pipeline.predict_proba(x_train)[:, 1]
+    y_score = _predict_score(pipeline, x_valid)
+    y_pred = None
+    if text_column:
+        y_pred = [value.item() if hasattr(value, "item") else value
+                  for value in pipeline.predict(x_valid)]
+    train_score = _predict_score(pipeline, x_train)
     latencies = []
     for start in range(0, len(x_valid), 64):
         chunk = x_valid.iloc[start:start + 64]
         began = time.perf_counter()
-        pipeline.predict_proba(chunk)
+        _warm_predict(pipeline, chunk)
         latencies.append((time.perf_counter() - began) * 1000.0 / len(chunk))
     print(json.dumps({
         "status": "ok",
         "y_true": [float(value) for value in y_valid],
-        "y_score": [float(value) for value in valid_score],
-        "reference": [float(value) for value in train_score[:500]],
-        "current": [float(value) for value in valid_score[:500]],
-        "feature_count": len(columns),
+        "y_score": y_score,
+        "y_pred": y_pred,
+        "reference": train_score[:500],
+        "current": y_score[:500],
+        "feature_count": feature_count,
         "inference_p50_ms": _percentile(latencies, 0.50),
         "inference_p95_ms": _percentile(latencies, 0.95),
     }))
@@ -103,11 +136,12 @@ class DatasetSandbox:
 
     def __init__(self, runtime: RuntimeSettings, split: SplitSpec,
                  data_path: Path, target: str, forbidden: list[str],
-                 n_samples: int = 30000) -> None:
+                 n_samples: int = 30000, text_column: str = "") -> None:
         self.runtime = runtime
         self.data_path = data_path
         self.target = target
         self.forbidden = forbidden
+        self.text_column = text_column
         self.train_end = int(n_samples * split.train_ratio)
         self.valid_end = int(n_samples * (split.train_ratio + split.valid_ratio))
 
@@ -123,7 +157,7 @@ class DatasetSandbox:
             arguments = [
                 sys.executable, str(runner), str(candidate), str(self.data_path),
                 self.target, str(self.train_end), str(self.valid_end),
-                json.dumps(self.forbidden),
+                json.dumps(self.forbidden), self.text_column,
             ]
             started = time.monotonic()
             proc = subprocess.Popen(
@@ -149,10 +183,14 @@ class DatasetSandbox:
             payload = json.loads(stdout.strip().splitlines()[-1])
         except (IndexError, ValueError):
             payload = {}
+        # 文本任务由子进程直接给出预测标签；表格任务由概率按 0.5 阈值派生
+        predicted = payload.get("y_pred") or [
+            int(value >= 0.5) for value in payload.get("y_score", [])
+        ]
         context = {
             "y_true": payload.get("y_true", []),
-            "y_score": payload.get("y_score", []),
-            "y_pred": [int(value >= 0.5) for value in payload.get("y_score", [])],
+            "y_score": payload.get("y_score") or [],
+            "y_pred": predicted,
             "reference": payload.get("reference", []),
             "current": payload.get("current", []),
         }

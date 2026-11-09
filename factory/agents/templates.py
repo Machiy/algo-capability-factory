@@ -28,13 +28,21 @@ def register(model_family: str) -> Callable[[TemplateFn], TemplateFn]:
     return decorator
 
 
-def render(model_family: str, columns: list[str], hyperparams: dict[str, Any]) -> str:
-    """按模型族渲染源码；未注册时回退 ``logistic_regression`` 并记 warning。"""
-    function = _REGISTRY.get(model_family)
-    if function is None:
-        logger.warning("未注册算法模板 %s，回退 logistic_regression", model_family)
-        function = _REGISTRY["logistic_regression"]
-    return function(columns, hyperparams)
+def render(model_family: str, columns: list[str], hyperparams: dict[str, Any],
+           task_type: str = "") -> str:
+    """按模型族渲染源码。
+
+    先按 ``<task_type>.<model_family>`` 查找任务专属模板（如文本分类的
+    TF-IDF 管线），再退回通用表格模板；两者都没有时回退
+    ``logistic_regression`` 并记 warning，绝不静默产出不匹配的代码。
+    """
+    keys = [f"{task_type}.{model_family}", model_family] if task_type else [model_family]
+    for key in keys:
+        function = _REGISTRY.get(key)
+        if function is not None:
+            return function(columns, hyperparams)
+    logger.warning("未注册算法模板 %s，回退 logistic_regression", model_family)
+    return _REGISTRY["logistic_regression"](columns, hyperparams)
 
 
 def list_templates() -> list[str]:
@@ -117,10 +125,99 @@ def _random_forest(columns: list[str], hyperparams: dict[str, Any]) -> str:
     )
 
 
+TEXT_LOGISTIC_TEMPLATE = '''\
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline
+
+TEXT_COLUMN = {text_column}
+
+def build_pipeline(config):
+    return Pipeline([
+        ("tfidf", TfidfVectorizer(
+            ngram_range=(1, {ngram_max}), min_df={min_df},
+            max_features={max_features}, sublinear_tf=True)),
+        ("model", LogisticRegression(C={c_value}, max_iter=1000, random_state=42,
+                                     class_weight="balanced")),
+    ])
+'''
+
+
+@register("text_classification.logistic_regression")
+def _text_logistic(columns: list[str], hyperparams: dict[str, Any]) -> str:
+    return TEXT_LOGISTIC_TEMPLATE.format(
+        text_column=json.dumps(hyperparams.get("text_column", "text")),
+        ngram_max=hyperparams.get("ngram_max", 2),
+        min_df=hyperparams.get("min_df", 2),
+        max_features=hyperparams.get("max_features", 50000),
+        c_value=hyperparams.get("C", 1.0),
+    )
+
+
+TEXT_SVM_TEMPLATE = '''\
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.pipeline import Pipeline
+from sklearn.svm import LinearSVC
+
+TEXT_COLUMN = {text_column}
+
+def build_pipeline(config):
+    return Pipeline([
+        ("tfidf", TfidfVectorizer(
+            ngram_range=(1, {ngram_max}), min_df={min_df},
+            max_features={max_features}, sublinear_tf=True)),
+        ("model", LinearSVC(C={c_value}, max_iter=5000, random_state=42,
+                            class_weight="balanced")),
+    ])
+'''
+
+
+@register("text_classification.linear_svc")
+def _text_svm(columns: list[str], hyperparams: dict[str, Any]) -> str:
+    return TEXT_SVM_TEMPLATE.format(
+        text_column=json.dumps(hyperparams.get("text_column", "text")),
+        ngram_max=hyperparams.get("ngram_max", 1),
+        min_df=hyperparams.get("min_df", 2),
+        max_features=hyperparams.get("max_features", 50000),
+        c_value=hyperparams.get("C", 1.0),
+    )
+
+
+TEXT_NB_TEMPLATE = '''\
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import ComplementNB
+from sklearn.pipeline import Pipeline
+
+TEXT_COLUMN = {text_column}
+
+def build_pipeline(config):
+    return Pipeline([
+        ("tfidf", TfidfVectorizer(
+            ngram_range=(1, {ngram_max}), min_df={min_df},
+            max_features={max_features}, sublinear_tf=True)),
+        ("model", ComplementNB(alpha={alpha})),
+    ])
+'''
+
+
+@register("text_classification.complement_nb")
+def _text_nb(columns: list[str], hyperparams: dict[str, Any]) -> str:
+    return TEXT_NB_TEMPLATE.format(
+        text_column=json.dumps(hyperparams.get("text_column", "text")),
+        ngram_max=hyperparams.get("ngram_max", 1),
+        min_df=hyperparams.get("min_df", 2),
+        max_features=hyperparams.get("max_features", 50000),
+        alpha=hyperparams.get("alpha", 1.0),
+    )
+
+
 __all__ = [
     "GRADIENT_BOOSTING_TEMPLATE",
     "LOGISTIC_REGRESSION_TEMPLATE",
     "RANDOM_FOREST_TEMPLATE",
+    "TEXT_LOGISTIC_TEMPLATE",
+    "TEXT_NB_TEMPLATE",
+    "TEXT_SVM_TEMPLATE",
     "list_templates",
     "register",
     "render",

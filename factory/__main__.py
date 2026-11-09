@@ -51,10 +51,24 @@ def main(
 def run(
     spec: str = typer.Option(..., "--spec", help="自然语言能力描述"),
     mock: bool = typer.Option(False, "--mock", help="强制使用离线 MockLLM"),
+    task_config: str = typer.Option(
+        "configs/verify_credit.yaml", "--task-config",
+        help="任务级验证配置；换场景只换 yaml，不改代码",
+    ),
+    run_id: str = typer.Option("demo", "--run-id", help="运行标识，决定报告与轨迹文件名"),
+    kg_filename: str = typer.Option(
+        "capabilities_after_run.json", "--kg-out",
+        help="回写图谱文件名；不同场景各用一份，避免指标互相污染",
+    ),
+    gen_dir: str = typer.Option(
+        "", "--gen-dir",
+        help="生成代码子目录；不同场景分开存放，避免互相覆盖",
+    ),
 ) -> None:
     """跑通 a–g 七步闭环。"""
     from factory.workflow import run_from_cli
-    raise typer.Exit(run_from_cli(spec, mock, ROOT))
+    raise typer.Exit(run_from_cli(spec, mock, ROOT, task_config, run_id,
+                                  kg_filename, gen_dir))
 
 
 @app.command()

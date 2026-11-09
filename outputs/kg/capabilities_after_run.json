@@ -2473,7 +2473,7 @@
           "grouped_auc_gap": 0.05875830231396728
         },
         "passed": false,
-        "duration_seconds": 1.937
+        "duration_seconds": 2.141
       },
       "evidence": []
     },
@@ -2495,7 +2495,7 @@
           "grouped_auc_gap": 0.058616072130054264
         },
         "passed": false,
-        "duration_seconds": 2.0
+        "duration_seconds": 2.157
       },
       "evidence": []
     },
@@ -2517,7 +2517,7 @@
           "grouped_auc_gap": 0.004885606390561015
         },
         "passed": true,
-        "duration_seconds": 2.203
+        "duration_seconds": 2.609
       },
       "evidence": []
     },
@@ -2581,7 +2581,7 @@
           "grouped_auc_gap": 0.05875830231396728
         },
         "passed": false,
-        "duration_seconds": 1.969
+        "duration_seconds": 2.188
       },
       "evidence": []
     },
@@ -2603,7 +2603,7 @@
           "grouped_auc_gap": 0.058616072130054264
         },
         "passed": false,
-        "duration_seconds": 2.094
+        "duration_seconds": 2.235
       },
       "evidence": []
     },
@@ -2625,7 +2625,7 @@
           "grouped_auc_gap": 0.004885606390561015
         },
         "passed": true,
-        "duration_seconds": 2.39
+        "duration_seconds": 2.593
       },
       "evidence": []
     },
@@ -4325,5 +4325,5 @@
     "assets/docs/test_report.md",
     "assets/legacy/legacy_default_model.py"
   ],
-  "content_sha256": "e65c07e98311d8fb2b632bf35341f9d566e337dfe23130a7bb62909b90d6e89e"
+  "content_sha256": "5a155e354d924c8b278774b718d7ac2d920bf26a2da6e548e0c8e73e6b564bbc"
 }

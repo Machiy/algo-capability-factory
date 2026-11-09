@@ -5,7 +5,7 @@
 - 方案：baseline_logreg
 - 任务类型：tabular_binary_classification
 - 通过状态：**FAIL**
-- 错误签名：OSError: [WinError 10106] 无法加载或初始化请求的服务提供程序。
+- 错误签名：MetricBelowThreshold
 
 ## 1. 接口规范
 
@@ -26,9 +26,9 @@
 ## 2. 功能正确性
 
 
-- smoke_passed：FAIL
+- smoke_passed：PASS
 
-- no_exception：FAIL
+- no_exception：PASS
 
 - deterministic：PASS
 
@@ -56,9 +56,9 @@
 ## 4. 运行稳定性
 
 
-- duration_seconds：2.469
+- duration_seconds：2.0
 
-- peak_memory_mb：4.08
+- peak_memory_mb：151.18
 
 - memory_limit_applied：True
 
@@ -68,7 +68,9 @@
 
 - repeat_variance：None
 
+- inference_p95_ms：None
+
 
 ## 5. 说明
 
-smoke_passed; no_exception; auc; f1
+auc; f1

@@ -65,21 +65,30 @@ class _GraphState(TypedDict, total=False):
     last_repair_no_change: bool
 
 
-def _candidate_score(report: ValidationReport) -> float:
-    value = report.metric_values.get("auc")
+def _candidate_score(report: ValidationReport, metric_name: str = "auc") -> float:
+    """按任务的主指标给候选打分；该指标算不出时退化为 0，不伪造数值。"""
+    value = report.metric_values.get(metric_name)
     return float(value) if isinstance(value, (int, float)) else 0.0
 
 
 def render_run_report(trace: RunTrace, reports: list[ValidationReport],
-                      rationale: str, path: Path) -> Path:
+                      rationale: str, path: Path, metric_name: str = "auc",
+                      task_config: str = "verify_credit.yaml",
+                      kg_path: str = "outputs/kg/capabilities_after_run.json",
+                      text_mode: bool = False) -> Path:
     """生成端到端报告：七步轨迹、候选排名、修复轨迹、四层结论与图谱 diff。"""
+    header = [
+        "> 本报告为真实运行的产物。核心闭环演示走 `MockLLM` 规则模板路径",
+        "> （开发要求 g），生成代码在子进程用真实数据集执行，指标均为实测，未造数值。",
+    ]
+    if not text_mode:
+        header.append("> T1 列名错误由规则模板模拟 LLM 的直觉命名，"
+                      "并在子进程用真实数据集触发 `KeyError` 后定向修复。")
+    header.append("> test 集全程未访问。引用 cassette 回放的内容须另标注「离线回放」。")
     lines = [
         f"# 端到端运行报告 · {trace.run_id}",
         "",
-        "> 本报告为真实运行的产物。核心闭环演示走 `MockLLM` 规则模板路径",
-        "> （开发要求 g），T1 列名错误由规则模板模拟 LLM 的直觉命名，",
-        "> 并在子进程用真实数据集触发 `KeyError` 后定向修复；指标均为实测，未造数值。",
-        "> test 集全程未访问。引用 cassette 回放的内容须另标注「离线回放」。",
+        *header,
         "",
         f"- 能力描述：{trace.spec}",
         f"- 能力理解来源：{trace.interpreter_source}",
@@ -89,7 +98,7 @@ def render_run_report(trace: RunTrace, reports: list[ValidationReport],
         f"- 四层全通过：**{'PASS' if trace.passed else 'FAIL'}**",
         f"- 七步轨迹：{' → '.join(trace.steps)}",
         "",
-        "> 说明：四层全通过为 FAIL 时，通常是「指标表现」层未达 `verify_credit.yaml`",
+        f"> 说明：四层全通过为 FAIL 时，通常是「指标表现」层未达 `{task_config}`",
         "> 的业务门槛；接口 / 功能 / 稳定性结论见第 3 节，失败记录已回写 FailureCase。",
         "",
         "## 1. 检索证据（进入 Planner / Coder prompt）",
@@ -98,15 +107,15 @@ def render_run_report(trace: RunTrace, reports: list[ValidationReport],
         trace.retrieval_prompt,
         "```",
         "",
-        "## 2. 候选方案比较（Beam Top-3）",
+        f"## 2. 候选方案比较（Beam Top-3，主指标 {metric_name}）",
         "",
-        "| 方案 | 模型族 | AUC | 通过 | 修复轮次 |",
+        f"| 方案 | 模型族 | {metric_name} | 通过 | 修复轮次 |",
         "|---|---|---|---|---|",
     ]
     for item in sorted(trace.candidates, key=lambda c: -c.score):
-        auc = item.metrics.get("auc")
-        auc_text = "N/A" if auc is None else f"{auc:.4f}"
-        lines.append(f"| {item.plan_id} | {item.model_family} | {auc_text} | "
+        value = item.metrics.get(metric_name)
+        value_text = "N/A" if value is None else f"{value:.4f}"
+        lines.append(f"| {item.plan_id} | {item.model_family} | {value_text} | "
                      f"{'PASS' if item.passed else 'FAIL'} | {item.repair_rounds} |")
     lines.extend([
         "",
@@ -138,7 +147,7 @@ def render_run_report(trace: RunTrace, reports: list[ValidationReport],
         lines.append(f"- {key}：{value}")
     lines.extend(["", "## 6. 产物", ""])
     lines.extend(f"- `{item}`" for item in trace.generated_files)
-    lines.append("- 回写图谱：`outputs/kg/capabilities_after_run.json`")
+    lines.append(f"- 回写图谱：`{kg_path}`")
     lines.extend(["", trace.notes, ""])
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(lines), encoding="utf-8")
@@ -149,12 +158,20 @@ class Workflow:
     """一次端到端运行；LangGraph 图在初始化时编译，节点复用已构造的角色。"""
 
     def __init__(self, settings: Settings, task: TaskSettings, root: Path,
-                 use_knowledge: bool = True) -> None:
+                 use_knowledge: bool = True,
+                 task_config: str = "configs/verify_credit.yaml",
+                 kg_filename: str = "capabilities_after_run.json",
+                 generated_subdir: str = "") -> None:
         self.settings = settings
         self.task = task
         self.root = root
         self.use_knowledge = use_knowledge
-        after_run = root / settings.paths.kg / "capabilities_after_run.json"
+        self.task_config = task_config
+        # 不同场景各自沉淀到独立图谱文件，避免跨场景指标混进同一份统计
+        self.kg_filename = kg_filename
+        # 不同场景的生成代码分目录存放，避免后跑的覆盖先跑的
+        self.generated_subdir = generated_subdir
+        after_run = root / settings.paths.kg / kg_filename
         loaded = load_graph(after_run) if use_knowledge else None
         if loaded is None:
             sources = read_sources(root, settings.paths.docs, settings.paths.legacy)
@@ -165,12 +182,22 @@ class Workflow:
             self.graph_source = "after_run"
             logger.info("加载上一轮回写图谱：%s（%d 节点）", after_run, len(loaded.nodes))
         llm = build_llm(settings.llm, root)
-        frame = pd.read_csv(root / settings.paths.data, nrows=1)
+        self.task_type = task.task_type
+        self.text_column = task.dataset.text_column
+        self.metric_name = task.metrics[0].name if task.metrics else "auc"
+        self.families = list(task.candidates.model_families)
         excluded = set(task.dataset.forbidden_features)
         excluded.update(task.sensitive_features)
         excluded.update({task.dataset.target, task.dataset.id_column})
-        self.columns = [name for name in frame.columns if name not in excluded]
-        with (root / settings.paths.data).open(encoding="utf-8") as handle:
+        excluded.discard("")
+        # 任务自带数据集路径时优先用它，否则回落到全局 paths.data
+        data_path = root / (task.dataset.path or settings.paths.data)
+        frame = pd.read_csv(data_path, nrows=1)
+        # 文本任务不按表格列选特征，改由模板声明的 TEXT_COLUMN 驱动
+        self.columns = [] if self.text_column else [
+            name for name in frame.columns if name not in excluded
+        ]
+        with data_path.open(encoding="utf-8") as handle:
             n_samples = sum(1 for _ in handle) - 1
         checker = StaticChecker(settings.runtime, task.dataset)
         self.interpreter = Interpreter(llm, settings.llm)
@@ -183,13 +210,13 @@ class Workflow:
         self.repairer = Repairer(llm)
         self.curator = Curator(graph, llm)
         self.sandbox = DatasetSandbox(
-            settings.runtime, task.split, root / settings.paths.data,
+            settings.runtime, task.split, data_path,
             task.dataset.target, sorted(excluded), n_samples,
+            text_column=self.text_column,
         )
         group_column = task.sensitive_features[0] if task.sensitive_features else None
         if group_column:
-            group_frame = pd.read_csv(root / settings.paths.data,
-                                      usecols=[group_column])
+            group_frame = pd.read_csv(data_path, usecols=[group_column])
             self.groups = [int(value) for value in group_frame[group_column].iloc[
                 self.sandbox.train_end:self.sandbox.valid_end]]
         else:
@@ -245,7 +272,8 @@ class Workflow:
         return {"retrieval": retrieval, "trace": trace}
 
     def _n_plan(self, state: _GraphState) -> dict:
-        plans = self.planner.plan(state["spec"], state["retrieval"])
+        plans = self.planner.plan(state["spec"], state["retrieval"],
+                                  families=self.families, task_type=self.task_type)
         trace = state["trace"]
         trace.steps.append(SEVEN_STEPS[2])
         return {"plans": plans, "candidate_index": 0, "reports": [], "trace": trace}
@@ -253,9 +281,13 @@ class Workflow:
     def _n_generate(self, state: _GraphState) -> dict:
         index = state["candidate_index"]
         plan = state["plans"][index]
-        source = self.coder.generate(plan, state["retrieval"], self.columns, index == 0)
+        source = self.coder.generate(
+            plan, state["retrieval"], self.columns, index == 0,
+            task_type=self.task_type, text_column=self.text_column,
+        )
         trace = state["trace"]
-        trace.used_historical_warnings = any(
+        # T1 列名经验只对表格场景有意义，文本场景不据此声称命中历史经验
+        trace.used_historical_warnings = (not self.text_column) and any(
             "PAY_1" in warning for warning in state["retrieval"].failure_warnings
         )
         trace.steps.append(SEVEN_STEPS[3])
@@ -304,7 +336,7 @@ class Workflow:
     def _n_finalize(self, state: _GraphState) -> dict:
         plan, report = state["plan"], state["report"]
         generated = (self.root / self.settings.paths.generated /
-                     f"candidate_{plan.plan_id}.py")
+                     self.generated_subdir / f"candidate_{plan.plan_id}.py")
         generated.parent.mkdir(parents=True, exist_ok=True)
         generated.write_text(state["source"], encoding="utf-8")
         trace = state["trace"]
@@ -313,7 +345,7 @@ class Workflow:
             plan_id=plan.plan_id,
             model_family=plan.model_family,
             passed=report.passed,
-            score=_candidate_score(report),
+            score=_candidate_score(report, self.metric_name),
             metrics=report.metric_values,
             repair_rounds=state["repair_rounds"],
         ))
@@ -328,8 +360,7 @@ class Workflow:
     def _n_sink(self, state: _GraphState) -> dict:
         trace = state["trace"]
         if self.use_knowledge:
-            kg_out = (self.root / self.settings.paths.kg /
-                      "capabilities_after_run.json")
+            kg_out = self.root / self.settings.paths.kg / self.kg_filename
             trace.kg_diff = self.curator.sink(trace, state["reports"], kg_out)
         else:
             # 消融对照组不回写，避免污染实验
@@ -346,6 +377,10 @@ class Workflow:
         trace.report_path = render_run_report(
             trace, state["reports"], self.curator.explain(trace),
             self.root / self.settings.paths.reports / f"run_{trace.run_id}.md",
+            metric_name=self.metric_name,
+            task_config=Path(self.task_config).name,
+            kg_path=f"{self.settings.paths.kg}/{self.kg_filename}",
+            text_mode=bool(self.text_column),
         ).relative_to(self.root).as_posix()
         write_trace(
             self.root / self.settings.paths.runs / f"trace_{trace.run_id}.json",
@@ -365,30 +400,41 @@ class Workflow:
 
 
 def run_from_cli(spec_text: str, mock: bool = False,
-                 root: Path | None = None) -> int:
-    """CLI 入口；默认按配置 provider，--mock 时强制规则模板。"""
+                 root: Path | None = None,
+                 task_config: str = "configs/verify_credit.yaml",
+                 run_id: str = "demo",
+                 kg_filename: str = "capabilities_after_run.json",
+                 generated_subdir: str = "") -> int:
+    """CLI 入口；默认按配置 provider，--mock 时强制规则模板。
+
+    ``task_config`` 决定任务类型与指标门槛——换场景只换 yaml，不改代码。
+    """
     from factory.logging_setup import configure_logging
     root = root or Path.cwd()
     configure_logging()
     settings = load_settings(root / "configs/default.yaml")
-    task = load_task_settings(root / "configs/verify_credit.yaml")
+    task = load_task_settings(root / task_config)
     if mock:
         # --mock 表示全链路规则模板，按角色路由也一并关闭
         settings.llm = settings.llm.model_copy(
             update={"provider": "mock", "role_providers": {}}
         )
-    trace = Workflow(settings, task, root).run(spec_text)
+    workflow = Workflow(settings, task, root, task_config=task_config,
+                        kg_filename=kg_filename,
+                        generated_subdir=generated_subdir)
+    trace = workflow.run(spec_text, run_id)
     print(f"[P3] 七步闭环执行完成；四层全通过={trace.passed} "
           f"理解来源={trace.interpreter_source} "
           f"候选={len(trace.candidates)} 修复={len(trace.repairs)} "
           f"报告={trace.report_path}")
     for item in sorted(trace.candidates, key=lambda c: -c.score):
-        print(f"  {item.plan_id}: auc={item.metrics.get('auc')} "
+        print(f"  {item.plan_id}: {workflow.metric_name}={item.metrics.get(workflow.metric_name)} "
               f"passed={item.passed} repairs={item.repair_rounds}")
     for record in trace.repairs:
         print(f"  修复[{record.round}] {record.error_signature} -> {record.fix_strategy}")
     if not trace.passed:
-        print("  说明：指标层未达 verify_credit.yaml 业务门槛，已如实判 FAIL 并回写 FailureCase")
+        print(f"  说明：指标层未达 {Path(task_config).name} 业务门槛，"
+              "已如实判 FAIL 并回写 FailureCase")
     return 0
 
 

@@ -11,7 +11,11 @@ import json
 import re
 from pathlib import Path
 
-from factory.agents.templates import LOGISTIC_REGRESSION_TEMPLATE, render
+from factory.agents.templates import (
+    LOGISTIC_REGRESSION_TEMPLATE,
+    list_templates,
+    render,
+)
 from factory.config import LLMSettings
 from factory.contracts.knowledge import KnowledgeGraph, RetrievalResult
 from factory.contracts.llm import LLMRequest
@@ -62,6 +66,9 @@ HYPERPARAM_PRESETS: dict[str, list[dict[str, float]]] = {
         {"n_estimators": 200, "max_depth": 8},
         {"n_estimators": 300, "max_depth": 10},
     ],
+    # 文本分类族：TF-IDF 管线，超参与表格族互不复用
+    "linear_svc": [{"C": 0.5}, {"C": 1.0}],
+    "complement_nb": [{"alpha": 0.5}, {"alpha": 1.0}],
 }
 
 
@@ -193,14 +200,29 @@ class Planner:
     def __init__(self, llm: BaseLLM) -> None:
         self.llm = llm
 
-    def plan(self, spec: CapabilitySpec, retrieval: RetrievalResult) -> list[CandidatePlan]:
+    def plan(self, spec: CapabilitySpec, retrieval: RetrievalResult,
+             families: list[str] | None = None,
+             task_type: str = "") -> list[CandidatePlan]:
+        """规划候选方案。
+
+        当该任务类型注册了专属算法模板（如文本分类的 TF-IDF 管线）时，
+        以 ``verify_*.yaml`` 的 ``candidates.model_families`` 为准并去重，
+        避免 Planner 提案出该任务无法渲染的模型族；表格场景仍沿用提案。
+        """
         user = f"能力描述：{spec.description}\n{retrieval.as_prompt_context()}"
         request = LLMRequest(role="Planner", system=SYSTEM_PROMPTS["Planner"], user=user)
         parsed = self.llm.complete(request).parsed
         raw_plans = parsed.get("candidates", [])
+        available = [family for family in (families or [])
+                     if f"{task_type}.{family}" in list_templates()]
+        used: set[str] = set()
         plans: list[CandidatePlan] = []
         for index, item in enumerate(raw_plans[:3], start=1):
             family = str(item.get("model_family", "logistic_regression"))
+            if available and (family not in available or family in used):
+                family = next((name for name in available if name not in used),
+                              family)
+            used.add(family)
             presets = HYPERPARAM_PRESETS.get(
                 family, HYPERPARAM_PRESETS["logistic_regression"]
             )
@@ -224,7 +246,8 @@ class Coder:
 
     def generate(self, plan: CandidatePlan, retrieval: RetrievalResult,
                  columns: list[str], induce_t1: bool = False,
-                 respect_failures: bool = True) -> str:
+                 respect_failures: bool = True, task_type: str = "",
+                 text_column: str = "") -> str:
         avoided = (induce_t1 and respect_failures
                    and any("PAY_1" in warning for warning in retrieval.failure_warnings))
         if avoided:
@@ -232,12 +255,17 @@ class Coder:
             induce_t1 = False
         rendered = [name.replace("PAY_0", "PAY_1") for name in columns] if induce_t1 \
             else list(columns)
+        prompt_inputs = (f"文本列：{text_column}" if text_column
+                         else f"特征列：{json.dumps(rendered, ensure_ascii=False)}")
         user = (f"方案：{plan.model_dump_json()}\n"
-                f"特征列：{json.dumps(rendered, ensure_ascii=False)}\n"
+                f"{prompt_inputs}\n"
                 f"{retrieval.as_prompt_context()}")
         request = LLMRequest(role="Coder", system=SYSTEM_PROMPTS["Coder"], user=user)
         self.llm.complete(request)
-        return render(plan.model_family, rendered, plan.hyperparams)
+        hyperparams = dict(plan.hyperparams)
+        if text_column:
+            hyperparams["text_column"] = text_column
+        return render(plan.model_family, rendered, hyperparams, task_type)
 
 
 class Reviewer:

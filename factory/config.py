@@ -94,11 +94,23 @@ class LLMSettings(_ConfigModel):
 
 
 class DatasetSettings(_ConfigModel):
-    """``verify_credit.yaml`` 的 dataset 段：禁入模字段与标签。"""
+    """``verify_*.yaml`` 的 dataset 段：禁入模字段、标签与文本列。
 
+    ``text_column`` 非空即表示该任务以原始文本为输入（文本分类），
+    此时核心流程不再按表格列名选特征，改由模板声明 ``TEXT_COLUMN``。
+    """
+
+    path: str = ""
     target: str = ""
     id_column: str = "ID"
+    text_column: str = ""
     forbidden_features: list[str] = Field(default_factory=list)
+
+
+class CandidateSettings(_ConfigModel):
+    """``verify_*.yaml`` 的 candidates 段：可用算法族，供 Planner 按任务裁剪。"""
+
+    model_families: list[str] = Field(default_factory=list)
 
 
 class TaskSettings(_ConfigModel):
@@ -109,6 +121,7 @@ class TaskSettings(_ConfigModel):
     split: SplitSpec = Field(default_factory=SplitSpec)
     metrics: list[MetricSpec] = Field(default_factory=list)
     constraints: dict[str, Any] = Field(default_factory=dict)
+    candidates: CandidateSettings = Field(default_factory=CandidateSettings)
 
     @property
     def sensitive_features(self) -> list[str]:
@@ -158,6 +171,7 @@ def load_task_settings(task_config_path: str | Path) -> TaskSettings:
 
 
 __all__ = [
+    "CandidateSettings",
     "CassetteSettings",
     "DatasetSettings",
     "KnowledgeSettings",

@@ -4,7 +4,7 @@
 >
 > 对应题目：LLM Agent 笔试《基于 AI Agent 的算法能力系统开发》。
 
-**当前仓库状态：P0–P5 已完成并实测。** a–g 七步闭环（能力抽取 → 检索 → 规划 → 生成 → 验证 → 修复 → 沉淀）全链路可跑；L0 契约、L1 能力图谱与混合检索、L2 的 8 个 Agent 角色与 LangGraph 编排、L3 子进程沙箱与 AST 静态检查、L4 四层验证与报告生成、L5 的 Typer CLI 与 FastAPI 均已落地，并支持三种 LLM 后端与脱敏 cassette。`python -m factory run --spec "..." --mock` 一次产出生成代码、四层报告、修复轨迹与图谱回写；最新一次实测为 3 候选、最佳候选（HGB）四层全通过、AUC 0.7843。题目进阶要求的 8 项全部满足，10 项加分项已覆盖 8 项（跨场景迁移见第 10 节后续方向）。本文档已按题目「提交方式」要求的十项内容写好。
+**当前仓库状态：P0–P5 已完成并实测。** a–g 七步闭环（能力抽取 → 检索 → 规划 → 生成 → 验证 → 修复 → 沉淀）全链路可跑；L0 契约、L1 能力图谱与混合检索、L2 的 8 个 Agent 角色与 LangGraph 编排、L3 子进程沙箱与 AST 静态检查、L4 四层验证与报告生成、L5 的 Typer CLI 与 FastAPI 均已落地，并支持三种 LLM 后端与脱敏 cassette。`python -m factory run --spec "..." --mock` 一次产出生成代码、四层报告、修复轨迹与图谱回写；最新一次实测为 3 候选、最佳候选（HGB）四层全通过、AUC 0.7843。题目进阶要求的 8 项全部满足，10 项加分项已全部覆盖（真实仓库抽取见第 3 节、资源消耗分析见第 8 节、跨场景迁移见第 8 节）。本文档已按题目「提交方式」要求的十项内容写好。
 
 ---
 
@@ -84,6 +84,7 @@ python -m factory run --spec "预测信用卡客户下月违约概率，处理�
 | 项目业务规则 | 时间外划分、禁 `ID` / 敏感字段、T1–T4 列名映射、成本比阈值、证据 SHA-256、`verify_*.yaml` 门槛 | 题目场景的合规约束，任何通用库都不会内置，属必须自研部分 | 无对应现成库 |
 | 算法模板 | 装饰器注册表（`factory/agents/templates.py`），内置 LR / HGB / RF | 与指标插件同一模式，新增算法族只需一个 `@register` 函数；`Coder` 按 `model_family` 渲染，三个候选因此真的代表三种算法 | 代码模板用标准库 `str.format`，不为单文件模板引入 Jinja2（Jinja2 仅用于报告） |
 | 算法栈 | pandas + scikit-learn + imbalanced-learn | 全 CPU、秒级、确定性强，`Pipeline` 天然防泄漏 | — |
+| 文本特征与分类 | sklearn `TfidfVectorizer` + LogisticRegression / LinearSVC / ComplementNB | 现成库、纯 CPU、单次 2s 级；英文短信用 sklearn 默认分词即可，无需额外分词器 | `jieba` 只在中文语料必要，本场景不引入；`sentence-transformers` 需下载模型、体积与推理成本远超原型；`transformers` 微调破坏「断网秒级复现」 |
 | 接入 | Typer CLI + FastAPI | 现成 CLI / Web 框架，CLI 有 `--version` / `--check` / `run` / `api` 入口，API 有 `/health`、`/templates`、`/run` 三端点并自动导出 OpenAPI | `argparse` 已替换；Streamlit 权衡后未做——题目为「或」，多一个前端只增加依赖与演示成本，不增加评分点 |
 | 报告 / 可视化 | Jinja2 Markdown + PyVis HTML | 交付验证报告样例与图谱可视化 | — |
 
@@ -94,9 +95,10 @@ algo-capability-factory/
 ├── README.md  requirements.txt  .env.example  pyproject.toml  .gitignore
 ├── .codebuddy/{CODEBUDDY.md, rules/}
 ├── configs/{default.yaml, verify_credit.yaml, verify_regression.yaml, verify_text.yaml}
-├── scripts/{download_data.py, build_kg.py, verify_baseline.py, run_ablation.py, record_llm.py}
+├── scripts/{download_data.py, build_kg.py, verify_baseline.py, run_ablation.py,
+│            record_llm.py, resource_benchmark.py, extract_repo.py, prepare_text_data.py}
 ├── assets/
-│   ├── data/UCI_Credit_Card.csv
+│   ├── data/{UCI_Credit_Card.csv, sms_spam.csv}
 │   ├── docs/{data_dictionary.md, risk_policy.md, expert_rules.md,
 │   │         experiment_log.md, failure_review.md, test_report.md}
 │   ├── legacy/legacy_default_model.py
@@ -113,7 +115,7 @@ algo-capability-factory/
 │   ├── runtime/{sandbox.py, dataset_sandbox.py, static_check.py}
 │   ├── validation/{checks.py, metrics.py, split.py, report.py}
 │   └── api/app.py
-├── outputs/{generated/, reports/, kg/, runs/}   # runs/ 为临时轨迹，不入库
+├── outputs/{generated/{,text/}, reports/, kg/, runs/}   # runs/ 为临时轨迹，不入库
 └── tests/                      # 11 个测试文件、104 个用例
 ```
 
@@ -256,6 +258,9 @@ python scripts/download_data.py
 # 4) 端到端七步闭环（生成代码 + 四层报告 + 修复轨迹 + 图谱回写）
 python -m factory run --spec "预测信用卡客户下月违约概率，按5:1成本比选阈值，禁止时间泄漏" --mock
 
+# 4b) 跨场景迁移：同一套框架跑文本分类，只换 --task-config（PowerShell 单行执行）
+python -m factory run --spec "把短信分类为垃圾短信或正常短信，输出准确率与宏平均F1" --mock --task-config configs/verify_text.yaml --run-id text_demo --kg-out capabilities_text_after_run.json --gen-dir text
+
 # 5) 分阶段可复现入口
 python scripts/build_kg.py               # 构建能力图谱与检索产物
 python scripts/verify_baseline.py        # baseline 四层验证自检
@@ -312,6 +317,8 @@ python -m factory --check
 | 付款金额 | `PAY_AMT1` … `PAY_AMT6` |
 | 标签 | `default.payment.next.month` |
 
+**文本场景数据集（跨场景迁移用）**：UCI SMS Spam Collection（dataset 228，**CC BY 4.0**），5,574 条短信、spam 占 13.4%。`scripts/prepare_text_data.py` 下载原包并转成 UTF-8 CSV（`assets/data/sms_spam.csv`，列为 `text,label`），固定种子洗牌后按 60/20/20 切分；文本任务没有「下月」这类时序语义，因此配置里显式使用 `random_holdout` 而非时间外划分。
+
 **模拟业务材料（6 份，对应题目背景的五类能力来源）**
 
 | 文件 | 类型 | 提供的能力 |
@@ -338,7 +345,7 @@ python -m factory --check
 |---|---|---|
 | T-credit 信用卡违约二分类（主） | `verify_credit.yaml` | 端到端闭环演示，含 3 轮真实修复 |
 | T-regression 需求量回归 | `verify_regression.yaml` | 验证不同任务类型的验证配置：现在只到指标层 smoke（`status: contract_only`），完整 Bike Sharing 数据未入库 |
-| T-text 文本分类 | `verify_text.yaml` | 跨场景迁移的目标配置；当前仅定义契约，文本数据与端到端报告待补 |
+| T-text 短信垃圾文本二分类 | `verify_text.yaml` | 跨场景迁移实测：`status: active`，数据 5,574 条（正例 13.4%），3 候选全部通过，报告 `outputs/reports/run_text_demo.md` |
 
 **数据使用声明**：数据仅用于算法原型研究。敏感字段仅用于分组公平性审计，不构成任何授信或部署建议；样本来自 2005 年 4–9 月单一时段，结论不外推至当前客群。
 
@@ -374,7 +381,28 @@ def build_pipeline(config):
 3. 不含文件写入、网络访问、危险 import，可在沙箱内重复运行且结果确定；
 4. 生成代码在独立子进程中执行，超时与内存上限由 `configs/default.yaml` 控制。
 
-完整的「能力描述 → 检索证据 → 3 个候选 → 代码 → 修复 diff」示例见 `outputs/reports/run_demo.md`，生成代码见 `outputs/generated/candidate_plan.0*.py`。
+**文本场景生成的候选（同一 Coder，按任务模板渲染）**
+
+```python
+# outputs/generated/text/candidate_plan.02.py（完整文件）
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.pipeline import Pipeline
+from sklearn.svm import LinearSVC
+
+TEXT_COLUMN = "text"
+
+def build_pipeline(config):
+    return Pipeline([
+        ("tfidf", TfidfVectorizer(ngram_range=(1, 1), min_df=2,
+                                 max_features=50000, sublinear_tf=True)),
+        ("model", LinearSVC(C=1.0, max_iter=5000, random_state=42,
+                            class_weight="balanced")),
+    ])
+```
+
+同一 `Coder` 只按 `model_family`+`task_type` 取模板：表格走 `StandardScaler/SimpleImputer`，文本走 `TfidfVectorizer`，没有第二套生成逻辑。
+
+完整的「能力描述 → 检索证据 → 3 个候选 → 代码 → 修复 diff」示例见 `outputs/reports/run_demo.md`，生成代码见 `outputs/generated/candidate_plan.0*.py`；文本场景对应 `outputs/generated/text/candidate_plan.0*.py`。
 
 ---
 
@@ -402,7 +430,7 @@ def build_pipeline(config):
 | 接口规范 | 契约签名 / AST 白名单 / 禁 `ID` 入模 | PASS | 静态检查 |
 | 功能正确性 | smoke / 无异常 / 确定性 | PASS | 子进程用真实数据 fit / predict |
 | 指标表现 | AUC 0.7843 ≥ 0.78、F1 0.4899 ≥ 0.45、KS 0.4400 ≥ 0.35 | PASS | 时间外划分；HGB 达标 |
-| 运行稳定性 | 超时 60s / 内存 2GB / 重复运行 | PASS | 单次约 1.9–2.2s，子进程隔离 |
+| 运行稳定性 | 超时 60s / 内存 2GB / 重复运行 | PASS | 单次约 2.1–2.6s，峰值内存 150–180MB（进程树实测），子进程隔离 |
 
 **可复现的真实修复轨迹（实测）**
 
@@ -444,6 +472,18 @@ def build_pipeline(config):
 
 结论：样本量 10 倍时，内存约为 2×（主要来自 pandas 数据框常驻），耗时按模型复杂度分化——线性模型 1.4×、梯度提升 3.0×、随机森林 5.4×；三者都在 60s / 2GB 沙箱上限内。完整表格与口径说明见 `outputs/reports/resources.md`，复现命令 `python scripts/resource_benchmark.py`。
 
+**跨场景迁移（实测，`configs/verify_text.yaml`）**
+
+同一套工作流、沙箱与四层验证器，只换一份任务配置（`--task-config`）就从表格分类切到文本分类，报告见 `outputs/reports/run_text_demo.md`：
+
+| 候选 | 模型族 | accuracy | macro-F1 | 四层结论 |
+|---|---|---|---|---|
+| plan.02 | linear_svc（TF-IDF + LinearSVC） | **0.9803** | 0.9564 | 全 PASS |
+| plan.01 | logistic_regression（TF-IDF + LR） | 0.9785 | 0.9535 | 全 PASS |
+| plan.03 | complement_nb（TF-IDF + ComplementNB） | 0.9731 | 0.9447 | 全 PASS |
+
+差异被收敛到配置与模板两处：`verify_text.yaml` 声明 `text_column` 与 `candidates.model_families`，`factory/agents/templates.py` 注册 `text_classification.*` 模板；核心验证器、沙箱与工作流代码**未改**。修复轮次为 0——文本场景没有表格列名陷阱，失败修复能力由表格场景的 T1 轨迹证明，不在这里硬造失败。
+
 ---
 
 ## 9. 遇到的挑战和解决方案
@@ -465,6 +505,7 @@ def build_pipeline(config):
 | **指标口径不统一** | 成本比、KS 门槛、baseline 定义全部配置化到 `verify_*.yaml`，避免硬编码 |
 | **早期为快速打通闭环写了若干自研轻量件，与开发要求 f「可使用现成工具但需说明选择理由」有张力** | 中途把「复用优先」写进 `.codebuddy/rules/architecture.md` 作为不可裁剪规则，逐项评估现成方案后替换：自研状态机 → LangGraph `StateGraph`、`ctypes` 内存监控 → `psutil`、手写日志格式 → `structlog`、`argparse` → `Typer`、手写 Markdown 正则 → `markdown-it-py`、手写词元计数 → `rank_bm25`；`vcrpy` / `bandit` / CrewAI / LlamaIndex 评估后因粒度或契约冲突未采用，理由逐项写在第 2 节选型表。全部替换以「功能不变」验收：ruff 全绿、测试全过（当前 104 个用例）、图谱仍 95 节点 / 259 边、端到端 3 候选 AUC 与修复轨迹逐字一致 |
 | **真实仓库的 docstring 格式不统一**：`scorecardpy` 用 `Params` 段、参数说明还跨行，部分函数完全没有结构化段 | 解析器同时接受 `Params` / `Parameters` / `Args`，跨行说明取首行；无结构化段时用签名兜底。81 个函数全部产出能力描述，其中 21 个有结构化参数——差异如实写进第 3 节，不补造内容 |
+| **跨场景迁移暴露隐藏耦合**：数据集路径写死取全局 `paths.data`，文本任务仍去读信用卡 CSV 而报 `KeyError: 'label'`；两场景都写 `outputs/generated/candidate_plan.*.py`，后跑的覆盖先跑的 | 数据集路径改为 `dataset.path` 优先、全局配置兜底；新增 `--run-id` / `--kg-out` / `--gen-dir`，让两个场景的代码、图谱、报告、轨迹互不覆盖；场景差异收敛到 `verify_*.yaml` 与 `templates.py` 两处 |
 | **沉淀只写不读**：Curator 已把结果写入 `capabilities_after_run.json`，但工作流每轮都从源材料重抽，下一轮看不到上一轮经验 | 让 `Workflow` 启动时优先加载回写图谱（不存在才回退源材料），检索器优先返回本项目实测 `FailureCase`，Coder 命中 T1 历史经验时首轮即避开，Curator 按 `run_id` 去重避免膨胀。消融实测：修复轮次 2（有 KG）vs 3（无 KG）、有 KG 首轮避开 `PAY_1`、两组 AUC 完全一致 |
 
 ---
@@ -540,6 +581,7 @@ License: CC BY 4.0 (UCI) / CC0 Public Domain (OpenML d/43435)
 | P4 沉淀闭环 | `c642c24` | 工作流优先加载回写图谱、检索优先实测失败经验、Coder 首轮避开 T1、回写按 `run_id` 去重；新增消融脚本与对比报告 |
 | 算法模板插件 | `e3873f7` | 装饰器注册表 + LR / HGB / RF 三个内置模板；Coder 按 `family` 渲染，修掉候选族被忽略的缺陷，HGB 候选四层达标 |
 | 接入层 | `d04c517` | FastAPI 三个端点 + CLI `api` 子命令；OpenAPI 由框架自动生成并导出 `outputs/reports/openapi.json` |
+| 收尾补强 | `db58c34`、`6c04b87`、`5a8e214` 及本次提交 | 文档按实测回填并消除自相矛盾；资源基准与内存看门狗修复；真实开源仓库 AST 抽取；文本分类跨场景迁移 |
 
 > 完整历史以 `git --no-pager log` 为准。所有提交时间由 Git 按实际提交时刻记录，未做调整；评审可据此还原 P0 → P3 的演进。
 

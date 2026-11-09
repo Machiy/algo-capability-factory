@@ -1,0 +1,4106 @@
+{
+  "nodes": [
+    {
+      "node_id": "evidence.data_dictionary",
+      "node_type": "Evidence",
+      "name": "证据源：assets/docs/data_dictionary.md",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "path": "assets/docs/data_dictionary.md",
+        "doc_type": "业务文档",
+        "file_sha256": "6848ec5aaa8675f09d0eca3d68dfb9ce3b14588abe1a450502f5e7a1c3101274"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/data_dictionary.md",
+          "excerpt": "# 信用卡客户数据字典（能力抽取源 · 模拟业务材料）\n\n> 本文件为本项目构造的模拟业务材料，用于演示「从业务文档抽取算法能力」。\n> 其中数据规模、取值分布与《Default of Credit Card Clients》公开数据集实测一致；\n> 「业务口径」与「处理建议」为构造内容。\n\n## 1. 数据集概况\n\n| 项 | 值 |\n|---|---|\n| 名称 | UCI Default o",
+          "sha256": "261b68c281c3ab715e0c9cffc9268e148b71b29165908d0662a3683bf15402a7",
+          "doc_type": "业务文档"
+        }
+      ]
+    },
+    {
+      "node_id": "dataset.data_dictionary",
+      "node_type": "Dataset",
+      "name": "UCI 信用卡客户下月违约数据集",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "fields": {
+          "名称": "UCI Default of Credit Card Clients",
+          "观测期": "2005 年 4 月 – 2005 年 9 月",
+          "样本量": "30,000 行 × 25 列（23 特征 + 1 标签 + 1 标识）",
+          "正例": "6,636（22.12%，下月违约）",
+          "负例": "23,364（77.88%）",
+          "标签": "`default.payment.next.month`，1 = 违约，0 = 正常"
+        },
+        "target": "default.payment.next.month",
+        "forbidden_features": [
+          "ID"
+        ],
+        "sensitive_features": [
+          "SEX",
+          "AGE",
+          "EDUCATION",
+          "MARRIAGE"
+        ],
+        "split_policy": "temporal_holdout"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/data_dictionary.md",
+          "excerpt": "| 项 | 值 |\n|---|---|\n| 名称 | UCI Default of Credit Card Clients |\n| 观测期 | 2005 年 4 月 – 2005 年 9 月 |\n| 样本量 | 30,000 行 × 25 列（23 特征 + 1 标签 + 1 标识） |\n| 正例 | 6,636（22.12%，下月违约） |\n| 负例 | 23,364（77.88%） |\n| 标签 | `default.payment.next.month`，1 = 违约，0 = 正常 |",
+          "sha256": "6dbdcedcf0ed7abf3fad1f205f8ec3265220f1d358146ff2a02e6202f5a1d39d",
+          "doc_type": "业务文档"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.data_dictionary.T1",
+      "node_type": "Capability",
+      "name": "[T1] 最近一期列名是 PAY_0，不存在 PAY_1",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "T1",
+        "section": "3. 已知数据问题（登记为 T1–T4）",
+        "编号": "T1",
+        "问题": "最近一期列名是 `PAY_0`，**不存在 `PAY_1`**",
+        "实测证据": "列名清单中仅有 `PAY_0`、`PAY_2`…`PAY_6`",
+        "处理建议": "建立显式列名映射，禁止按 `PAY_1`…`PAY_6` 硬编码",
+        "metrics": {
+          "编号": 1.0,
+          "问题": 1.0,
+          "实测证据": 26.0,
+          "处理建议": 16.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/data_dictionary.md",
+          "excerpt": "| T1 | 最近一期列名是 `PAY_0`，**不存在 `PAY_1`** | 列名清单中仅有 `PAY_0`、`PAY_2`…`PAY_6` | 建立显式列名映射，禁止按 `PAY_1`…`PAY_6` 硬编码 |",
+          "sha256": "5c1d6a6452eb7450277f95cf44889474fd4de130b09c8f9d550030dbacdff621",
+          "doc_type": "业务文档"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.data_dictionary.T2",
+      "node_type": "Capability",
+      "name": "[T2] 存在未文档化类别",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "T2",
+        "section": "3. 已知数据问题（登记为 T1–T4）",
+        "编号": "T2",
+        "问题": "存在未文档化类别",
+        "实测证据": "`EDUCATION` 实测取值 `[0,1,2,3,4,5,6]`，其中 0/5/6 共 **345** 条；`MARRIAGE` 实测 `[0,1,2,3]`，0 共 **54** 条",
+        "处理建议": "0/5/6 归入「其他」；编码前必须做取值校验",
+        "metrics": {
+          "编号": 2.0,
+          "实测证据": 1.234560563450123e+18,
+          "处理建议": 56.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/data_dictionary.md",
+          "excerpt": "| T2 | 存在未文档化类别 | `EDUCATION` 实测取值 `[0,1,2,3,4,5,6]`，其中 0/5/6 共 **345** 条；`MARRIAGE` 实测 `[0,1,2,3]`，0 共 **54** 条 | 0/5/6 归入「其他」；编码前必须做取值校验 |",
+          "sha256": "2f483281b15240d0977653136ba1f4fdb0d0f287f00b25792c860ddde86c351f",
+          "doc_type": "业务文档"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.data_dictionary.T2b",
+      "node_type": "Capability",
+      "name": "[T2b] 还款状态含未文档化值",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "T2b",
+        "section": "3. 已知数据问题（登记为 T1–T4）",
+        "编号": "T2b",
+        "问题": "还款状态含未文档化值",
+        "实测证据": "`PAY_0` 实测范围 `[-2, 8]`，字典未说明 -2 含义",
+        "处理建议": "保留为独立类别，不做简单裁剪",
+        "metrics": {
+          "编号": 2.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/data_dictionary.md",
+          "excerpt": "| T2b | 还款状态含未文档化值 | `PAY_0` 实测范围 `[-2, 8]`，字典未说明 -2 含义 | 保留为独立类别，不做简单裁剪 |",
+          "sha256": "2bd0fb6eaf1dda67ca7dc0be29b099c38e1a4cb340d0dc92ae430e6d2a28e0a4",
+          "doc_type": "业务文档"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.data_dictionary.T3",
+      "node_type": "Capability",
+      "name": "[T3] 账单金额为负",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "T3",
+        "section": "3. 已知数据问题（登记为 T1–T4）",
+        "编号": "T3",
+        "问题": "账单金额为负",
+        "实测证据": "`BILL_AMT*` 负值记录共 **3,932** 条",
+        "处理建议": "视为退款/多付，保留符号，不做绝对值化",
+        "metrics": {
+          "编号": 3.0,
+          "实测证据": 3932.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/data_dictionary.md",
+          "excerpt": "| T3 | 账单金额为负 | `BILL_AMT*` 负值记录共 **3,932** 条 | 视为退款/多付，保留符号，不做绝对值化 |",
+          "sha256": "2d3176662cd814a22862d8ba25bdb14a14fee1aa0bc6dd010004ef84d111b4fd",
+          "doc_type": "业务文档"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.data_dictionary.T3b",
+      "node_type": "Capability",
+      "name": "[T3b] 期次错位",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "T3b",
+        "section": "3. 已知数据问题（登记为 T1–T4）",
+        "编号": "T3b",
+        "问题": "期次错位",
+        "实测证据": "`PAY_AMT1` 是 9 月实付、对应 8 月账单，与 `BILL_AMT1`（9 月账单）不同期",
+        "处理建议": "构造比值类特征时须显式对齐期次",
+        "metrics": {
+          "编号": 3.0,
+          "实测证据": 19819.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/data_dictionary.md",
+          "excerpt": "| T3b | 期次错位 | `PAY_AMT1` 是 9 月实付、对应 8 月账单，与 `BILL_AMT1`（9 月账单）不同期 | 构造比值类特征时须显式对齐期次 |",
+          "sha256": "6d1925050f8daba5c9ed0003486e5de4a1fda0d20b00fb5680fa2f107d9d9d37",
+          "doc_type": "业务文档"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.data_dictionary.T4",
+      "node_type": "Capability",
+      "name": "[T4] 标签为「下月」违约",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "T4",
+        "section": "3. 已知数据问题（登记为 T1–T4）",
+        "编号": "T4",
+        "问题": "标签为「下月」违约",
+        "实测证据": "目标列定义",
+        "处理建议": "必须时间外划分，随机划分会引入未来信息",
+        "metrics": {
+          "编号": 4.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/data_dictionary.md",
+          "excerpt": "| T4 | 标签为「下月」违约 | 目标列定义 | 必须时间外划分，随机划分会引入未来信息 |",
+          "sha256": "a18af01303afb121a23db1213e838c8248c88032459c4580f3b794b1f4a7d0ba",
+          "doc_type": "业务文档"
+        }
+      ]
+    },
+    {
+      "node_id": "evidence.experiment_log",
+      "node_type": "Evidence",
+      "name": "证据源：assets/docs/experiment_log.md",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "path": "assets/docs/experiment_log.md",
+        "doc_type": "实验记录",
+        "file_sha256": "9891c32bbc8405638188bc0eb96712557592c18973eca1ef49abe2ba103e29db"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/experiment_log.md",
+          "excerpt": "# 历史实验记录（能力抽取源 · 模拟业务材料）\n\n> 本文件为本项目构造的模拟业务材料。表中指标为**构造的历史记录**，仅用于演示「从实验记录抽取模型选择经验与历史验证结果」，不是本项目的实测结果。\n\n## 实验环境与口径\n\n- 固定随机种子 42；时间外划分 train 60% / valid 20% / test 20%；test 仅终评一次。\n- 指标：AUC、KS、PR-AUC、F1、",
+          "sha256": "a76458c18e43b6eb454c833cff69e1c89791494f0e2d9d6df22be8d4be363859",
+          "doc_type": "实验记录"
+        }
+      ]
+    },
+    {
+      "node_id": "run.experiment_log.EXP-01",
+      "node_type": "ValidationRun",
+      "name": "[EXP-01] Dummy（分层随机）",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "EXP-01",
+        "section": "记录汇总",
+        "编号": "EXP-01",
+        "模型": "Dummy（分层随机）",
+        "预处理": "无",
+        "采样/阈值": "0.5",
+        "验证集 AUC": "0.500",
+        "验证集 KS": "0.000",
+        "成本加权损失": "0.221",
+        "耗时(s)": "0.1",
+        "结论": "基线",
+        "metrics": {
+          "编号": -1.0,
+          "采样/阈值": 0.5,
+          "验证集 AUC": 0.5,
+          "验证集 KS": 0.0,
+          "成本加权损失": 0.221,
+          "耗时(s)": 0.1
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/experiment_log.md",
+          "excerpt": "| EXP-01 | Dummy（分层随机） | 无 | 0.5 | 0.500 | 0.000 | 0.221 | 0.1 | 基线 |",
+          "sha256": "97bfd1cd08034bf073eb8789e4296faf60af697bbcf83839b798c432705a3a35",
+          "doc_type": "实验记录"
+        }
+      ]
+    },
+    {
+      "node_id": "run.experiment_log.EXP-02",
+      "node_type": "ValidationRun",
+      "name": "[EXP-02] LogisticRegression",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "EXP-02",
+        "section": "记录汇总",
+        "编号": "EXP-02",
+        "模型": "LogisticRegression",
+        "预处理": "标准化",
+        "采样/阈值": "无 / 0.5",
+        "验证集 AUC": "0.741",
+        "验证集 KS": "0.318",
+        "成本加权损失": "0.183",
+        "耗时(s)": "0.8",
+        "结论": "基线，未达 KS 门槛",
+        "metrics": {
+          "编号": -2.0,
+          "采样/阈值": 0.5,
+          "验证集 AUC": 0.741,
+          "验证集 KS": 0.318,
+          "成本加权损失": 0.183,
+          "耗时(s)": 0.8
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/experiment_log.md",
+          "excerpt": "| EXP-02 | LogisticRegression | 标准化 | 无 / 0.5 | 0.741 | 0.318 | 0.183 | 0.8 | 基线，未达 KS 门槛 |",
+          "sha256": "fc99afc0aaaeb49922322b5be5dff2ed57586efa949f179c96db4c720c7b3609",
+          "doc_type": "实验记录"
+        }
+      ]
+    },
+    {
+      "node_id": "run.experiment_log.EXP-03",
+      "node_type": "ValidationRun",
+      "name": "[EXP-03] LogisticRegression",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "EXP-03",
+        "section": "记录汇总",
+        "编号": "EXP-03",
+        "模型": "LogisticRegression",
+        "预处理": "WOE 分箱",
+        "采样/阈值": "无 / 0.5",
+        "验证集 AUC": "0.772",
+        "验证集 KS": "0.361",
+        "成本加权损失": "0.171",
+        "耗时(s)": "2.4",
+        "结论": "可解释性好，KS 达标",
+        "metrics": {
+          "编号": -3.0,
+          "采样/阈值": 0.5,
+          "验证集 AUC": 0.772,
+          "验证集 KS": 0.361,
+          "成本加权损失": 0.171,
+          "耗时(s)": 2.4
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/experiment_log.md",
+          "excerpt": "| EXP-03 | LogisticRegression | WOE 分箱 | 无 / 0.5 | 0.772 | 0.361 | 0.171 | 2.4 | 可解释性好，KS 达标 |",
+          "sha256": "5b6bf15ccc25df6bf5c7aa70a69acfbd0a544be4d9d73b0a1300c11f4a4d53cd",
+          "doc_type": "实验记录"
+        }
+      ]
+    },
+    {
+      "node_id": "run.experiment_log.EXP-04",
+      "node_type": "ValidationRun",
+      "name": "[EXP-04] LogisticRegression",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "EXP-04",
+        "section": "记录汇总",
+        "编号": "EXP-04",
+        "模型": "LogisticRegression",
+        "预处理": "WOE 分箱",
+        "采样/阈值": "class_weight / 成本最优阈值",
+        "验证集 AUC": "0.775",
+        "验证集 KS": "0.368",
+        "成本加权损失": "0.152",
+        "耗时(s)": "2.6",
+        "结论": "成本损失最低",
+        "metrics": {
+          "编号": -4.0,
+          "验证集 AUC": 0.775,
+          "验证集 KS": 0.368,
+          "成本加权损失": 0.152,
+          "耗时(s)": 2.6
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/experiment_log.md",
+          "excerpt": "| EXP-04 | LogisticRegression | WOE 分箱 | class_weight / 成本最优阈值 | 0.775 | 0.368 | 0.152 | 2.6 | 成本损失最低 |",
+          "sha256": "1e78ca310548aeeb09d9c2e35b12ca148dc0c67bcb99f04656731ea8ef3e8ca5",
+          "doc_type": "实验记录"
+        }
+      ]
+    },
+    {
+      "node_id": "run.experiment_log.EXP-05",
+      "node_type": "ValidationRun",
+      "name": "[EXP-05] RandomForest(200)",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "EXP-05",
+        "section": "记录汇总",
+        "编号": "EXP-05",
+        "模型": "RandomForest(200)",
+        "预处理": "类别编码",
+        "采样/阈值": "class_weight / 0.5",
+        "验证集 AUC": "0.779",
+        "验证集 KS": "0.372",
+        "成本加权损失": "0.168",
+        "耗时(s)": "6.1",
+        "结论": "AUC 略高但成本损失不如 EXP-04",
+        "metrics": {
+          "编号": -5.0,
+          "模型": 200.0,
+          "采样/阈值": 0.5,
+          "验证集 AUC": 0.779,
+          "验证集 KS": 0.372,
+          "成本加权损失": 0.168,
+          "耗时(s)": 6.1,
+          "结论": -4.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/experiment_log.md",
+          "excerpt": "| EXP-05 | RandomForest(200) | 类别编码 | class_weight / 0.5 | 0.779 | 0.372 | 0.168 | 6.1 | AUC 略高但成本损失不如 EXP-04 |",
+          "sha256": "5d00ae21643b64a971ffcdf9f577558601576ef580d816269767dd8ce12f7158",
+          "doc_type": "实验记录"
+        }
+      ]
+    },
+    {
+      "node_id": "run.experiment_log.EXP-06",
+      "node_type": "ValidationRun",
+      "name": "[EXP-06] HistGB(max_iter=200)",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "EXP-06",
+        "section": "记录汇总",
+        "编号": "EXP-06",
+        "模型": "HistGB(max_iter=200)",
+        "预处理": "类别编码",
+        "采样/阈值": "无 / 0.5",
+        "验证集 AUC": "0.783",
+        "验证集 KS": "0.381",
+        "成本加权损失": "0.165",
+        "耗时(s)": "4.3",
+        "结论": "AUC/KS 最高",
+        "metrics": {
+          "编号": -6.0,
+          "模型": 200.0,
+          "采样/阈值": 0.5,
+          "验证集 AUC": 0.783,
+          "验证集 KS": 0.381,
+          "成本加权损失": 0.165,
+          "耗时(s)": 4.3
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/experiment_log.md",
+          "excerpt": "| EXP-06 | HistGB(max_iter=200) | 类别编码 | 无 / 0.5 | 0.783 | 0.381 | 0.165 | 4.3 | AUC/KS 最高 |",
+          "sha256": "3ae4055a428d7ceb5f97c5226598c0a7dbfbe446c22966795187b438edbaec5d",
+          "doc_type": "实验记录"
+        }
+      ]
+    },
+    {
+      "node_id": "run.experiment_log.EXP-07",
+      "node_type": "ValidationRun",
+      "name": "[EXP-07] HistGB + SMOTE",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "EXP-07",
+        "section": "记录汇总",
+        "编号": "EXP-07",
+        "模型": "HistGB + SMOTE",
+        "预处理": "类别编码",
+        "采样/阈值": "SMOTE / 0.5",
+        "验证集 AUC": "0.770",
+        "验证集 KS": "0.355",
+        "成本加权损失": "0.176",
+        "耗时(s)": "7.9",
+        "结论": "过采样未带来收益，且耗时上升",
+        "metrics": {
+          "编号": -7.0,
+          "采样/阈值": 0.5,
+          "验证集 AUC": 0.77,
+          "验证集 KS": 0.355,
+          "成本加权损失": 0.176,
+          "耗时(s)": 7.9
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/experiment_log.md",
+          "excerpt": "| EXP-07 | HistGB + SMOTE | 类别编码 | SMOTE / 0.5 | 0.770 | 0.355 | 0.176 | 7.9 | 过采样未带来收益，且耗时上升 |",
+          "sha256": "552be5afd8fc84c266425a0a292684eef1f4259399559f3619c8d1f8e3edcc0a",
+          "doc_type": "实验记录"
+        }
+      ]
+    },
+    {
+      "node_id": "run.experiment_log.EXP-08",
+      "node_type": "ValidationRun",
+      "name": "[EXP-08] HistGB(全量随机划分)",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "EXP-08",
+        "section": "记录汇总",
+        "编号": "EXP-08",
+        "模型": "HistGB(全量随机划分)",
+        "预处理": "类别编码",
+        "采样/阈值": "无 / 0.5",
+        "验证集 AUC": "0.912",
+        "验证集 KS": "0.702",
+        "成本加权损失": "0.071",
+        "耗时(s)": "4.5",
+        "结论": "**判定无效**：随机划分引入未来信息，指标虚高，已作废",
+        "metrics": {
+          "编号": -8.0,
+          "采样/阈值": 0.5,
+          "验证集 AUC": 0.912,
+          "验证集 KS": 0.702,
+          "成本加权损失": 0.071,
+          "耗时(s)": 4.5
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/experiment_log.md",
+          "excerpt": "| EXP-08 | HistGB(全量随机划分) | 类别编码 | 无 / 0.5 | 0.912 | 0.702 | 0.071 | 4.5 | **判定无效**：随机划分引入未来信息，指标虚高，已作废 |",
+          "sha256": "537f42d0f0f3fc9df2dc4de71ab517ff7a54a5d0bf02335067c4708c436cf4f7",
+          "doc_type": "实验记录"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.experiment_log.K1",
+      "node_type": "Capability",
+      "name": "[K1] WOE 分箱对逻辑回归的 KS 提升明显（0.318 → 0.361）",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "K1",
+        "section": "可复用经验",
+        "编号": "K1",
+        "经验": "WOE 分箱对逻辑回归的 KS 提升明显（0.318 → 0.361）",
+        "来源": "EXP-02 / EXP-03",
+        "metrics": {
+          "编号": 1.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/experiment_log.md",
+          "excerpt": "| K1 | WOE 分箱对逻辑回归的 KS 提升明显（0.318 → 0.361） | EXP-02 / EXP-03 |",
+          "sha256": "889790085e73426a38747b920b7c5ea5a82dd520da9c661ba029b6bd637d02a6",
+          "doc_type": "实验记录"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.experiment_log.K2",
+      "node_type": "Capability",
+      "name": "[K2] 按成本比调阈值比换模型更能降低业务损失",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "K2",
+        "section": "可复用经验",
+        "编号": "K2",
+        "经验": "按成本比调阈值比换模型更能降低业务损失",
+        "来源": "EXP-04",
+        "metrics": {
+          "编号": 2.0,
+          "来源": -4.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/experiment_log.md",
+          "excerpt": "| K2 | 按成本比调阈值比换模型更能降低业务损失 | EXP-04 |",
+          "sha256": "190ebe5312fa8beebfee008cdf7a449d3e743c427308071aa8ddadf6059d63cb",
+          "doc_type": "实验记录"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.experiment_log.K3",
+      "node_type": "Capability",
+      "name": "[K3] HistGB 在 AUC/KS 上最优，但可解释性弱于评分卡",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "K3",
+        "section": "可复用经验",
+        "编号": "K3",
+        "经验": "HistGB 在 AUC/KS 上最优，但可解释性弱于评分卡",
+        "来源": "EXP-06",
+        "metrics": {
+          "编号": 3.0,
+          "来源": -6.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/experiment_log.md",
+          "excerpt": "| K3 | HistGB 在 AUC/KS 上最优，但可解释性弱于评分卡 | EXP-06 |",
+          "sha256": "91b197985b3c9263009dbde1ec539e7433cf0f3c9f335fc5f0a2758ac6cc3448",
+          "doc_type": "实验记录"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.experiment_log.K4",
+      "node_type": "Capability",
+      "name": "[K4] SMOTE 在本数据集无收益，优先 class_weight",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "K4",
+        "section": "可复用经验",
+        "编号": "K4",
+        "经验": "SMOTE 在本数据集无收益，优先 `class_weight`",
+        "来源": "EXP-07",
+        "metrics": {
+          "编号": 4.0,
+          "来源": -7.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/experiment_log.md",
+          "excerpt": "| K4 | SMOTE 在本数据集无收益，优先 `class_weight` | EXP-07 |",
+          "sha256": "d1f0e3da2c321593be1187d1091a9fb221aa25c630b8f56f55dc5d6409bbe479",
+          "doc_type": "实验记录"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.experiment_log.K5",
+      "node_type": "Capability",
+      "name": "[K5] 随机划分会造成严重虚高，必须时间外划分",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "K5",
+        "section": "可复用经验",
+        "编号": "K5",
+        "经验": "随机划分会造成严重虚高，必须时间外划分",
+        "来源": "EXP-08（作废记录）",
+        "metrics": {
+          "编号": 5.0,
+          "来源": -8.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/experiment_log.md",
+          "excerpt": "| K5 | 随机划分会造成严重虚高，必须时间外划分 | EXP-08（作废记录） |",
+          "sha256": "dcc0e712fa0e8e85966c016926be560f8198da850e9db5ddf6e324570df0f0a4",
+          "doc_type": "实验记录"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.experiment_log.K6",
+      "node_type": "Capability",
+      "name": "[K6] 训练耗时均低于 8s，满足 60s 时限；Beam Search 可行",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "K6",
+        "section": "可复用经验",
+        "编号": "K6",
+        "经验": "训练耗时均低于 8s，满足 60s 时限；Beam Search 可行",
+        "来源": "全部",
+        "metrics": {
+          "编号": 6.0,
+          "经验": 860.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/experiment_log.md",
+          "excerpt": "| K6 | 训练耗时均低于 8s，满足 60s 时限；Beam Search 可行 | 全部 |",
+          "sha256": "27b64f0e9e4c79eb1d2671a950910c380ea4f14adb63ae35edc9a5836d16bd34",
+          "doc_type": "实验记录"
+        }
+      ]
+    },
+    {
+      "node_id": "evidence.expert_rules",
+      "node_type": "Evidence",
+      "name": "证据源：assets/docs/expert_rules.md",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "path": "assets/docs/expert_rules.md",
+        "doc_type": "专家经验",
+        "file_sha256": "a937357a6a5598c3df7787d9807bd44c06b45a83dca27791fdb75cce2dc8a1e4"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/expert_rules.md",
+          "excerpt": "# 信用评分专家经验（能力抽取源 · 模拟业务材料）\n\n> 本文件为本项目构造的模拟业务材料，用于演示从「专家经验」抽取特征工程与模型选择能力。\n> 经验条目为教学性构造，不代表任何机构真实策略。\n\n## 1. 预处理经验\n\n| 编号 | 经验 | 原因 |\n|---|---|---|\n| E1 | `EDUCATION` 的 0/5/6、`MARRIAGE` 的 0 统一归入「其他」 | 数据字",
+          "sha256": "d921a198c084e34ea762072e18ff7977c653ea73a0031eab1e63e1188f2898b7",
+          "doc_type": "专家经验"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.expert_rules.E1",
+      "node_type": "Capability",
+      "name": "[E1] EDUCATION 的 0/5/6、MARRIAGE 的 0 统一归入「其他」",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "E1",
+        "section": "1. 预处理经验",
+        "编号": "E1",
+        "经验": "`EDUCATION` 的 0/5/6、`MARRIAGE` 的 0 统一归入「其他」",
+        "原因": "数据字典未定义，直接 One-Hot 会引入稀疏噪声或触发未知类别报错",
+        "metrics": {
+          "编号": 1.0,
+          "经验": 560.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/expert_rules.md",
+          "excerpt": "| E1 | `EDUCATION` 的 0/5/6、`MARRIAGE` 的 0 统一归入「其他」 | 数据字典未定义，直接 One-Hot 会引入稀疏噪声或触发未知类别报错 |",
+          "sha256": "3b7141d98db23422c99c7ef2130dbeb63605e21e8509f170aba48e72df113bc1",
+          "doc_type": "专家经验"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.expert_rules.E2",
+      "node_type": "Capability",
+      "name": "[E2] PAY_* 的 -2 保留为独立类别，不裁剪为 0",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "E2",
+        "section": "1. 预处理经验",
+        "编号": "E2",
+        "经验": "`PAY_*` 的 -2 保留为独立类别，不裁剪为 0",
+        "原因": "-2 表示无消费记录，与按时还款（-1）语义不同",
+        "metrics": {
+          "编号": 2.0,
+          "经验": -20.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/expert_rules.md",
+          "excerpt": "| E2 | `PAY_*` 的 -2 保留为独立类别，不裁剪为 0 | -2 表示无消费记录，与按时还款（-1）语义不同 |",
+          "sha256": "b439f3913228b8e10d9177ae776f0a5a453609d3fe8fa633d1e8fc8ca875e6b3",
+          "doc_type": "专家经验"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.expert_rules.E3",
+      "node_type": "Capability",
+      "name": "[E3] BILL_AMT* 负值保留符号",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "E3",
+        "section": "1. 预处理经验",
+        "编号": "E3",
+        "经验": "`BILL_AMT*` 负值保留符号",
+        "原因": "负值代表退款/多付，取绝对值会丢失信息",
+        "metrics": {
+          "编号": 3.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/expert_rules.md",
+          "excerpt": "| E3 | `BILL_AMT*` 负值保留符号 | 负值代表退款/多付，取绝对值会丢失信息 |",
+          "sha256": "fdb13e9f5175b424fbccf3415c5aa6f2791378c0b9923f982738eaeb4b34e012",
+          "doc_type": "专家经验"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.expert_rules.E4",
+      "node_type": "Capability",
+      "name": "[E4] 所有预处理器置于 sklearn.Pipeline 内并仅在训练集 fit",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "E4",
+        "section": "1. 预处理经验",
+        "编号": "E4",
+        "经验": "所有预处理器置于 `sklearn.Pipeline` 内并仅在训练集 fit",
+        "原因": "防止均值/编码统计量泄漏到验证集",
+        "metrics": {
+          "编号": 4.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/expert_rules.md",
+          "excerpt": "| E4 | 所有预处理器置于 `sklearn.Pipeline` 内并仅在训练集 fit | 防止均值/编码统计量泄漏到验证集 |",
+          "sha256": "aef058396924467ce6fd8f45314f5f534536b9bf5b97a215cb98649a254db17c",
+          "doc_type": "专家经验"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.expert_rules.E5",
+      "node_type": "Capability",
+      "name": "[E5] 连续逾期月数是最强单一信号",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "E5",
+        "section": "2. 特征工程经验",
+        "编号": "E5",
+        "经验": "连续逾期月数是最强单一信号",
+        "派生方式": "统计 `PAY_0`、`PAY_2`…`PAY_6` 中 > 0 的期数",
+        "metrics": {
+          "编号": 5.0,
+          "派生方式": 260.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/expert_rules.md",
+          "excerpt": "| E5 | 连续逾期月数是最强单一信号 | 统计 `PAY_0`、`PAY_2`…`PAY_6` 中 > 0 的期数 |",
+          "sha256": "2f0699f77b376bb0902ba0f4dfa81d71a978bd23d380f958caea58d58522e06c",
+          "doc_type": "专家经验"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.expert_rules.E6",
+      "node_type": "Capability",
+      "name": "[E6] 最大逾期等级",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "E6",
+        "section": "2. 特征工程经验",
+        "编号": "E6",
+        "经验": "最大逾期等级",
+        "派生方式": "`max(PAY_0, PAY_2, …, PAY_6)`",
+        "metrics": {
+          "编号": 6.0,
+          "派生方式": 26.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/expert_rules.md",
+          "excerpt": "| E6 | 最大逾期等级 | `max(PAY_0, PAY_2, …, PAY_6)` |",
+          "sha256": "89f110d29fb2b8337fa3431a8e66cff07927dac325d11c190500f99429dfd0c4",
+          "doc_type": "专家经验"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.expert_rules.E7",
+      "node_type": "Capability",
+      "name": "[E7] 还款率需按期次对齐",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "E7",
+        "section": "2. 特征工程经验",
+        "编号": "E7",
+        "经验": "还款率需按期次对齐",
+        "派生方式": "`PAY_AMT2 / BILL_AMT1`（9 月实付针对 8 月账单），分母为 0 时置 0",
+        "metrics": {
+          "编号": 7.0,
+          "派生方式": 219800.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/expert_rules.md",
+          "excerpt": "| E7 | 还款率需按期次对齐 | `PAY_AMT2 / BILL_AMT1`（9 月实付针对 8 月账单），分母为 0 时置 0 |",
+          "sha256": "876b4cb1cf20383c073afe1f94b9bd10091acec355db296641920e0b92e263fc",
+          "doc_type": "专家经验"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.expert_rules.E8",
+      "node_type": "Capability",
+      "name": "[E8] 账单趋势",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "E8",
+        "section": "2. 特征工程经验",
+        "编号": "E8",
+        "经验": "账单趋势",
+        "派生方式": "`BILL_AMT1 - BILL_AMT6`、`BILL_AMT*` 均值与标准差",
+        "metrics": {
+          "编号": 8.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/expert_rules.md",
+          "excerpt": "| E8 | 账单趋势 | `BILL_AMT1 - BILL_AMT6`、`BILL_AMT*` 均值与标准差 |",
+          "sha256": "7192a83a51efaf5533501354b5091c9586aa9250a1bd933a35598e31f58df256",
+          "doc_type": "专家经验"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.expert_rules.E9",
+      "node_type": "Capability",
+      "name": "[E9] 额度使用率",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "E9",
+        "section": "2. 特征工程经验",
+        "编号": "E9",
+        "经验": "额度使用率",
+        "派生方式": "`BILL_AMT1 / LIMIT_BAL`，`LIMIT_BAL = 0` 时置 0",
+        "metrics": {
+          "编号": 9.0,
+          "派生方式": 100.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/expert_rules.md",
+          "excerpt": "| E9 | 额度使用率 | `BILL_AMT1 / LIMIT_BAL`，`LIMIT_BAL = 0` 时置 0 |",
+          "sha256": "e9b298333810d6cba2f9d86cb265f1b245b502e68f082953121b3cf50e9bef12",
+          "doc_type": "专家经验"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.expert_rules.E10",
+      "node_type": "Capability",
+      "name": "[E10] 对 LIMIT_BAL、AGE、BILL_AMT1 做监督分箱（5–10 箱），计算 WOE 与 IV，IV < 0.02 的变量剔除",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "E10",
+        "section": "3. WOE 分箱与评分卡",
+        "编号": "E10",
+        "经验": "对 `LIMIT_BAL`、`AGE`、`BILL_AMT1` 做监督分箱（5–10 箱），计算 WOE 与 IV，IV < 0.02 的变量剔除",
+        "metrics": {
+          "编号": 10.0,
+          "经验": 15100.02
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/expert_rules.md",
+          "excerpt": "| E10 | 对 `LIMIT_BAL`、`AGE`、`BILL_AMT1` 做监督分箱（5–10 箱），计算 WOE 与 IV，IV < 0.02 的变量剔除 |",
+          "sha256": "57f4e637ec9b6bbfaa8855ca747ef183f088854987e9f4868de89f9ca8c69dfd",
+          "doc_type": "专家经验"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.expert_rules.E11",
+      "node_type": "Capability",
+      "name": "[E11] WOE 变换后接逻辑回归，可输出标准评分卡分数，可解释性优于树模型，适合作为 baseline 候选",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "E11",
+        "section": "3. WOE 分箱与评分卡",
+        "编号": "E11",
+        "经验": "WOE 变换后接逻辑回归，可输出标准评分卡分数，可解释性优于树模型，适合作为 baseline 候选",
+        "metrics": {
+          "编号": 11.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/expert_rules.md",
+          "excerpt": "| E11 | WOE 变换后接逻辑回归，可输出标准评分卡分数，可解释性优于树模型，适合作为 baseline 候选 |",
+          "sha256": "c009181d2b2c05315f70cbe3383ffaf89fdd1bc0757669163c8a5d328ab4fb01",
+          "doc_type": "专家经验"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.expert_rules.E12",
+      "node_type": "Capability",
+      "name": "[E12] 分箱边界必须在训练集内学习，验证/测试集只做 apply",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "E12",
+        "section": "3. WOE 分箱与评分卡",
+        "编号": "E12",
+        "经验": "分箱边界必须在训练集内学习，验证/测试集只做 apply",
+        "metrics": {
+          "编号": 12.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/expert_rules.md",
+          "excerpt": "| E12 | 分箱边界必须在训练集内学习，验证/测试集只做 apply |",
+          "sha256": "7bea966d81faac87c7fc0c06c6526dff7095ba960a0ed96a4ebe90bf1a4665c6",
+          "doc_type": "专家经验"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.expert_rules.E13",
+      "node_type": "Capability",
+      "name": "[E13] 逻辑回归 + WOE",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "E13",
+        "section": "4. 模型选择经验",
+        "编号": "E13",
+        "经验": "逻辑回归 + WOE",
+        "适用条件": "需要可解释、需输出评分卡、样本量小",
+        "metrics": {
+          "编号": 13.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/expert_rules.md",
+          "excerpt": "| E13 | 逻辑回归 + WOE | 需要可解释、需输出评分卡、样本量小 |",
+          "sha256": "95a6cdb5a4deaa2a9db715bd6f4b6f8e61543efed05998025533d1fb9a4a4f3c",
+          "doc_type": "专家经验"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.expert_rules.E14",
+      "node_type": "Capability",
+      "name": "[E14] 随机森林",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "E14",
+        "section": "4. 模型选择经验",
+        "编号": "E14",
+        "经验": "随机森林",
+        "适用条件": "存在非线性交互，允许黑箱，需 `class_weight='balanced'`",
+        "metrics": {
+          "编号": 14.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/expert_rules.md",
+          "excerpt": "| E14 | 随机森林 | 存在非线性交互，允许黑箱，需 `class_weight='balanced'` |",
+          "sha256": "45deafab9226001751f98b447e7020667b52668b9d26eaecb4c88d1647ce551b",
+          "doc_type": "专家经验"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.expert_rules.E15",
+      "node_type": "Capability",
+      "name": "[E15] HistGradientBoosting",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "E15",
+        "section": "4. 模型选择经验",
+        "编号": "E15",
+        "经验": "HistGradientBoosting",
+        "适用条件": "追求 AUC/KS 上限，注意限制 `max_iter` 以满足 60s 时限",
+        "metrics": {
+          "编号": 15.0,
+          "适用条件": 60.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/expert_rules.md",
+          "excerpt": "| E15 | HistGradientBoosting | 追求 AUC/KS 上限，注意限制 `max_iter` 以满足 60s 时限 |",
+          "sha256": "bb6b40a131f58d5a2c393aad08857e772538e2925c57b6515b3d78b9a6d84c1c",
+          "doc_type": "专家经验"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.expert_rules.E16",
+      "node_type": "Capability",
+      "name": "[E16] SMOTE",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "E16",
+        "section": "4. 模型选择经验",
+        "编号": "E16",
+        "经验": "SMOTE",
+        "适用条件": "仅对训练集过采样，绝不能对全量数据采样；与 `class_weight` 二选一",
+        "metrics": {
+          "编号": 16.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/expert_rules.md",
+          "excerpt": "| E16 | SMOTE | 仅对训练集过采样，绝不能对全量数据采样；与 `class_weight` 二选一 |",
+          "sha256": "08996c6d36db2d09949ed34d866759d4f704d8ef41b6298dc3f7a9f74b376e74",
+          "doc_type": "专家经验"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.expert_rules.E17",
+      "node_type": "Capability",
+      "name": "[E17] 阈值",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "E17",
+        "section": "4. 模型选择经验",
+        "编号": "E17",
+        "经验": "阈值",
+        "适用条件": "按 5:1 成本比在验证集网格搜索，不在测试集调阈值",
+        "metrics": {
+          "编号": 17.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/expert_rules.md",
+          "excerpt": "| E17 | 阈值 | 按 5:1 成本比在验证集网格搜索，不在测试集调阈值 |",
+          "sha256": "c4b21100785bb489efd40a42d338935e4c351e69fc2aee560fd4442a0ec7b039",
+          "doc_type": "专家经验"
+        }
+      ]
+    },
+    {
+      "node_id": "op.pipeline.01",
+      "node_type": "Operator",
+      "name": "列名映射",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "order": 1,
+        "fit_on_train_only": true,
+        "source_section": "依赖与顺序约束"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/expert_rules.md",
+          "excerpt": "列名映射 → 类别清洗 → 特征派生 → WOE/编码 → 采样 → 模型 → 阈值",
+          "sha256": "0d322b3c776b96d875603640a81814a2c8fd1232a300ea721fb7484963183ec7",
+          "doc_type": "专家经验"
+        }
+      ]
+    },
+    {
+      "node_id": "op.pipeline.02",
+      "node_type": "Operator",
+      "name": "类别清洗",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "order": 2,
+        "fit_on_train_only": true,
+        "source_section": "依赖与顺序约束"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/expert_rules.md",
+          "excerpt": "列名映射 → 类别清洗 → 特征派生 → WOE/编码 → 采样 → 模型 → 阈值",
+          "sha256": "0d322b3c776b96d875603640a81814a2c8fd1232a300ea721fb7484963183ec7",
+          "doc_type": "专家经验"
+        }
+      ]
+    },
+    {
+      "node_id": "op.pipeline.03",
+      "node_type": "Operator",
+      "name": "特征派生",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "order": 3,
+        "fit_on_train_only": true,
+        "source_section": "依赖与顺序约束"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/expert_rules.md",
+          "excerpt": "列名映射 → 类别清洗 → 特征派生 → WOE/编码 → 采样 → 模型 → 阈值",
+          "sha256": "0d322b3c776b96d875603640a81814a2c8fd1232a300ea721fb7484963183ec7",
+          "doc_type": "专家经验"
+        }
+      ]
+    },
+    {
+      "node_id": "op.pipeline.04",
+      "node_type": "Operator",
+      "name": "WOE/编码",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "order": 4,
+        "fit_on_train_only": true,
+        "source_section": "依赖与顺序约束"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/expert_rules.md",
+          "excerpt": "列名映射 → 类别清洗 → 特征派生 → WOE/编码 → 采样 → 模型 → 阈值",
+          "sha256": "0d322b3c776b96d875603640a81814a2c8fd1232a300ea721fb7484963183ec7",
+          "doc_type": "专家经验"
+        }
+      ]
+    },
+    {
+      "node_id": "op.pipeline.05",
+      "node_type": "Operator",
+      "name": "采样",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "order": 5,
+        "fit_on_train_only": true,
+        "source_section": "依赖与顺序约束"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/expert_rules.md",
+          "excerpt": "列名映射 → 类别清洗 → 特征派生 → WOE/编码 → 采样 → 模型 → 阈值",
+          "sha256": "0d322b3c776b96d875603640a81814a2c8fd1232a300ea721fb7484963183ec7",
+          "doc_type": "专家经验"
+        }
+      ]
+    },
+    {
+      "node_id": "op.pipeline.06",
+      "node_type": "Operator",
+      "name": "模型",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "order": 6,
+        "fit_on_train_only": true,
+        "source_section": "依赖与顺序约束"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/expert_rules.md",
+          "excerpt": "列名映射 → 类别清洗 → 特征派生 → WOE/编码 → 采样 → 模型 → 阈值",
+          "sha256": "0d322b3c776b96d875603640a81814a2c8fd1232a300ea721fb7484963183ec7",
+          "doc_type": "专家经验"
+        }
+      ]
+    },
+    {
+      "node_id": "op.pipeline.07",
+      "node_type": "Operator",
+      "name": "阈值",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "order": 7,
+        "fit_on_train_only": true,
+        "source_section": "依赖与顺序约束"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/expert_rules.md",
+          "excerpt": "列名映射 → 类别清洗 → 特征派生 → WOE/编码 → 采样 → 模型 → 阈值",
+          "sha256": "0d322b3c776b96d875603640a81814a2c8fd1232a300ea721fb7484963183ec7",
+          "doc_type": "专家经验"
+        }
+      ]
+    },
+    {
+      "node_id": "evidence.failure_review",
+      "node_type": "Evidence",
+      "name": "证据源：assets/docs/failure_review.md",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "path": "assets/docs/failure_review.md",
+        "doc_type": "失败复盘",
+        "file_sha256": "e212416e3615bb62fac36346385b914f27c945deda4c1c536fd644db1981c857"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/failure_review.md",
+          "excerpt": "# 失败案例复盘（能力抽取源 · 模拟业务材料）\n\n> 本文件为本项目构造的模拟业务材料，用于演示「自动分析失败案例并形成可复用经验」。\n> 错误签名与修复策略将被抽取为 `FailureCase` 节点，供 Repairer 定向修复使用。\n\n## FR-01 列名假设错误\n\n| 项 | 内容 |\n|---|---|\n| 现象 | `KeyError: 'PAY_1'` |\n| 根因 | 工程师",
+          "sha256": "8edf65252f8f078a3607e2a8528fb513aa71f4d514d75bb93e871fcc9368249a",
+          "doc_type": "失败复盘"
+        }
+      ]
+    },
+    {
+      "node_id": "fail.failure_review.FR-01",
+      "node_type": "FailureCase",
+      "name": "[FR-01] 列名假设错误",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "现象": "`KeyError: 'PAY_1'`",
+        "根因": "工程师按 `PAY_1`…`PAY_6` 的直觉命名编写代码，实际数据集最近一期列名为 `PAY_0`，不存在 `PAY_1`",
+        "错误签名": "`KeyError: PAY_1`",
+        "修复策略": "按 `Dataset` 节点的列名映射表替换为 `PAY_0`、`PAY_2`…`PAY_6`；禁止按序号硬编码列名",
+        "可复用经验": "使用数据字典校验列名，而非按业务直觉推断",
+        "error_signature": "KeyError"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/failure_review.md",
+          "excerpt": "| 项 | 内容 |\n|---|---|\n| 现象 | `KeyError: 'PAY_1'` |\n| 根因 | 工程师按 `PAY_1`…`PAY_6` 的直觉命名编写代码，实际数据集最近一期列名为 `PAY_0`，不存在 `PAY_1` |\n| 错误签名 | `KeyError: PAY_1` |\n| 修复策略 | 按 `Dataset` 节点的列名映射表替换为 `PAY_0`、`PAY_2`…`PAY_6`；禁止按序号硬编码列名 |\n| 可复用经验 | 使用数据字典校验列名，而非按业务直觉推断 |",
+          "sha256": "c34c8758e282be160ad9c22d2a0bee3f3e35ae4f1346bcc7eb5346935ea5be7b",
+          "doc_type": "失败复盘"
+        }
+      ]
+    },
+    {
+      "node_id": "fail.failure_review.FR-02",
+      "node_type": "FailureCase",
+      "name": "[FR-02] 未文档化类别导致编码失败",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "现象": "OneHotEncoder 报未知类别 / schema 校验失败",
+        "根因": "`EDUCATION` 实测含 0/5/6（345 条），`MARRIAGE` 含 0（54 条），均不在数据字典枚举内",
+        "错误签名": "`SchemaError`",
+        "修复策略": "0/5/6 归入「其他」类别；`PAY_* = -2` 保留为独立类别；编码前做取值域校验",
+        "可复用经验": "类别型特征的合法取值必须以数据实测为准，不能只信文档",
+        "error_signature": "SchemaError"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/failure_review.md",
+          "excerpt": "| 项 | 内容 |\n|---|---|\n| 现象 | OneHotEncoder 报未知类别 / schema 校验失败 |\n| 根因 | `EDUCATION` 实测含 0/5/6（345 条），`MARRIAGE` 含 0（54 条），均不在数据字典枚举内 |\n| 错误签名 | `SchemaError` |\n| 修复策略 | 0/5/6 归入「其他」类别；`PAY_* = -2` 保留为独立类别；编码前做取值域校验 |\n| 可复用经验 | 类别型特征的合法取值必须以数据实测为准，不能只信文档 |",
+          "sha256": "f6a439e9f4018e4b2c91af5f963230040fb3a1ad5bda5d9b931488f84b7e048d",
+          "doc_type": "失败复盘"
+        }
+      ]
+    },
+    {
+      "node_id": "fail.failure_review.FR-03",
+      "node_type": "FailureCase",
+      "name": "[FR-03] 数据泄漏导致指标虚高",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "现象": "验证 AUC 0.912，显著高于历史 0.78 量级；上线后效果骤降",
+        "根因": "① 使用随机划分而非时间外划分；② 在全量数据上 fit 标准化/编码器；③ 使用了与目标同期的付款信息",
+        "错误签名": "`LeakageDetected` / `MetricSuspiciouslyHigh`",
+        "修复策略": "改时间外划分；强制 `sklearn.Pipeline` 且所有预处理器仅 on train fit；按 `PRECEDES` 约束检查期次",
+        "可复用经验": "指标显著高于历史记录时，优先怀疑泄漏而非庆祝提升",
+        "error_signature": "LeakageDetected"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/failure_review.md",
+          "excerpt": "| 项 | 内容 |\n|---|---|\n| 现象 | 验证 AUC 0.912，显著高于历史 0.78 量级；上线后效果骤降 |\n| 根因 | ① 使用随机划分而非时间外划分；② 在全量数据上 fit 标准化/编码器；③ 使用了与目标同期的付款信息 |\n| 错误签名 | `LeakageDetected` / `MetricSuspiciouslyHigh` |\n| 修复策略 | 改时间外划分；强制 `sklearn.Pipeline` 且所有预处理器仅 on train fit；按 `PRECEDES` 约束检查期次 |\n| 可复用经验 | 指标显著高于历史记录时，优先怀疑泄漏而非庆祝提升 |",
+          "sha256": "eb7a908040896b43e64dceb88e2c6305923943d449836ce7e5f44eeed3bf8a64",
+          "doc_type": "失败复盘"
+        }
+      ]
+    },
+    {
+      "node_id": "fail.failure_review.FR-04",
+      "node_type": "FailureCase",
+      "name": "[FR-04] 阈值选择错误",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "现象": "AUC 达标但业务损失偏高",
+        "根因": "沿用 0.5 默认阈值，忽略 5:1 的漏报/误报成本比",
+        "错误签名": "`CostLossAboveBaseline`",
+        "修复策略": "在验证集上按成本加权损失网格搜索最优阈值，测试集不参与调阈",
+        "可复用经验": "分类阈值是业务决策，不是超参数默认值",
+        "error_signature": "CostLossAboveBaseline"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/failure_review.md",
+          "excerpt": "| 项 | 内容 |\n|---|---|\n| 现象 | AUC 达标但业务损失偏高 |\n| 根因 | 沿用 0.5 默认阈值，忽略 5:1 的漏报/误报成本比 |\n| 错误签名 | `CostLossAboveBaseline` |\n| 修复策略 | 在验证集上按成本加权损失网格搜索最优阈值，测试集不参与调阈 |\n| 可复用经验 | 分类阈值是业务决策，不是超参数默认值 |",
+          "sha256": "b81a83947aca78d9eee33b584a30b6b1ef803ec7538064f578d31e21ca68d8b4",
+          "doc_type": "失败复盘"
+        }
+      ]
+    },
+    {
+      "node_id": "fail.failure_review.FR-05",
+      "node_type": "FailureCase",
+      "name": "[FR-05] 采样时机错误",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "现象": "验证指标虚高且不可复现",
+        "根因": "对全量数据先做 SMOTE 再划分，合成样本跨训练/验证集",
+        "错误签名": "`LeakageDetected`",
+        "修复策略": "采样仅在训练集内、且在 Pipeline 内执行",
+        "可复用经验": "任何改变样本分布的操作都必须在划分之后",
+        "error_signature": "LeakageDetected"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/failure_review.md",
+          "excerpt": "| 项 | 内容 |\n|---|---|\n| 现象 | 验证指标虚高且不可复现 |\n| 根因 | 对全量数据先做 SMOTE 再划分，合成样本跨训练/验证集 |\n| 错误签名 | `LeakageDetected` |\n| 修复策略 | 采样仅在训练集内、且在 Pipeline 内执行 |\n| 可复用经验 | 任何改变样本分布的操作都必须在划分之后 |",
+          "sha256": "682233407d45e14a5bc9a2d7e9639cb508ca78843b88818313f0c4ed4744a444",
+          "doc_type": "失败复盘"
+        }
+      ]
+    },
+    {
+      "node_id": "fail.failure_review.r01",
+      "node_type": "FailureCase",
+      "name": "[r01] 列名映射",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "r01",
+        "section": "错误签名 → 修复策略速查",
+        "签名": "`KeyError: PAY_1`",
+        "定向修复": "列名映射"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/failure_review.md",
+          "excerpt": "| `KeyError: PAY_1` | 列名映射 |",
+          "sha256": "929c2b986babfd5aa958f1bdbdef65f6a04f99879d775ef070e4b64983184660",
+          "doc_type": "失败复盘"
+        }
+      ]
+    },
+    {
+      "node_id": "fail.failure_review.r02",
+      "node_type": "FailureCase",
+      "name": "[r02] 类别归一化 + 取值域校验",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "r02",
+        "section": "错误签名 → 修复策略速查",
+        "签名": "`SchemaError`",
+        "定向修复": "类别归一化 + 取值域校验"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/failure_review.md",
+          "excerpt": "| `SchemaError` | 类别归一化 + 取值域校验 |",
+          "sha256": "481f0f193883fbba66edef02f449514b5a6f42bbfa4cb1c7e3867cd5f2a93dc1",
+          "doc_type": "失败复盘"
+        }
+      ]
+    },
+    {
+      "node_id": "fail.failure_review.r03",
+      "node_type": "FailureCase",
+      "name": "[r03] 时间外划分 + Pipeline 约束",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "r03",
+        "section": "错误签名 → 修复策略速查",
+        "签名": "`LeakageDetected`",
+        "定向修复": "时间外划分 + Pipeline 约束"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/failure_review.md",
+          "excerpt": "| `LeakageDetected` | 时间外划分 + Pipeline 约束 |",
+          "sha256": "5f7c0f10de0eb64ecbf5023e5b2366814adb510379617dc62f78b1f396114002",
+          "doc_type": "失败复盘"
+        }
+      ]
+    },
+    {
+      "node_id": "fail.failure_review.r04",
+      "node_type": "FailureCase",
+      "name": "[r04] 检索历史高分方案，切换模型族/采样/阈值",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "r04",
+        "section": "错误签名 → 修复策略速查",
+        "签名": "`MetricBelowThreshold`",
+        "定向修复": "检索历史高分方案，切换模型族/采样/阈值"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/failure_review.md",
+          "excerpt": "| `MetricBelowThreshold` | 检索历史高分方案，切换模型族/采样/阈值 |",
+          "sha256": "3a0456fb35da39e139d33b85410129c771d30f70a59cc95e29e5caf01ef0c414",
+          "doc_type": "失败复盘"
+        }
+      ]
+    },
+    {
+      "node_id": "fail.failure_review.r05",
+      "node_type": "FailureCase",
+      "name": "[r05] 降采样或换轻量模型",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "r05",
+        "section": "错误签名 → 修复策略速查",
+        "签名": "`Timeout`",
+        "定向修复": "降采样或换轻量模型"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/failure_review.md",
+          "excerpt": "| `Timeout` | 降采样或换轻量模型 |",
+          "sha256": "3c5e11a98114d6e8069ad40a58b33bd354a00183ceca5e7b2bc14f749764707d",
+          "doc_type": "失败复盘"
+        }
+      ]
+    },
+    {
+      "node_id": "fail.failure_review.r06",
+      "node_type": "FailureCase",
+      "name": "[r06] 注入 random_state",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "r06",
+        "section": "错误签名 → 修复策略速查",
+        "签名": "`Nondeterminism`",
+        "定向修复": "注入 `random_state`"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/failure_review.md",
+          "excerpt": "| `Nondeterminism` | 注入 `random_state` |",
+          "sha256": "d4ea520994e95469c3cbdd2600d836d99ee5770e8e68cc5133792701c6f6ba9e",
+          "doc_type": "失败复盘"
+        }
+      ]
+    },
+    {
+      "node_id": "evidence.risk_policy",
+      "node_type": "Evidence",
+      "name": "证据源：assets/docs/risk_policy.md",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "path": "assets/docs/risk_policy.md",
+        "doc_type": "风控策略",
+        "file_sha256": "65132022264e88c7552c8d681aa03b3c5d55eefee9fd18d38037b207f549c1fd"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/risk_policy.md",
+          "excerpt": "# 信用卡违约预测 · 风控策略与适用条件（能力抽取源 · 模拟业务材料）\n\n> 本文件为本项目构造的模拟业务材料，用于演示从业务文档抽取「适用条件」与「评价指标」类能力。\n\n## 1. 业务目标\n\n在账单日出账前预测客户下月发生违约的概率，用于辅助额度管理与催收排期。模型仅作辅助决策，不单独触发拒贷或降额。\n\n## 2. 适用条件（约束）\n\n| 编号 | 约束 | 说明 |\n|---|---|-",
+          "sha256": "c2ea590b3894a5950b77abf2af1c8c825ef370caaff1b67b3559e192e56d56cd",
+          "doc_type": "风控策略"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.risk_policy.C1",
+      "node_type": "Capability",
+      "name": "[C1] 客群范围",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "C1",
+        "section": "2. 适用条件（约束）",
+        "编号": "C1",
+        "约束": "客群范围",
+        "说明": "仅适用于持有 ≥6 期账单历史的存量客户；新客无 `PAY_*` / `BILL_AMT*` 序列，不在适用范围内",
+        "metrics": {
+          "编号": 1.0,
+          "说明": 6.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/risk_policy.md",
+          "excerpt": "| C1 | 客群范围 | 仅适用于持有 ≥6 期账单历史的存量客户；新客无 `PAY_*` / `BILL_AMT*` 序列，不在适用范围内 |",
+          "sha256": "452ec2a9d19702fe2ab1783706f76b5199266e61fbea55327d02c30a1e516c58",
+          "doc_type": "风控策略"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.risk_policy.C2",
+      "node_type": "Capability",
+      "name": "[C2] 额度区间",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "C2",
+        "section": "2. 适用条件（约束）",
+        "编号": "C2",
+        "约束": "额度区间",
+        "说明": "`LIMIT_BAL` 在本样本覆盖区间内；超出区间需人工复核",
+        "metrics": {
+          "编号": 2.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/risk_policy.md",
+          "excerpt": "| C2 | 额度区间 | `LIMIT_BAL` 在本样本覆盖区间内；超出区间需人工复核 |",
+          "sha256": "d2a479b6890917403fd7f27bc39cdcbcc10a74e4310748580b21d14db9bfd620",
+          "doc_type": "风控策略"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.risk_policy.C3",
+      "node_type": "Capability",
+      "name": "[C3] 时间范围",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "C3",
+        "section": "2. 适用条件（约束）",
+        "编号": "C3",
+        "约束": "时间范围",
+        "说明": "训练样本观测期为 2005-04 至 2005-09；上线前须做 PSI 群体稳定性检查，PSI > 0.25 触发重训",
+        "metrics": {
+          "编号": 3.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/risk_policy.md",
+          "excerpt": "| C3 | 时间范围 | 训练样本观测期为 2005-04 至 2005-09；上线前须做 PSI 群体稳定性检查，PSI > 0.25 触发重训 |",
+          "sha256": "bb985519507eada653da2e23835b1c79a8e4b6767517a757c3909b1a58508e0c",
+          "doc_type": "风控策略"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.risk_policy.C4",
+      "node_type": "Capability",
+      "name": "[C4] 划分方式",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "C4",
+        "section": "2. 适用条件（约束）",
+        "编号": "C4",
+        "约束": "划分方式",
+        "说明": "必须时间外划分，禁止随机打乱；所有预处理在训练集内 fit",
+        "metrics": {
+          "编号": 4.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/risk_policy.md",
+          "excerpt": "| C4 | 划分方式 | 必须时间外划分，禁止随机打乱；所有预处理在训练集内 fit |",
+          "sha256": "8c431ed11822b24173254ac5819b8abb982db052f6133ec1162597a404338ea9",
+          "doc_type": "风控策略"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.risk_policy.C5",
+      "node_type": "Capability",
+      "name": "[C5] 敏感字段",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "C5",
+        "section": "2. 适用条件（约束）",
+        "编号": "C5",
+        "约束": "敏感字段",
+        "说明": "`SEX` / `AGE` / `EDUCATION` / `MARRIAGE` 不得进入模型特征，仅用于分组公平性审计",
+        "metrics": {
+          "编号": 5.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/risk_policy.md",
+          "excerpt": "| C5 | 敏感字段 | `SEX` / `AGE` / `EDUCATION` / `MARRIAGE` 不得进入模型特征，仅用于分组公平性审计 |",
+          "sha256": "6293ec0e9d06fac99cc229e1b11dfb7174dab5d4a97ff1964effdd42ba1d5869",
+          "doc_type": "风控策略"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.risk_policy.C6",
+      "node_type": "Capability",
+      "name": "[C6] 标识字段",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "C6",
+        "section": "2. 适用条件（约束）",
+        "编号": "C6",
+        "约束": "标识字段",
+        "说明": "`ID` 不得作为特征",
+        "metrics": {
+          "编号": 6.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/risk_policy.md",
+          "excerpt": "| C6 | 标识字段 | `ID` 不得作为特征 |",
+          "sha256": "b63e8dba0a4a6d6a210173cb23d3d7b6ac47bc3ad4c07d417e6df5ba046135b7",
+          "doc_type": "风控策略"
+        }
+      ]
+    },
+    {
+      "node_id": "cap.risk_policy.C7",
+      "node_type": "Capability",
+      "name": "[C7] 可复现",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "C7",
+        "section": "2. 适用条件（约束）",
+        "编号": "C7",
+        "约束": "可复现",
+        "说明": "固定随机种子 42，单次运行 60 秒内、内存 2GB 以内",
+        "metrics": {
+          "编号": 7.0,
+          "说明": 42602.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/risk_policy.md",
+          "excerpt": "| C7 | 可复现 | 固定随机种子 42，单次运行 60 秒内、内存 2GB 以内 |",
+          "sha256": "5d605a499ad3c4a5cbd65db0392a5ef8d2737e28978af535bf31b94e723dcba0",
+          "doc_type": "风控策略"
+        }
+      ]
+    },
+    {
+      "node_id": "metric.risk_policy.r01",
+      "node_type": "Metric",
+      "name": "[r01] 越大越好",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "r01",
+        "section": "4. 验收门槛（目标值，非实测结果）",
+        "指标": "AUC",
+        "方向": "越大越好",
+        "门槛": "≥ 0.78",
+        "metrics": {
+          "门槛": 0.78
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/risk_policy.md",
+          "excerpt": "| AUC | 越大越好 | ≥ 0.78 |",
+          "sha256": "d20c916a0bde9254594e2317779a4ce603f1aa14ab2a47a8fb0e94f2f2e3ad99",
+          "doc_type": "风控策略"
+        }
+      ]
+    },
+    {
+      "node_id": "metric.risk_policy.r02",
+      "node_type": "Metric",
+      "name": "[r02] 越大越好",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "r02",
+        "section": "4. 验收门槛（目标值，非实测结果）",
+        "指标": "KS",
+        "方向": "越大越好",
+        "门槛": "≥ 0.35",
+        "metrics": {
+          "门槛": 0.35
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/risk_policy.md",
+          "excerpt": "| KS | 越大越好 | ≥ 0.35 |",
+          "sha256": "1c39ea791942fc39665494be79101d62931124a4a490b286cedcc089b60390e9",
+          "doc_type": "风控策略"
+        }
+      ]
+    },
+    {
+      "node_id": "metric.risk_policy.r03",
+      "node_type": "Metric",
+      "name": "[r03] 越大越好",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "r03",
+        "section": "4. 验收门槛（目标值，非实测结果）",
+        "指标": "PR-AUC",
+        "方向": "越大越好",
+        "门槛": "≥ 0.50",
+        "metrics": {
+          "门槛": 0.5
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/risk_policy.md",
+          "excerpt": "| PR-AUC | 越大越好 | ≥ 0.50 |",
+          "sha256": "48ecdf8a1817080bfb2da1ad313fb1ef04cf811a10b8a693264088e9a2354c0e",
+          "doc_type": "风控策略"
+        }
+      ]
+    },
+    {
+      "node_id": "metric.risk_policy.r04",
+      "node_type": "Metric",
+      "name": "[r04] 越小越好",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "r04",
+        "section": "4. 验收门槛（目标值，非实测结果）",
+        "指标": "分组 AUC 差异",
+        "方向": "越小越好",
+        "门槛": "≤ 0.10",
+        "metrics": {
+          "门槛": 0.1
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/risk_policy.md",
+          "excerpt": "| 分组 AUC 差异 | 越小越好 | ≤ 0.10 |",
+          "sha256": "fe5b55b2c817020bf1796e43e8e3d604618757c3a0b26960c3a5120697843bf3",
+          "doc_type": "风控策略"
+        }
+      ]
+    },
+    {
+      "node_id": "evidence.test_report",
+      "node_type": "Evidence",
+      "name": "证据源：assets/docs/test_report.md",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "path": "assets/docs/test_report.md",
+        "doc_type": "测试报告",
+        "file_sha256": "b52820419a10325ef552814bc32ff798524186bfaf4f214bd9da7774ca99df90"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/test_report.md",
+          "excerpt": "# 算法能力验证报告模板（能力抽取源 · 模拟业务材料）\n\n> 本文件为本项目构造的**报告模板与历史样例**，不是本项目的实测结果。\n> 实际验证报告由 P2/P3 的 validator 生成到 `outputs/reports/`。\n\n## 1. 四层验证检查项\n\n| 层 | 检查项 | 判定方法 |\n|---|---|---|\n| 接口规范 | `build_pipeline()` 签名 ",
+          "sha256": "7b29ad5976705c35a521683a64a350df33b8e6370e79400b94a83b66b9c06fb7",
+          "doc_type": "测试报告"
+        }
+      ]
+    },
+    {
+      "node_id": "metric.test_report.r01",
+      "node_type": "Metric",
+      "name": "[r01] build_pipeline() 签名",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "r01",
+        "section": "1. 四层验证检查项",
+        "层": "接口规范",
+        "检查项": "`build_pipeline()` 签名",
+        "判定方法": "AST 解析函数签名"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/test_report.md",
+          "excerpt": "| 接口规范 | `build_pipeline()` 签名 | AST 解析函数签名 |",
+          "sha256": "2b7ed17cb3877dce01bfaa7e681bf780016a205fb0a14cd54e11f6c75e821616",
+          "doc_type": "测试报告"
+        }
+      ]
+    },
+    {
+      "node_id": "metric.test_report.r02",
+      "node_type": "Metric",
+      "name": "[r02] 输出列 pd / label / score 及 dtype",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "r02",
+        "section": "1. 四层验证检查项",
+        "层": "接口规范",
+        "检查项": "输出列 `pd` / `label` / `score` 及 dtype",
+        "判定方法": "契约比对"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/test_report.md",
+          "excerpt": "| 接口规范 | 输出列 `pd` / `label` / `score` 及 dtype | 契约比对 |",
+          "sha256": "5a0ab0a28489dc9e61f504b3621a4ea7d1618e026d294c84af5e10e4f560228f",
+          "doc_type": "测试报告"
+        }
+      ]
+    },
+    {
+      "node_id": "metric.test_report.r03",
+      "node_type": "Metric",
+      "name": "[r03] pd ∈ [0,1]",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "r03",
+        "section": "1. 四层验证检查项",
+        "层": "接口规范",
+        "检查项": "`pd` ∈ [0,1]",
+        "判定方法": "逐行断言",
+        "metrics": {
+          "检查项": 1.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/test_report.md",
+          "excerpt": "| 接口规范 | `pd` ∈ [0,1] | 逐行断言 |",
+          "sha256": "74cb7c0d4e7ee94d8e256905513f3f45fa55a1282ca345d0eddf27b8476464bf",
+          "doc_type": "测试报告"
+        }
+      ]
+    },
+    {
+      "node_id": "metric.test_report.r04",
+      "node_type": "Metric",
+      "name": "[r04] 禁 ID 入模、禁读标签路径",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "r04",
+        "section": "1. 四层验证检查项",
+        "层": "接口规范",
+        "检查项": "禁 `ID` 入模、禁读标签路径",
+        "判定方法": "AST 名称检查"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/test_report.md",
+          "excerpt": "| 接口规范 | 禁 `ID` 入模、禁读标签路径 | AST 名称检查 |",
+          "sha256": "9f825e1f936985199ec7be26c1ae6d55273baee3c2d8c2f19709d9a95602e959",
+          "doc_type": "测试报告"
+        }
+      ]
+    },
+    {
+      "node_id": "metric.test_report.r05",
+      "node_type": "Metric",
+      "name": "[r05] import 白名单",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "r05",
+        "section": "1. 四层验证检查项",
+        "层": "接口规范",
+        "检查项": "import 白名单",
+        "判定方法": "AST 检查，禁止 os.system / subprocess / socket"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/test_report.md",
+          "excerpt": "| 接口规范 | import 白名单 | AST 检查，禁止 os.system / subprocess / socket |",
+          "sha256": "4d4131edd644845f1c997c4768af5e4f5c8df8fe3caf9a0b49bafd8225165cb7",
+          "doc_type": "测试报告"
+        }
+      ]
+    },
+    {
+      "node_id": "metric.test_report.r06",
+      "node_type": "Metric",
+      "name": "[r06] 小样本 smoke、无 NaN",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "r06",
+        "section": "1. 四层验证检查项",
+        "层": "功能正确性",
+        "检查项": "小样本 smoke、无 NaN",
+        "判定方法": "沙箱执行"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/test_report.md",
+          "excerpt": "| 功能正确性 | 小样本 smoke、无 NaN | 沙箱执行 |",
+          "sha256": "3107d24326df9b16390730e5233a473771d63b331abee5ce63991c51ba646e8b",
+          "doc_type": "测试报告"
+        }
+      ]
+    },
+    {
+      "node_id": "metric.test_report.r07",
+      "node_type": "Metric",
+      "name": "[r07] fit/predict 幂等、固定种子两次输出一致",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "r07",
+        "section": "1. 四层验证检查项",
+        "层": "功能正确性",
+        "检查项": "fit/predict 幂等、固定种子两次输出一致",
+        "判定方法": "重复运行比对"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/test_report.md",
+          "excerpt": "| 功能正确性 | fit/predict 幂等、固定种子两次输出一致 | 重复运行比对 |",
+          "sha256": "8819586ecb57ce50884f66da449998d69c6bff719812c7407b9e5a9f8efdfce0",
+          "doc_type": "测试报告"
+        }
+      ]
+    },
+    {
+      "node_id": "metric.test_report.r08",
+      "node_type": "Metric",
+      "name": "[r08] 单类别、全缺失列边界输入",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "r08",
+        "section": "1. 四层验证检查项",
+        "层": "功能正确性",
+        "检查项": "单类别、全缺失列边界输入",
+        "判定方法": "合成边界样本"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/test_report.md",
+          "excerpt": "| 功能正确性 | 单类别、全缺失列边界输入 | 合成边界样本 |",
+          "sha256": "bd4fbe85cc734779bd39525bbf242d8b6cefe1df53a63dc081aecc6adc3c7bfb",
+          "doc_type": "测试报告"
+        }
+      ]
+    },
+    {
+      "node_id": "metric.test_report.r09",
+      "node_type": "Metric",
+      "name": "[r09] AUC / KS / PR-AUC / F1 / 成本损失 / PSI / 分组 AUC 差异",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "r09",
+        "section": "1. 四层验证检查项",
+        "层": "指标表现",
+        "检查项": "AUC / KS / PR-AUC / F1 / 成本损失 / PSI / 分组 AUC 差异",
+        "判定方法": "时间外划分 + baseline 对照",
+        "metrics": {
+          "检查项": -1.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/test_report.md",
+          "excerpt": "| 指标表现 | AUC / KS / PR-AUC / F1 / 成本损失 / PSI / 分组 AUC 差异 | 时间外划分 + baseline 对照 |",
+          "sha256": "2ff000dc4506f7883fe2607c1a49c157783a208edb8f62cad946f24009b05cbc",
+          "doc_type": "测试报告"
+        }
+      ]
+    },
+    {
+      "node_id": "metric.test_report.r10",
+      "node_type": "Metric",
+      "name": "[r10] test 集仅终评一次",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "r10",
+        "section": "1. 四层验证检查项",
+        "层": "指标表现",
+        "检查项": "test 集仅终评一次",
+        "判定方法": "运行日志审计"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/test_report.md",
+          "excerpt": "| 指标表现 | test 集仅终评一次 | 运行日志审计 |",
+          "sha256": "c7bb4f5d02fd7e9c944425d1e5d398afa4367ad2665f60e7191b48f649cd4caa",
+          "doc_type": "测试报告"
+        }
+      ]
+    },
+    {
+      "node_id": "metric.test_report.r11",
+      "node_type": "Metric",
+      "name": "[r11] 单次 ≤ 60s、内存 ≤ 2GB",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "r11",
+        "section": "1. 四层验证检查项",
+        "层": "运行稳定性",
+        "检查项": "单次 ≤ 60s、内存 ≤ 2GB",
+        "判定方法": "子进程资源限制",
+        "metrics": {
+          "检查项": 602.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/test_report.md",
+          "excerpt": "| 运行稳定性 | 单次 ≤ 60s、内存 ≤ 2GB | 子进程资源限制 |",
+          "sha256": "37c41f39448054dad3f0609397f40318e71072cfd4ef8a9f8aa3632525d2e44f",
+          "doc_type": "测试报告"
+        }
+      ]
+    },
+    {
+      "node_id": "metric.test_report.r12",
+      "node_type": "Metric",
+      "name": "[r12] 重复运行方差、依赖版本校验",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "r12",
+        "section": "1. 四层验证检查项",
+        "层": "运行稳定性",
+        "检查项": "重复运行方差、依赖版本校验",
+        "判定方法": "多次运行比对"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/test_report.md",
+          "excerpt": "| 运行稳定性 | 重复运行方差、依赖版本校验 | 多次运行比对 |",
+          "sha256": "14361cdb2d796e6909c2f611612d6ea91d7481344c24344ebe6b7010316c382a",
+          "doc_type": "测试报告"
+        }
+      ]
+    },
+    {
+      "node_id": "run.test_report.RUN-legacy-01",
+      "node_type": "ValidationRun",
+      "name": "[RUN-legacy-01] 历史评分卡脚本",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "RUN-legacy-01",
+        "section": "3. 历史样例结论（构造数据）",
+        "运行": "RUN-legacy-01",
+        "方案": "历史评分卡脚本",
+        "四层结论": "接口 FAIL、功能 FAIL、指标 FAIL、稳定性 PASS",
+        "修复轮次": "3",
+        "最终状态": "通过（修复后）",
+        "metrics": {
+          "修复轮次": 3.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/test_report.md",
+          "excerpt": "| RUN-legacy-01 | 历史评分卡脚本 | 接口 FAIL、功能 FAIL、指标 FAIL、稳定性 PASS | 3 | 通过（修复后） |",
+          "sha256": "d24ca247504f04b0b313cfde260d4d6cde833b5241b61b22b30501de1f3f57e0",
+          "doc_type": "测试报告"
+        }
+      ]
+    },
+    {
+      "node_id": "run.test_report.RUN-legacy-02",
+      "node_type": "ValidationRun",
+      "name": "[RUN-legacy-02] WOE + LR",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "RUN-legacy-02",
+        "section": "3. 历史样例结论（构造数据）",
+        "运行": "RUN-legacy-02",
+        "方案": "WOE + LR",
+        "四层结论": "四层 PASS",
+        "修复轮次": "0",
+        "最终状态": "通过",
+        "metrics": {
+          "修复轮次": 0.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/test_report.md",
+          "excerpt": "| RUN-legacy-02 | WOE + LR | 四层 PASS | 0 | 通过 |",
+          "sha256": "1fce995683b84fef44f08e1a16cc034ffe86e999ffa2cc2d18cc9a473081150e",
+          "doc_type": "测试报告"
+        }
+      ]
+    },
+    {
+      "node_id": "run.test_report.RUN-legacy-03",
+      "node_type": "ValidationRun",
+      "name": "[RUN-legacy-03] HistGB + SMOTE",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "RUN-legacy-03",
+        "section": "3. 历史样例结论（构造数据）",
+        "运行": "RUN-legacy-03",
+        "方案": "HistGB + SMOTE",
+        "四层结论": "接口 PASS、功能 PASS、指标 FAIL、稳定性 FAIL",
+        "修复轮次": "2",
+        "最终状态": "通过",
+        "metrics": {
+          "修复轮次": 2.0
+        }
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/test_report.md",
+          "excerpt": "| RUN-legacy-03 | HistGB + SMOTE | 接口 PASS、功能 PASS、指标 FAIL、稳定性 FAIL | 2 | 通过 |",
+          "sha256": "30df30da99ec7042aac81feb59f1383eb798e860746e0f9e07cedb8c58ecc0ce",
+          "doc_type": "测试报告"
+        }
+      ]
+    },
+    {
+      "node_id": "evidence.legacy_default_model",
+      "node_type": "Evidence",
+      "name": "证据源：assets/legacy/legacy_default_model.py",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "path": "assets/legacy/legacy_default_model.py",
+        "doc_type": "历史代码",
+        "file_sha256": "de226005c94a6953799ed790c083fcd6d2b1e58662680b7d11e2404187d6c287"
+      },
+      "evidence": [
+        {
+          "path": "assets/legacy/legacy_default_model.py",
+          "excerpt": "\"\"\"历史评分卡脚本（legacy，模拟的历史代码仓库资产）。\n\n本文件**故意保留已知缺陷**，用于两个目的：\n1. 供 RepoExtractor 演示「从真实/历史代码中抽取函数、依赖与能力描述」；\n2. 作为验证器的反例，触发 KeyError / SchemaError / LeakageDetected 等错误签名，\n   从而产生可复现的「失败 → 诊断 → 修复 → 沉淀」轨迹。\n",
+          "sha256": "9d3de6ab08c0e18148c20546b39119544edaaa784d155676e6767e76d1fb33df",
+          "doc_type": "历史代码"
+        }
+      ]
+    },
+    {
+      "node_id": "algo.legacy_default_model.load_raw",
+      "node_type": "Algorithm",
+      "name": "load_raw",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "docstring": "读取原始客户账单数据。",
+        "args": [
+          "path"
+        ],
+        "lineno": 26
+      },
+      "evidence": [
+        {
+          "path": "assets/legacy/legacy_default_model.py",
+          "excerpt": "def load_raw(path: str = DATA_PATH) -> pd.DataFrame:\n    \"\"\"读取原始客户账单数据。\"\"\"\n    return pd.read_csv(path)",
+          "sha256": "e95ccc96fc7d0e0754b7702ef72161eee8a423cb6ea1b1d719404f7d9545572b",
+          "doc_type": "历史代码"
+        }
+      ]
+    },
+    {
+      "node_id": "algo.legacy_default_model.build_features",
+      "node_type": "Algorithm",
+      "name": "build_features",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "docstring": "构造历史评分卡特征。\n\n缺陷 2：未剔除 ID 标识列。\n缺陷 3：未处理 EDUCATION / MARRIAGE 的未文档化类别。",
+        "args": [
+          "df"
+        ],
+        "lineno": 31
+      },
+      "evidence": [
+        {
+          "path": "assets/legacy/legacy_default_model.py",
+          "excerpt": "def build_features(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:\n    \"\"\"构造历史评分卡特征。\n\n    缺陷 2：未剔除 ID 标识列。\n    缺陷 3：未处理 EDUCATION / MARRIAGE 的未文档化类别。\n    \"\"\"\n    features = df.drop(columns=[TARGET]).copy()\n    features[\"delay_count\"] = (features[PAY_COLUMNS] > 0).sum(axis=1)\n    return features, df[TARGET]",
+          "sha256": "74a54fea97dc8091fb6ff5da26355e5dbf695a1f35ea5d8ad58fb448d57d657e",
+          "doc_type": "历史代码"
+        }
+      ]
+    },
+    {
+      "node_id": "algo.legacy_default_model.train_default_model",
+      "node_type": "Algorithm",
+      "name": "train_default_model",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "docstring": "训练历史逻辑回归评分卡，返回结果字典。\n\n缺陷 4：在全量数据上 fit 标准化器，统计量泄漏到验证集。\n缺陷 5：使用随机划分，对「下月违约」标签引入未来信息。\n缺陷 6：以 accuracy 作为验收指标，正例仅 22.12% 时结论失真。",
+        "args": [
+          "df"
+        ],
+        "lineno": 42
+      },
+      "evidence": [
+        {
+          "path": "assets/legacy/legacy_default_model.py",
+          "excerpt": "def train_default_model(df: pd.DataFrame) -> dict:\n    \"\"\"训练历史逻辑回归评分卡，返回结果字典。\n\n    缺陷 4：在全量数据上 fit 标准化器，统计量泄漏到验证集。\n    缺陷 5：使用随机划分，对「下月违约」标签引入未来信息。\n    缺陷 6：以 accuracy 作为验收指标，正例仅 22.12% 时结论失真。\n    \"\"\"\n    features, target = build_features(df)\n    scaler = StandardScaler()\n    scaled = scaler.fit_transform(features)\n    x_train, x_test, y_train, y_test = train_test_split(\n        scaled, target, test_size=0.2, random_state=42\n    )\n    model = LogisticRegression(max_iter=1000)\n    model.fit(x_train, y_train)\n    prediction = model.predict(x_test)\n    return {\"accuracy\": accuracy_score(y_test, prediction), \"model\": model}",
+          "sha256": "ac44c7b140a52d999fca7cb097f7123011691e5724f3853f36530f39ac2d27d8",
+          "doc_type": "历史代码"
+        }
+      ]
+    },
+    {
+      "node_id": "algo.legacy_default_model.score_to_rating",
+      "node_type": "Algorithm",
+      "name": "score_to_rating",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "docstring": "把违约概率映射为内部评级（历史规则）。",
+        "args": [
+          "probability"
+        ],
+        "lineno": 61
+      },
+      "evidence": [
+        {
+          "path": "assets/legacy/legacy_default_model.py",
+          "excerpt": "def score_to_rating(probability: float) -> str:\n    \"\"\"把违约概率映射为内部评级（历史规则）。\"\"\"\n    if probability < 0.1:\n        return \"A\"\n    if probability < 0.3:\n        return \"B\"\n    if probability < 0.5:\n        return \"C\"\n    return \"D\"",
+          "sha256": "30133f05221d303485c4d825af67a4aaafcbf1de4e048a4ad963e37b8b3a8d94",
+          "doc_type": "历史代码"
+        }
+      ]
+    },
+    {
+      "node_id": "fail.legacy_default_model.defect022",
+      "node_type": "FailureCase",
+      "name": "[缺陷22] 数据集中最近一期的列名是 PAY_0，并不存在 PAY_1",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "description": "数据集中最近一期的列名是 PAY_0，并不存在 PAY_1",
+        "lineno": 22,
+        "error_signature": null
+      },
+      "evidence": [
+        {
+          "path": "assets/legacy/legacy_default_model.py",
+          "excerpt": "# 缺陷 1：数据集中最近一期的列名是 PAY_0，并不存在 PAY_1",
+          "sha256": "cb3df2b220bbc69a47aa2f4808512d645569c8281e1618d8d4a3208f6d4ab8e1",
+          "doc_type": "历史代码"
+        }
+      ]
+    },
+    {
+      "node_id": "env.legacy_default_model",
+      "node_type": "Environment",
+      "name": "历史代码依赖环境",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "lib_deps": [
+          "__future__",
+          "pandas",
+          "sklearn.linear_model",
+          "sklearn.metrics",
+          "sklearn.model_selection",
+          "sklearn.preprocessing"
+        ],
+        "python_version": "3.11+"
+      },
+      "evidence": [
+        {
+          "path": "assets/legacy/legacy_default_model.py",
+          "excerpt": "__future__\npandas\nsklearn.linear_model\nsklearn.metrics\nsklearn.model_selection\nsklearn.preprocessing",
+          "sha256": "b6ad72a282f09298272264ea492b6769729067889b020d40b6ab693db436acee",
+          "doc_type": "历史代码"
+        }
+      ]
+    },
+    {
+      "node_id": "run.text_demo.01",
+      "node_type": "ValidationRun",
+      "name": "验证运行 run.text_demo.01",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "metrics": {
+          "accuracy": 0.97847533632287,
+          "macro_f1": 0.9535203634999374
+        },
+        "passed": true,
+        "duration_seconds": 2.218
+      },
+      "evidence": []
+    },
+    {
+      "node_id": "run.text_demo.02",
+      "node_type": "ValidationRun",
+      "name": "验证运行 run.text_demo.02",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "metrics": {
+          "accuracy": 0.9802690582959641,
+          "macro_f1": 0.9563988624244579
+        },
+        "passed": true,
+        "duration_seconds": 2.11
+      },
+      "evidence": []
+    },
+    {
+      "node_id": "run.text_demo.03",
+      "node_type": "ValidationRun",
+      "name": "验证运行 run.text_demo.03",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "metrics": {
+          "accuracy": 0.9730941704035875,
+          "macro_f1": 0.944694654974009
+        },
+        "passed": true,
+        "duration_seconds": 2.016
+      },
+      "evidence": []
+    }
+  ],
+  "edges": [
+    {
+      "source": "dataset.data_dictionary",
+      "target": "evidence.data_dictionary",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T1",
+      "target": "evidence.data_dictionary",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T2",
+      "target": "evidence.data_dictionary",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T2b",
+      "target": "evidence.data_dictionary",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T3",
+      "target": "evidence.data_dictionary",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T3b",
+      "target": "evidence.data_dictionary",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T4",
+      "target": "evidence.data_dictionary",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "run.experiment_log.EXP-01",
+      "target": "evidence.experiment_log",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "run.experiment_log.EXP-02",
+      "target": "evidence.experiment_log",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "run.experiment_log.EXP-03",
+      "target": "evidence.experiment_log",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "run.experiment_log.EXP-04",
+      "target": "evidence.experiment_log",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "run.experiment_log.EXP-05",
+      "target": "evidence.experiment_log",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "run.experiment_log.EXP-06",
+      "target": "evidence.experiment_log",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "run.experiment_log.EXP-07",
+      "target": "evidence.experiment_log",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "run.experiment_log.EXP-08",
+      "target": "evidence.experiment_log",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K1",
+      "target": "evidence.experiment_log",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K2",
+      "target": "evidence.experiment_log",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K3",
+      "target": "evidence.experiment_log",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K4",
+      "target": "evidence.experiment_log",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K5",
+      "target": "evidence.experiment_log",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K6",
+      "target": "evidence.experiment_log",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E1",
+      "target": "evidence.expert_rules",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E2",
+      "target": "evidence.expert_rules",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E3",
+      "target": "evidence.expert_rules",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E4",
+      "target": "evidence.expert_rules",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E5",
+      "target": "evidence.expert_rules",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E6",
+      "target": "evidence.expert_rules",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E7",
+      "target": "evidence.expert_rules",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E8",
+      "target": "evidence.expert_rules",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E9",
+      "target": "evidence.expert_rules",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E10",
+      "target": "evidence.expert_rules",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E11",
+      "target": "evidence.expert_rules",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E12",
+      "target": "evidence.expert_rules",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E13",
+      "target": "evidence.expert_rules",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E14",
+      "target": "evidence.expert_rules",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E15",
+      "target": "evidence.expert_rules",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E16",
+      "target": "evidence.expert_rules",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E17",
+      "target": "evidence.expert_rules",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "op.pipeline.01",
+      "target": "evidence.expert_rules",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "op.pipeline.02",
+      "target": "evidence.expert_rules",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "op.pipeline.01",
+      "target": "op.pipeline.02",
+      "edge_type": "PRECEDES",
+      "attributes": {
+        "rule": "fit 仅作用于训练集"
+      }
+    },
+    {
+      "source": "op.pipeline.03",
+      "target": "evidence.expert_rules",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "op.pipeline.02",
+      "target": "op.pipeline.03",
+      "edge_type": "PRECEDES",
+      "attributes": {
+        "rule": "fit 仅作用于训练集"
+      }
+    },
+    {
+      "source": "op.pipeline.04",
+      "target": "evidence.expert_rules",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "op.pipeline.03",
+      "target": "op.pipeline.04",
+      "edge_type": "PRECEDES",
+      "attributes": {
+        "rule": "fit 仅作用于训练集"
+      }
+    },
+    {
+      "source": "op.pipeline.05",
+      "target": "evidence.expert_rules",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "op.pipeline.04",
+      "target": "op.pipeline.05",
+      "edge_type": "PRECEDES",
+      "attributes": {
+        "rule": "fit 仅作用于训练集"
+      }
+    },
+    {
+      "source": "op.pipeline.06",
+      "target": "evidence.expert_rules",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "op.pipeline.05",
+      "target": "op.pipeline.06",
+      "edge_type": "PRECEDES",
+      "attributes": {
+        "rule": "fit 仅作用于训练集"
+      }
+    },
+    {
+      "source": "op.pipeline.07",
+      "target": "evidence.expert_rules",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "op.pipeline.06",
+      "target": "op.pipeline.07",
+      "edge_type": "PRECEDES",
+      "attributes": {
+        "rule": "fit 仅作用于训练集"
+      }
+    },
+    {
+      "source": "fail.failure_review.FR-01",
+      "target": "evidence.failure_review",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "fail.failure_review.FR-02",
+      "target": "evidence.failure_review",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "fail.failure_review.FR-03",
+      "target": "evidence.failure_review",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "fail.failure_review.FR-04",
+      "target": "evidence.failure_review",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "fail.failure_review.FR-05",
+      "target": "evidence.failure_review",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "fail.failure_review.r01",
+      "target": "evidence.failure_review",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "fail.failure_review.r02",
+      "target": "evidence.failure_review",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "fail.failure_review.r03",
+      "target": "evidence.failure_review",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "fail.failure_review.r04",
+      "target": "evidence.failure_review",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "fail.failure_review.r05",
+      "target": "evidence.failure_review",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "fail.failure_review.r06",
+      "target": "evidence.failure_review",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C1",
+      "target": "evidence.risk_policy",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C2",
+      "target": "evidence.risk_policy",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C3",
+      "target": "evidence.risk_policy",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C4",
+      "target": "evidence.risk_policy",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C5",
+      "target": "evidence.risk_policy",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C6",
+      "target": "evidence.risk_policy",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C7",
+      "target": "evidence.risk_policy",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "metric.risk_policy.r01",
+      "target": "evidence.risk_policy",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "metric.risk_policy.r02",
+      "target": "evidence.risk_policy",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "metric.risk_policy.r03",
+      "target": "evidence.risk_policy",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "metric.risk_policy.r04",
+      "target": "evidence.risk_policy",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "metric.test_report.r01",
+      "target": "evidence.test_report",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "metric.test_report.r02",
+      "target": "evidence.test_report",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "metric.test_report.r03",
+      "target": "evidence.test_report",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "metric.test_report.r04",
+      "target": "evidence.test_report",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "metric.test_report.r05",
+      "target": "evidence.test_report",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "metric.test_report.r06",
+      "target": "evidence.test_report",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "metric.test_report.r07",
+      "target": "evidence.test_report",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "metric.test_report.r08",
+      "target": "evidence.test_report",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "metric.test_report.r09",
+      "target": "evidence.test_report",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "metric.test_report.r10",
+      "target": "evidence.test_report",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "metric.test_report.r11",
+      "target": "evidence.test_report",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "metric.test_report.r12",
+      "target": "evidence.test_report",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "run.test_report.RUN-legacy-01",
+      "target": "evidence.test_report",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "run.test_report.RUN-legacy-02",
+      "target": "evidence.test_report",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "run.test_report.RUN-legacy-03",
+      "target": "evidence.test_report",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "algo.legacy_default_model.load_raw",
+      "target": "evidence.legacy_default_model",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "algo.legacy_default_model.build_features",
+      "target": "evidence.legacy_default_model",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "algo.legacy_default_model.train_default_model",
+      "target": "evidence.legacy_default_model",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "algo.legacy_default_model.score_to_rating",
+      "target": "evidence.legacy_default_model",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "fail.legacy_default_model.defect022",
+      "target": "evidence.legacy_default_model",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "env.legacy_default_model",
+      "target": "evidence.legacy_default_model",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T1",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T1",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T1",
+      "target": "metric.risk_policy.r01",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T1",
+      "target": "op.pipeline.01",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T2",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T2",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T2",
+      "target": "metric.risk_policy.r02",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T2",
+      "target": "op.pipeline.02",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T2b",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T2b",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T2b",
+      "target": "metric.risk_policy.r03",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T2b",
+      "target": "op.pipeline.03",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T3",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T3",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T3",
+      "target": "metric.risk_policy.r04",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T3",
+      "target": "op.pipeline.04",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T3b",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T3b",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T3b",
+      "target": "metric.test_report.r01",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T3b",
+      "target": "op.pipeline.05",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T4",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T4",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T4",
+      "target": "metric.test_report.r02",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T4",
+      "target": "op.pipeline.06",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K1",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K1",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K1",
+      "target": "metric.test_report.r03",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K1",
+      "target": "op.pipeline.07",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K2",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K2",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K2",
+      "target": "metric.test_report.r04",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K2",
+      "target": "op.pipeline.01",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K3",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K3",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K3",
+      "target": "metric.test_report.r05",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K3",
+      "target": "op.pipeline.02",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K4",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K4",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K4",
+      "target": "metric.test_report.r06",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K4",
+      "target": "op.pipeline.03",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K5",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K5",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K5",
+      "target": "metric.test_report.r07",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K5",
+      "target": "op.pipeline.04",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K6",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K6",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K6",
+      "target": "metric.test_report.r08",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.experiment_log.K6",
+      "target": "op.pipeline.05",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E1",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E1",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E1",
+      "target": "metric.test_report.r09",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E1",
+      "target": "op.pipeline.06",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E2",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E2",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E2",
+      "target": "metric.test_report.r10",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E2",
+      "target": "op.pipeline.07",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E3",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E3",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E3",
+      "target": "metric.test_report.r11",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E3",
+      "target": "op.pipeline.01",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E4",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E4",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E4",
+      "target": "metric.test_report.r12",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E4",
+      "target": "op.pipeline.02",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E5",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E5",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E5",
+      "target": "metric.risk_policy.r01",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E5",
+      "target": "op.pipeline.03",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E6",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E6",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E6",
+      "target": "metric.risk_policy.r02",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E6",
+      "target": "op.pipeline.04",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E7",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E7",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E7",
+      "target": "metric.risk_policy.r03",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E7",
+      "target": "op.pipeline.05",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E8",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E8",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E8",
+      "target": "metric.risk_policy.r04",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E8",
+      "target": "op.pipeline.06",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E9",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E9",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E9",
+      "target": "metric.test_report.r01",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E9",
+      "target": "op.pipeline.07",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E10",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E10",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E10",
+      "target": "metric.test_report.r02",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E10",
+      "target": "op.pipeline.01",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E11",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E11",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E11",
+      "target": "metric.test_report.r03",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E11",
+      "target": "op.pipeline.02",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E12",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E12",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E12",
+      "target": "metric.test_report.r04",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E12",
+      "target": "op.pipeline.03",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E13",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E13",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E13",
+      "target": "metric.test_report.r05",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E13",
+      "target": "op.pipeline.04",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E14",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E14",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E14",
+      "target": "metric.test_report.r06",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E14",
+      "target": "op.pipeline.05",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E15",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E15",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E15",
+      "target": "metric.test_report.r07",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E15",
+      "target": "op.pipeline.06",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E16",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E16",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E16",
+      "target": "metric.test_report.r08",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E16",
+      "target": "op.pipeline.07",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E17",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E17",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E17",
+      "target": "metric.test_report.r09",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.expert_rules.E17",
+      "target": "op.pipeline.01",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C1",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C1",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C1",
+      "target": "metric.test_report.r10",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C1",
+      "target": "op.pipeline.02",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C2",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C2",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C2",
+      "target": "metric.test_report.r11",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C2",
+      "target": "op.pipeline.03",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C3",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C3",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C3",
+      "target": "metric.test_report.r12",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C3",
+      "target": "op.pipeline.04",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C4",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C4",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C4",
+      "target": "metric.risk_policy.r01",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C4",
+      "target": "op.pipeline.05",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C5",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C5",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C5",
+      "target": "metric.risk_policy.r02",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C5",
+      "target": "op.pipeline.06",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C6",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C6",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C6",
+      "target": "metric.risk_policy.r03",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C6",
+      "target": "op.pipeline.07",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C7",
+      "target": "dataset.data_dictionary",
+      "edge_type": "APPLIES_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C7",
+      "target": "env.legacy_default_model",
+      "edge_type": "DEPENDS_ON",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C7",
+      "target": "metric.risk_policy.r04",
+      "edge_type": "EVALUATED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.risk_policy.C7",
+      "target": "op.pipeline.01",
+      "edge_type": "USES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T1",
+      "target": "dataset.data_dictionary",
+      "edge_type": "REQUIRES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T1",
+      "target": "op.pipeline.01",
+      "edge_type": "REQUIRES",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T2",
+      "target": "cap.data_dictionary.T1",
+      "edge_type": "DERIVED_FROM",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T2b",
+      "target": "cap.data_dictionary.T1",
+      "edge_type": "DERIVED_FROM",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T3",
+      "target": "cap.data_dictionary.T1",
+      "edge_type": "DERIVED_FROM",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T1",
+      "target": "cap.data_dictionary.T2",
+      "edge_type": "SIMILAR_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T2",
+      "target": "cap.data_dictionary.T2b",
+      "edge_type": "SIMILAR_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T2b",
+      "target": "cap.data_dictionary.T3",
+      "edge_type": "SIMILAR_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T1",
+      "target": "cap.data_dictionary.T3b",
+      "edge_type": "TRANSFERABLE_TO",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T1",
+      "target": "run.experiment_log.EXP-01",
+      "edge_type": "HAS_RUN",
+      "attributes": {}
+    },
+    {
+      "source": "run.experiment_log.EXP-01",
+      "target": "fail.failure_review.FR-01",
+      "edge_type": "RESULTED_IN",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T1",
+      "target": "run.experiment_log.EXP-02",
+      "edge_type": "HAS_RUN",
+      "attributes": {}
+    },
+    {
+      "source": "run.experiment_log.EXP-02",
+      "target": "fail.failure_review.FR-01",
+      "edge_type": "RESULTED_IN",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T1",
+      "target": "run.experiment_log.EXP-03",
+      "edge_type": "HAS_RUN",
+      "attributes": {}
+    },
+    {
+      "source": "run.experiment_log.EXP-03",
+      "target": "fail.failure_review.FR-01",
+      "edge_type": "RESULTED_IN",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T1",
+      "target": "run.experiment_log.EXP-04",
+      "edge_type": "HAS_RUN",
+      "attributes": {}
+    },
+    {
+      "source": "run.experiment_log.EXP-04",
+      "target": "fail.failure_review.FR-01",
+      "edge_type": "RESULTED_IN",
+      "attributes": {}
+    },
+    {
+      "source": "fail.failure_review.FR-01",
+      "target": "cap.data_dictionary.T1",
+      "edge_type": "FIXED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "fail.failure_review.FR-02",
+      "target": "cap.data_dictionary.T1",
+      "edge_type": "FIXED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "fail.failure_review.FR-03",
+      "target": "cap.data_dictionary.T1",
+      "edge_type": "FIXED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "fail.failure_review.FR-04",
+      "target": "cap.data_dictionary.T1",
+      "edge_type": "FIXED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T1",
+      "target": "run.text_demo.01",
+      "edge_type": "HAS_RUN",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T1",
+      "target": "run.text_demo.02",
+      "edge_type": "HAS_RUN",
+      "attributes": {}
+    },
+    {
+      "source": "cap.data_dictionary.T1",
+      "target": "run.text_demo.03",
+      "edge_type": "HAS_RUN",
+      "attributes": {}
+    }
+  ],
+  "source_files": [
+    "assets/docs/data_dictionary.md",
+    "assets/docs/experiment_log.md",
+    "assets/docs/expert_rules.md",
+    "assets/docs/failure_review.md",
+    "assets/docs/risk_policy.md",
+    "assets/docs/test_report.md",
+    "assets/legacy/legacy_default_model.py"
+  ],
+  "content_sha256": "aff8744d905e8673519f10001f8c18dc612125efcb42746193d451423068556f"
+}

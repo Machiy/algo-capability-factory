@@ -1,32 +1,42 @@
 # 第三任务类型：文本分类，用于验证「跨场景迁移」
-# 状态：planned —— 数据包将在 P6-1 引入，当前仅定义契约
-status: planned
+# 与 verify_credit.yaml 的唯一差别是配置本身：任务类型、输入列、指标与候选族，
+# 核心验证器 / 沙箱 / 工作流代码不改一行。
+status: active
 task_type: text_classification
-capability_id: cap.text.sentiment.v1
+capability_id: cap.text.spam.v1
 
 dataset:
-  path: assets/data/ag_news.csv
-  source: AG News (120000 train / 7600 test) 或 ChnSentiCorp (HF seamew/ChnSentiCorp)
-  text_column: text
-  target: label
-  language: zh_or_en
+  path: assets/data/sms_spam.csv
+  source: UCI SMS Spam Collection (dataset 228, CC BY 4.0)
+  text_column: text          # 非空即启用文本输入模式，模板据此声明 TEXT_COLUMN
+  target: label              # 0 = ham（正常短信），1 = spam（垃圾短信）
+  id_column: ""
+  forbidden_features:
+    - label
+  expected_rows: 5574
 
 split:
-  strategy: predefined
-  train_split: train
-  test_split: test
+  # 文本任务没有「下月」这类时序语义，固定种子洗牌后按位置切分，
+  # 与表格场景的时间外划分不是同一策略，因此在配置里显式区分
+  strategy: random_holdout
+  train_ratio: 0.60
+  valid_ratio: 0.20
+  test_ratio: 0.20
+  stratify: true
   random_state: 42
+  test_used_once: true
 
 constraints:
-  max_vocab_size: 50000
-  no_test_vocabulary_leakage: true
+  deterministic: true
+  no_test_vocabulary_leakage: true   # 向量器只在训练集 fit，由 Pipeline 保证
+  positive_ratio: 0.134
 
 metrics:
-  - {name: accuracy, direction: maximize, threshold: 0.80, plugin: sklearn_metrics}
-  - {name: macro_f1, direction: maximize, threshold: 0.78, plugin: sklearn_metrics}
+  - {name: accuracy, direction: maximize, threshold: 0.95, plugin: sklearn_metrics}
+  - {name: macro_f1, direction: maximize, threshold: 0.90, plugin: sklearn_metrics}
 
-vectorizers: [tfidf, count]
-model_families: [logistic_regression, linear_svm, naive_bayes]
+candidates:
+  model_families: [logistic_regression, linear_svc, complement_nb]
 
 baselines:
   - dummy_most_frequent

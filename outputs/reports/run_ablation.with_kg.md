@@ -1,8 +1,8 @@
 # 端到端运行报告 · ablation.with_kg
 
 > 本报告为真实运行的产物。核心闭环演示走 `MockLLM` 规则模板路径
-> （开发要求 g），T1 列名错误由规则模板模拟 LLM 的直觉命名，
-> 并在子进程用真实数据集触发 `KeyError` 后定向修复；指标均为实测，未造数值。
+> （开发要求 g），生成代码在子进程用真实数据集执行，指标均为实测，未造数值。
+> T1 列名错误由规则模板模拟 LLM 的直觉命名，并在子进程用真实数据集触发 `KeyError` 后定向修复。
 > test 集全程未访问。引用 cassette 回放的内容须另标注「离线回放」。
 
 - 能力描述：预测信用卡客户下月违约概率，时间外划分，按5:1成本比选阈值，禁止ID入模
@@ -32,16 +32,16 @@
 - [C4] 划分方式：必须时间外划分，禁止随机打乱；所有预处理在训练集内 fit
 - [C5] 敏感字段：`SEX` / `AGE` / `EDUCATION` / `MARRIAGE` 不得进入模型特征，仅用于分组公平性审计
 ## 历史失败规避项
-- MetricBelowThreshold → 检索历史高分方案，切换模型族或按成本比调阈值
 - KeyError: PAY_1 → 按 Dataset 列名映射把 PAY_1 改为 PAY_0（T1 陷阱）
+- MetricBelowThreshold → 检索历史高分方案，切换模型族或按成本比调阈值
 - KeyError → 按 `Dataset` 节点的列名映射表替换为 `PAY_0`、`PAY_2`…`PAY_6`；禁止按序号硬编码列名
 - SchemaError → 0/5/6 归入「其他」类别；`PAY_* = -2` 保留为独立类别；编码前做取值域校验
 - LeakageDetected → 改时间外划分；强制 `sklearn.Pipeline` 且所有预处理器仅 on train fit；按 `PRECEDES` 约束检查期次
 ```
 
-## 2. 候选方案比较（Beam Top-3）
+## 2. 候选方案比较（Beam Top-3，主指标 auc）
 
-| 方案 | 模型族 | AUC | 通过 | 修复轮次 |
+| 方案 | 模型族 | auc | 通过 | 修复轮次 |
 |---|---|---|---|---|
 | plan.03 | hist_gradient_boosting | 0.7843 | PASS | 0 |
 | plan.02 | logistic_regression | 0.7206 | FAIL | 1 |
@@ -68,8 +68,8 @@
 
 ## 5. 图谱沉淀 diff
 
-- nodes_added：-1
-- edges_added：-1
+- nodes_added：5
+- edges_added：5
 
 ## 6. 产物
 
