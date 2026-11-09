@@ -329,7 +329,11 @@ class Workflow:
 
     def _n_generate(self, state: _GraphState) -> dict:
         index = state["candidate_index"]
-        plan = state["plans"][index]
+        plans = state["plans"]
+        if not plans:
+            # 兜底防线：Planner 已经会在空候选时回退配置，这里避免裸 IndexError
+            raise ValueError("Planner 未能产出候选方案；请检查 llm.provider 与 Planner 输出格式")
+        plan = plans[index]
         source = self.coder.generate(
             plan, state["retrieval"], self.columns, index == 0,
             task_type=self.task_type, text_column=self.text_column,

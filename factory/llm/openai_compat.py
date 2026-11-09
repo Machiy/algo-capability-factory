@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 from contextlib import suppress
 from datetime import datetime
 from pathlib import Path
@@ -19,6 +20,9 @@ from factory.llm.base import BaseLLM
 from factory.llm.cassette import cassette_path, load_cassette, make_entry, save_cassette
 
 logger = logging.getLogger(__name__)
+
+# 模型常把结构化输出包在 ```json ... ``` 里；剥离后再 json.loads
+_JSON_FENCE_RE = re.compile(r"```(?:json)?\s*(.*?)```", re.DOTALL)
 
 
 class MissingCredentialError(RuntimeError):
@@ -84,8 +88,18 @@ class OpenAICompatLLM(BaseLLM):
 
     @staticmethod
     def _parse(raw: str) -> dict[str, Any]:
+        """解析模型输出。
+
+        真实模型常把 JSON 包在 ```` ```json ```` 里，或前後带一句解释；
+        只认纯 JSON 会让下游拿到空 payload（实测 Planner 返回空候选，
+        工作流在 generate 节点 IndexError）。这里先剥离代码块再解析。
+        """
+        text = (raw or "").strip()
+        fenced = _JSON_FENCE_RE.search(text)
+        if fenced:
+            text = fenced.group(1).strip()
         try:
-            parsed = json.loads(raw)
+            parsed = json.loads(text)
         except (ValueError, TypeError):
             return {"text": raw}
         return parsed if isinstance(parsed, dict) else {"items": parsed}

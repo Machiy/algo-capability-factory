@@ -34,7 +34,11 @@ logger = logging.getLogger(__name__)
 SYSTEM_PROMPTS = {
     "Interpreter": SYSTEM_PROMPT,
     "Retriever": "从能力图谱检索约束、历史指标与失败规避项。",
-    "Planner": "结合检索证据规划多个候选算法方案。",
+    "Planner": (
+        "结合检索证据规划多个候选算法方案。只输出 JSON，不要输出解释文字："
+        '{"candidates": [{"model_family": "logistic_regression", '
+        '"operators": ["Imputer", "Scaler"]}]}'
+    ),
     "Coder": "按方案生成实现 build_pipeline() 的可运行代码。",
     "Reviewer": "对生成代码做 AST 静态评审。",
     "Verifier": "汇总沙箱与指标证据，输出四层 ValidationReport。",
@@ -235,18 +239,10 @@ class Planner:
         ]
         used: set[str] = set()
         plans: list[CandidatePlan] = []
-        # 先按算法族去重再截断：直接切前 N 条会出现「同族候选占满宽度、
-        # 后续可用族被丢弃」，去重后 Top-N 才真的代表 N 种算法。
-        for item in raw_plans:
-            if len(plans) >= self.beam_width:
-                break
-            family = str(item.get("model_family", "logistic_regression"))
-            if available:
-                # 有可用族清单时才强制族唯一，避免同族候选占满 Beam 宽度
-                if family not in available or family in used:
-                    family = next((name for name in available if name not in used), "")
-                if not family or family in used:
-                    continue
+
+        def _add(family: str, operators: list[str], rationale: str) -> None:
+            if not family or family in used:
+                return
             used.add(family)
             index = len(plans) + 1
             presets = HYPERPARAM_PRESETS.get(
@@ -256,11 +252,36 @@ class Planner:
                 plan_id=f"plan.{index:02d}",
                 spec_id=spec.spec_id,
                 model_family=family,
-                operators=list(item.get("operators", [])),
+                operators=list(operators),
                 hyperparams=dict(presets[(index - 1) % len(presets)]),
-                rationale=f"检索证据 {len(retrieval.hits)} 项；候选 {index}（{family}）",
+                rationale=rationale,
                 retrieved_evidence=[hit.node_id for hit in retrieval.hits],
             ))
+
+        # 先按算法族去重再截断：直接切前 N 条会出现「同族候选占满宽度、
+        # 后续可用族被丢弃」，去重后 Top-N 才真的代表 N 种算法。
+        for item in raw_plans:
+            if len(plans) >= self.beam_width:
+                break
+            if not isinstance(item, dict):
+                continue
+            family = str(item.get("model_family", "logistic_regression"))
+            if available and (family not in available or family in used):
+                family = next((name for name in available if name not in used), "")
+            operators = item.get("operators")
+            _add(family,
+                 operators if isinstance(operators, list) else [],
+                 f"检索证据 {len(retrieval.hits)} 项；候选 {len(plans) + 1}（{family}）")
+
+        if not plans:
+            # 真实模型的输出未必符合契约（漏字段、纯自然语言）。这里按任务
+            # 配置的算法族兜底，宁可降级为模板候选，也不让闭环在 generate
+            # 节点以 IndexError 崩掉。
+            fallback = available[: self.beam_width] or ["logistic_regression"]
+            logger.warning("Planner 未返回有效候选（parsed keys=%s），按配置兜底：%s",
+                           sorted(parsed), fallback)
+            for family in fallback:
+                _add(family, [], f"Planner 未返回候选，按配置兜底（{family}）")
         return plans
 
 

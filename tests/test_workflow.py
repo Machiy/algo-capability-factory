@@ -113,6 +113,46 @@ class RepairTests(unittest.TestCase):
         self.assertEqual(result.error_signature, "ImportError")
 
 
+class PlannerFallbackTests(unittest.TestCase):
+    """真实模型输出不符合契约时的兜底。
+
+    实测：``.env`` 切到 ``openai_compat`` 后，Planner 返回自然语言，
+    ``candidates`` 为空，工作流在 generate 节点以 IndexError 崩掉。
+    """
+
+    def test_fenced_json_is_parsed(self) -> None:
+        from factory.llm.openai_compat import OpenAICompatLLM
+
+        raw = '```json\n{"candidates": [{"model_family": "random_forest"}]}\n```'
+        parsed = OpenAICompatLLM._parse(raw)
+        self.assertEqual(parsed["candidates"][0]["model_family"], "random_forest")
+
+    def test_plain_text_yields_no_candidates(self) -> None:
+        from factory.llm.openai_compat import OpenAICompatLLM
+
+        self.assertNotIn("candidates", OpenAICompatLLM._parse("我认为应该用逻辑回归"))
+
+    def test_planner_falls_back_to_configured_families(self) -> None:
+        from factory.agents import Interpreter
+
+        class TextOnlyLLM(BaseLLM):
+            """模拟只回自然语言的真实模型。"""
+
+            def complete(self, request: LLMRequest) -> LLMResponse:
+                return LLMResponse(raw="我认为应该用逻辑回归，先做 WOE 分箱",
+                                   parsed={"text": "..."}, source="deepseek_api")
+
+        families = ["logistic_regression", "random_forest", "hist_gradient_boosting"]
+        spec = Interpreter(MockLLM()).parse("预测信用卡客户下月违约概率")
+        plans = Planner(TextOnlyLLM()).plan(
+            spec, _retrieval(), families=families,
+            task_type="tabular_binary_classification",
+        )
+        self.assertEqual(len(plans), 3)
+        self.assertEqual({plan.model_family for plan in plans}, set(families))
+        self.assertIn("兜底", plans[0].rationale)
+
+
 class CodeSourceLLM(BaseLLM):
     """返回指定源码的假后端，用于验证「采用 LLM 代码 / 回退模板」两条路径。"""
 
