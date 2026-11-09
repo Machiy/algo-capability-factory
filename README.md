@@ -6,6 +6,8 @@
 >
 > 对应题目：LLM Agent 笔试《基于 AI Agent 的算法能力系统开发》。
 
+**版本与变更记录**：当前版本 `1.0.1`，见 [`CHANGELOG.md`](CHANGELOG.md) 与 [Releases](https://github.com/Machiy/algo-capability-factory/releases)。
+
 **当前仓库状态：P0–P5 已完成并实测。** a–g 七步闭环（能力抽取 → 检索 → 规划 → 生成 → 验证 → 修复 → 沉淀）全链路可跑；L0 契约、L1 能力图谱与混合检索、L2 的 8 个 Agent 角色与 LangGraph 编排、L3 子进程沙箱与 AST 静态检查、L4 四层验证与报告生成、L5 的 Typer CLI 与 FastAPI 均已落地，并支持三种 LLM 后端与脱敏 cassette。`python -m factory run --spec "..." --mock` 一次产出生成代码、四层报告、修复轨迹与图谱回写；最新一次实测为 3 候选、最佳候选（HGB）四层全通过、AUC 0.7843。题目进阶要求的 8 项全部满足，10 项加分项已全部覆盖（真实仓库抽取见第 3 节、资源消耗分析见第 8 节、跨场景迁移见第 8 节）。本文档已按题目「提交方式」要求的十项内容写好。
 
 ---
