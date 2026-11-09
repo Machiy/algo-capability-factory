@@ -563,6 +563,7 @@ def build_pipeline(config):
 | **真实仓库的 docstring 格式不统一**：`scorecardpy` 用 `Params` 段、参数说明还跨行，部分函数完全没有结构化段 | 解析器同时接受 `Params` / `Parameters` / `Args`，跨行说明取首行；无结构化段时用签名兜底。81 个函数全部产出能力描述，其中 21 个有结构化参数——差异如实写进第 3 节，不补造内容 |
 | **跨场景迁移暴露隐藏耦合**：数据集路径写死取全局 `paths.data`，文本任务仍去读信用卡 CSV 而报 `KeyError: 'label'`；两场景都写 `outputs/generated/candidate_plan.*.py`，后跑的覆盖先跑的 | 数据集路径改为 `dataset.path` 优先、全局配置兜底；新增 `--run-id` / `--kg-out` / `--gen-dir`，让两个场景的代码、图谱、报告、轨迹互不覆盖；场景差异收敛到 `verify_*.yaml` 与 `templates.py` 两处 |
 | **候选排序默认「越大越好」**：换成回归后主指标是 RMSE，原实现会把最差候选排到第一 | 打分按指标 `direction` 归一（`minimize` 取负号），原始值仍原样存在 `metrics`；`test_end_to_end_ranks_by_minimized_metric` 用「排序后的 RMSE 必须单调不减」守住这条语义 |
+| **跨平台 lint 盲区**：本地 `ruff` 全绿，CI 首跑却在代码规范步骤挂掉——`scripts/download_data.py` 带 shebang 但索引里是 100644，`EXE001` 只对 POSIX 文件模式生效，Windows 看不到 | 用 `git update-index --chmod=+x` 置为 100755（保留 shebang 与直接执行能力），并把 ruff 输出改成 `--output-format=github`，失败时具体文件与规则直接进 check-run 注解，不必拉日志 |
 | **知识图谱一开始是单场景的**：文本任务检索到的是信用卡域约束，`PAY_0`、成本比 5:1 这些噪音会进 Planner / Coder prompt | `verify_*.yaml` 增加 `knowledge.docs`，工作流按场景抽独立子图；两套材料结构一致（适用条件表 / 验收门槛表 / `FR-xx`），抽取器与检索器代码零改动即支持第二领域 |
 | **沉淀只写不读**：Curator 已把结果写入 `capabilities_after_run.json`，但工作流每轮都从源材料重抽，下一轮看不到上一轮经验 | 让 `Workflow` 启动时优先加载回写图谱（不存在才回退源材料），检索器优先返回本项目实测 `FailureCase`，Coder 命中 T1 历史经验时首轮即避开，Curator 按 `run_id` 去重避免膨胀。消融实测：修复轮次 2（有 KG）vs 3（无 KG）、有 KG 首轮避开 `PAY_1`、两组 AUC 完全一致 |
 
