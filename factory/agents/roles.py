@@ -39,7 +39,16 @@ SYSTEM_PROMPTS = {
         '{"candidates": [{"model_family": "logistic_regression", '
         '"operators": ["Imputer", "Scaler"]}]}'
     ),
-    "Coder": "按方案生成实现 build_pipeline() 的可运行代码。",
+    "Coder": (
+        "按方案生成可运行的 Python 源码，只输出代码，不要解释。硬性要求：\n"
+        "1) 定义模块级常量 FEATURE_COLUMNS，值为特征列名列表，必须与用户消息给出的"
+        "特征列一致，不得包含 ID、标签列或敏感字段；若用户消息给的是文本列，"
+        "则改为定义 TEXT_COLUMN = \"<列名>\"；\n"
+        "2) 定义 def build_pipeline(config): 返回 sklearn.pipeline.Pipeline；\n"
+        "3) 必须使用方案中的 model_family 对应的算法；\n"
+        "4) 缺失值处理、缩放、编码、采样全部放进 Pipeline，不得在 Pipeline 外 fit；\n"
+        "5) 只 import 白名单内的库（numpy / pandas / sklearn / imblearn / math / typing）。"
+    ),
     "Reviewer": "对生成代码做 AST 静态评审。",
     "Verifier": "汇总沙箱与指标证据，输出四层 ValidationReport。",
     "Repairer": "按错误签名查策略表做定向修复，不重写全量代码。",

@@ -3,6 +3,29 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循
 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本对应一个 annotated tag 与 GitHub Release。
 
+## [1.1.1] - 2026-11-09
+
+真实 LLM 通路实测后的健壮性补丁。mock 路径永远返回结构化 JSON，测不出「模型输出与契约不一致」这一类问题，只有切到 `openai_compat` 才会暴露。
+
+### 修复
+
+- **Planner 空候选导致工作流崩溃**：`_parse` 只认纯 JSON，模型把结果包在 `json` 代码块里时解析失败，`candidates` 为空，工作流在 `generate` 节点 `plans[0]` 处抛 `IndexError`。现在先剥离代码块再解析；空候选按任务配置的算法族兜底并记 warning；`generate` 节点改为可读的 `ValueError`。
+- **Planner 缺输出格式约束**：system prompt 只写「结合检索证据规划多个候选算法方案」，从未告诉模型要输出什么结构。现补 JSON 契约。
+- **Coder 缺输出格式约束**：生成的代码普遍没有 `FEATURE_COLUMNS` 常量，被契约检查拒收后全部回退模板，「LLM 生成代码」实际上从未生效。prompt 现明确要求：`FEATURE_COLUMNS`（或文本任务的 `TEXT_COLUMN`）、`build_pipeline()`、使用方案指定的 `model_family`、预处理全部放进 Pipeline、只用 import 白名单内的库。
+
+### 实测（真实 DeepSeek，`LLM_PROVIDER=openai_compat`）
+
+| 项目 | 结果 |
+|---|---|
+| 真实调用 | 7 次（Planner 1、Coder 3、Repairer 2、Curator 1） |
+| 四层结论 | 全通过，候选 3、修复 2 轮 |
+| LLM 代码采用 | 3 个候选中 2 个采用：`plan.02` AUC 0.78992（模板 RF 为 0.78990，可区分），`plan.01` AUC 0.7643 如实判 FAIL；`plan.03` 无有效响应回退模板 |
+| 产物差异 | 采用代码与模板产物相差 149 行，确认不是模板回退 |
+
+### 测试
+
+- 新增 3 个用例：代码块包裹的 JSON 解析、纯文本解析、Planner 兜底候选。全量 148 个用例通过，`ruff check` 全绿。
+
 ## [1.1.0] - 2026-11-09
 
 对照代码走查结论做的真实性整改：把三处「文档说做了、代码没做」的检查补成真的，并修掉两处会让闭环失效的逻辑缺陷。对外契约只增不改（新增 `TestEvaluation`、`RunTrace.code_sources`、`WorkflowSettings`），端到端三条命令的指标与修复轨迹保持一致。

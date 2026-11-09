@@ -1,4 +1,4 @@
-# AlgoCap Factory · 基于 AI Agent 的算法能力工厂
+﻿# AlgoCap Factory · 基于 AI Agent 的算法能力工厂
 
 [![ci](https://github.com/Machiy/algo-capability-factory/actions/workflows/ci.yml/badge.svg)](https://github.com/Machiy/algo-capability-factory/actions/workflows/ci.yml)
 
@@ -22,7 +22,7 @@
 |---|---|---|
 | 0 | `python -m venv .venv` → 激活（Windows `.venv\Scripts\activate`，Linux/macOS `source .venv/bin/activate`）→ `pip install -r requirements.txt` | 一次性安装完成，无需清单外依赖 |
 | 1 | `python -m ruff check .` | `All checks passed!` |
-| 2 | `python -m unittest discover -s tests` | `Ran 143 tests ... OK` |
+| 2 | `python -m unittest discover -s tests` | `Ran 148 tests ... OK` |
 | 3 | `python -m factory run --spec "预测信用卡客户下月违约概率，时间外划分，按 5:1 成本比选阈值，禁止 ID 入模。"` | `四层全通过=True 理解来源=cassette 候选=3`；最佳候选 random_forest AUC 0.7899。修复轮次取决于是否已有回写图谱：仓库自带 `capabilities_after_run.json` 时为 **1**（T1 经验命中，首轮即避开），删掉该文件再跑为 **2**（现场复现 `KeyError: PAY_1` → 定向修复，再处理指标层） |
 | 4 | `python -m factory run --spec "把短信分类为垃圾短信或正常短信，输出准确率与宏平均F1" --mock --task-config configs/verify_text.yaml --run-id text_demo --kg-out capabilities_text_after_run.json --gen-dir text` | `四层全通过=True`；linear_svc accuracy 0.9803 |
 | 5 | `python -m factory run --spec "根据多期特征预测日需求量，最小化RMSE，输出RMSE/MAE/R2" --mock --task-config configs/verify_regression.yaml --run-id regression_demo --kg-out capabilities_regression_after_run.json --gen-dir regression` | `四层全通过=True`；ridge RMSE 19.31、R² 0.978 |
@@ -143,7 +143,7 @@ algo-capability-factory/
 │   ├── validation/{checks.py, metrics.py, split.py, report.py}
 │   └── api/app.py
 ├── outputs/{generated/{,text/}, reports/, kg/, runs/}   # runs/ 为临时轨迹，不入库
-└── tests/                      # 15 个测试文件、143 个用例
+└── tests/                      # 15 个测试文件、148 个用例
 ```
 
 `knowledge/`、`agents/`、`workflow/`、`runtime/`、`validation/`、`api/` 均已实现并入库。内部规划文档（`PLAN.md`）、原始数据包与 `_archive/` 不纳入版本控制。
@@ -329,7 +329,7 @@ python -m factory --check
 
 **最小依赖**：核心闭环需 `pydantic`、`PyYAML`、`pandas`、`scikit-learn`、`networkx`、`langgraph`、`rank-bm25`、`markdown-it-py`、`psutil`、`structlog`（全部为现成库，`requirements.txt` 已锁版本区间）；若只需验证数据契约与配置，可先 `pip install pydantic PyYAML` 再运行 `python -m unittest discover -s tests -v`。`pyvis`、`Jinja2`、`Typer`、`openai` 按入口加载，全量清单见 `requirements.txt`。
 
-**干净环境实测（P5 记录）**：在系统临时目录新建空 venv，仅执行一次 `pip install -r requirements.txt`（106 个包，无冲突），随后直接跑通 `ruff check`（全绿）、当时的 104 个用例与端到端 `factory run`（`四层全通过=True`、`理解来源=cassette`、退出码 0），未安装任何清单外依赖。P6 未引入任何新的第三方依赖（文本与仓库抽取均用已有的 pandas / scikit-learn / 标准库），因此该结论继续成立；补充用例后当前全量测试为 **143 个**，在项目 venv 中全部通过。1.1.0 移除了未使用的 `streamlit` 依赖（题目「Web 界面、CLI 或 API」三选一，CLI + API 已满足），未新增任何第三方包。
+**干净环境实测（P5 记录）**：在系统临时目录新建空 venv，仅执行一次 `pip install -r requirements.txt`（106 个包，无冲突），随后直接跑通 `ruff check`（全绿）、当时的 104 个用例与端到端 `factory run`（`四层全通过=True`、`理解来源=cassette`、退出码 0），未安装任何清单外依赖。P6 未引入任何新的第三方依赖（文本与仓库抽取均用已有的 pandas / scikit-learn / 标准库），因此该结论继续成立；补充用例后当前全量测试为 **148 个**，在项目 venv 中全部通过。1.1.0 移除了未使用的 `streamlit` 依赖（题目「Web 界面、CLI 或 API」三选一，CLI + API 已满足），未新增任何第三方包。
 
 **持续集成**：`.github/workflows/ci.yml` 用 matrix 固定并行两版——**Python 3.11**（`pyproject.toml` 声明的最低版本）与 **Python 3.12**（本地实测版本），各自执行 `ruff check`、全量单元测试与三条端到端命令（信用卡违约 / 短信文本 / 需求量回归），并对输出断言 `四层全通过=True`。job 名直接带版本号，看板上一眼可辨。端到端走默认 provider（Interpreter 用已入库 cassette），因此 CI 不依赖任何 API key。
 
@@ -474,7 +474,7 @@ def build_pipeline(config):
 | 图谱沉淀 | `outputs/kg/capabilities_after_run.json`：首轮新增 ValidationRun / FailureCase / 能力 v2；失败案例按错误签名去重 |
 | 确定性实测 | 三个候选在同一子进程内二次 fit，两次连续输出的最大绝对差均为 `0.00e+00`（报告第 3 节「确定性 Δ」列） |
 | test 终评 | 最佳候选 `plan.02`（RF）在 test 段一次性评估：AUC 0.7883、KS 0.4399、F1 0.4590、PSI 0.0681、分组 AUC 差 0.0201；终评指标不参与排序与修复 |
-| 代码来源 | 本次全链路走规则模板（`code_sources` 全为 `template`）：默认路径的 Coder 不把 Mock 输出冒充模型生成；接入真实 LLM 后代码先过 AST 检查才采用 |
+| 代码来源 | 默认 mock 路径全为 `template`（Mock 输出不冒充模型生成）；接入真实 DeepSeek 后实测 3 个候选中 **2 个采用 LLM 代码**：`plan.02` AUC 0.78992（模板 RF 为 0.78990，可区分），`plan.01` AUC 0.7643 如实判 FAIL；`plan.03` 因响应无可解析代码回退模板。采用前均过 AST 静态检查，未通过即回退并记日志 |
 
 > 说明：`Curator` 对 ValidationRun 按 `run_id` 覆盖、对 `FailureCase` 按 `error_signature` 复用，因此第二轮运行不会再写一遍相同的 T1 经验，报告里的「图谱沉淀 diff」显示 0 表示**本轮没有新知识**，而不是回写失败；首轮的完整新增清单见 `capabilities_after_run.json`。
 >
@@ -680,11 +680,11 @@ License: CC BY 4.0 (UCI) / CC0 Public Domain (OpenML d/43435)
 | 4 | 知识抽取结果文件（JSON / CSV / GraphML） | `outputs/kg/capabilities.json`、`capabilities.csv`、`graph.graphml`；文本场景 `text_capabilities.*`、`text_graph.graphml`；真实仓库 `repo_capabilities.*`、`repo_graph.graphml` |
 | 5 | Agent 工作流代码或流程配置 | `factory/workflow/pipeline.py`（LangGraph `StateGraph`）+ `factory/agents/roles.py`（8 角色）；流程图见第 4 节 |
 | 6 | 至少 1 个从能力描述到代码生成的完整示例 | `outputs/reports/run_demo.md`（能力描述 → 检索证据 → 3 候选 → 代码 → 修复 diff）+ `outputs/generated/candidate_plan.0*.py`；文本 / 回归场景另有 `run_text_demo.md`、`run_regression_demo.md` |
-| 7 | 自动验证脚本 | `python -m factory run`；`scripts/verify_baseline.py`；CI `.github/workflows/ci.yml`（lint + 143 用例 + 3 条端到端） |
+| 7 | 自动验证脚本 | `python -m factory run`；`scripts/verify_baseline.py`；CI `.github/workflows/ci.yml`（lint + 148 用例 + 3 条端到端） |
 | 8 | 验证报告样例 | `outputs/reports/`：`run_demo.md`（四层结论 + 候选排名 + 修复轨迹）、`run_text_demo.md`、`run_regression_demo.md`、`validation_sample.md`、`ablation.md`、`resources.md`、`openapi.json` |
 | 9 | 项目文档 README.md | `README.md`（十节 + 附录 A–E） |
 | 10 | 环境依赖文件 | `requirements.txt`（106 个包；干净 venv 实测无清单外依赖） |
-| 11 | 使用示例和测试用例 | 第 5 节命令清单 + `tests/`（15 个文件 / 143 个用例，含泄漏拦截、沙箱、确定性、test 终评、代码来源、CLI 进程级、`/run` 真实闭环、cassette 回放、跨场景等） |
+| 11 | 使用示例和测试用例 | 第 5 节命令清单 + `tests/`（15 个文件 / 148 个用例，含泄漏拦截、沙箱、确定性、test 终评、代码来源、CLI 进程级、`/run` 真实闭环、cassette 回放、跨场景等） |
 
 ### 进阶与加分证据位置
 

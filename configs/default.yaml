@@ -1,7 +1,7 @@
-# 全局默认配置；任务级配置见 verify_*.yaml
+﻿# 全局默认配置；任务级配置见 verify_*.yaml
 project:
   name: algocap-factory
-  version: 1.1.0
+  version: 1.1.1
   seed: 42
   log_level: INFO
 
