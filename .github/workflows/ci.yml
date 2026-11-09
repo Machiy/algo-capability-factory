@@ -27,7 +27,9 @@ jobs:
           pip install -r requirements.txt
 
       - name: 代码规范
-        run: python -m ruff check .
+        run: |
+          python -m ruff --version
+          python -m ruff check . --output-format=github
 
       - name: 全量测试
         run: python -m unittest discover -s tests -v
