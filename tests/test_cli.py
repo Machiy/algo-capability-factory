@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -18,6 +19,13 @@ from pathlib import Path
 from factory.api.app import create_app
 
 ROOT = Path(__file__).resolve().parents[1]
+# Typer / Rich 在带颜色的终端上会把选项拆成 "-\x1b[0m\x1b[1;36m-spec"，
+# 断言前统一剥离 ANSI 序列，并同时用 NO_COLOR 关掉着色，避免平台差异
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _plain(text: str) -> str:
+    return _ANSI_RE.sub("", text or "")
 
 
 class CliProcessTests(unittest.TestCase):
@@ -30,7 +38,11 @@ class CliProcessTests(unittest.TestCase):
             capture_output=True,
             text=True,
             encoding="utf-8",
-            env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+            env={**os.environ,
+                 "PYTHONIOENCODING": "utf-8",
+                 "NO_COLOR": "1",
+                 "TERM": "dumb",
+                 "COLUMNS": "120"},
             timeout=180,
             check=False,
         )
@@ -40,19 +52,20 @@ class CliProcessTests(unittest.TestCase):
 
         result = self._run("--version")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn(f"factory {factory.__version__}", result.stdout)
+        self.assertIn(f"factory {factory.__version__}", _plain(result.stdout))
 
     def test_check_flag_reports_dependencies(self) -> None:
         result = self._run("--check")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("核心依赖就绪", result.stdout)
+        self.assertIn("核心依赖就绪", _plain(result.stdout))
 
     def test_run_help_lists_task_config_option(self) -> None:
         """换场景的入口参数必须存在，否则跨场景迁移只能靠改代码。"""
         result = self._run("run", "--help")
         self.assertEqual(result.returncode, 0, result.stderr)
+        help_text = _plain(result.stdout)
         for option in ("--spec", "--task-config", "--run-id", "--kg-out", "--gen-dir"):
-            self.assertIn(option, result.stdout)
+            self.assertIn(option, help_text)
 
 
 class ApiWorkflowTests(unittest.TestCase):

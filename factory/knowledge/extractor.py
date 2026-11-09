@@ -157,8 +157,14 @@ def read_sources(root: Path, docs_dir: str, legacy_dir: str) -> list[SourceDocum
     docs = root / docs_dir
     if not docs.is_dir():
         raise ExtractionError(f"业务材料目录不存在：{docs}")
+
+    def _read(path: Path) -> str:
+        # 统一换行：Windows 检出为 CRLF、Linux 为 LF，不归一化会让
+        # 表格单元格带上 "\r"，跨平台抽出不同的边数（实测 188 vs 179）
+        return path.read_text(encoding="utf-8").replace("\r\n", "\n")
+
     for path in sorted(docs.glob("*.md")):
-        content = path.read_text(encoding="utf-8")
+        content = _read(path)
         sources.append(SourceDocument(
             path=path.relative_to(root).as_posix(),
             doc_type=DOC_TYPE_BY_FILENAME.get(path.name, "业务文档"),
@@ -167,7 +173,7 @@ def read_sources(root: Path, docs_dir: str, legacy_dir: str) -> list[SourceDocum
         ))
     legacy = root / legacy_dir if legacy_dir else None
     for path in sorted(legacy.glob("*.py")) if legacy else []:
-        content = path.read_text(encoding="utf-8")
+        content = _read(path)
         sources.append(SourceDocument(
             path=path.relative_to(root).as_posix(),
             doc_type=LEGACY_DOC_TYPE,
