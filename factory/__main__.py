@@ -57,5 +57,25 @@ def run(
     raise typer.Exit(run_from_cli(spec, mock, ROOT))
 
 
+@app.command()
+def api(
+    host: str = typer.Option("127.0.0.1", help="监听地址"),
+    port: int = typer.Option(8000, help="监听端口"),
+    export_openapi: bool = typer.Option(
+        False, "--export-openapi", help="只导出 OpenAPI 文档到 outputs/reports/"
+    ),
+) -> None:
+    """启动 FastAPI 服务，或导出 OpenAPI 文档。"""
+    from factory.api.app import create_app, write_openapi
+
+    if export_openapi:
+        path = write_openapi(ROOT / "outputs/reports/openapi.json", ROOT)
+        print(f"[API] OpenAPI 已导出：{path.relative_to(ROOT).as_posix()}")
+        raise typer.Exit()
+    import uvicorn
+
+    uvicorn.run(create_app(ROOT), host=host, port=port)
+
+
 if __name__ == "__main__":
     app()
