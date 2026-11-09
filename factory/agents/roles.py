@@ -1,13 +1,18 @@
 """L2 Agent 层：8 个角色，各自有独立 system prompt 与输入输出契约。
 
 检索结果必须进入 Planner 与 Coder 的 prompt（``retrieval.as_prompt_context()``），
-由 ``RunTrace.retrieval_prompt`` 留证；Coder 代码由参数化模板渲染，属于
-开发要求 g 允许的规则模板路径，不冒充真实 LLM 生成。
+由 ``RunTrace.retrieval_prompt`` 留证。
+
+Coder 有两条路径：真实 LLM（``source != "mock"``）返回的代码先过 AST 静态
+检查，通过才采用；解析失败或检查不过则回退参数化模板，并把原因写进 trace。
+``MockLLM`` 只作契约示例，固定走模板——模板输出不会冒充模型生成，回退路径
+本身才是可靠性设计。
 """
 
 from __future__ import annotations
 
 import json
+import logging
 import re
 from pathlib import Path
 
@@ -23,6 +28,8 @@ from factory.llm.base import BaseLLM
 from factory.llm.demo import SYSTEM_PROMPT, build_demo_request
 from factory.runtime import StaticChecker
 from factory.validation import FourLayerValidator
+
+logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPTS = {
     "Interpreter": SYSTEM_PROMPT,
@@ -201,8 +208,10 @@ class Retriever:
 class Planner:
     """c. 规划多个候选方案；检索证据进入 prompt。"""
 
-    def __init__(self, llm: BaseLLM) -> None:
+    def __init__(self, llm: BaseLLM, beam_width: int = 3) -> None:
         self.llm = llm
+        # 候选宽度来自 configs/default.yaml 的 workflow.beam_width，不在代码里写死
+        self.beam_width = beam_width
 
     def plan(self, spec: CapabilitySpec, retrieval: RetrievalResult,
              families: list[str] | None = None,
@@ -221,12 +230,20 @@ class Planner:
                      if f"{task_type}.{family}" in list_templates()]
         used: set[str] = set()
         plans: list[CandidatePlan] = []
-        for index, item in enumerate(raw_plans[:3], start=1):
+        # 先按算法族去重再截断：直接切前 N 条会出现「同族候选占满宽度、
+        # 后续可用族被丢弃」，去重后 Top-N 才真的代表 N 种算法。
+        for item in raw_plans:
+            if len(plans) >= self.beam_width:
+                break
             family = str(item.get("model_family", "logistic_regression"))
-            if available and (family not in available or family in used):
-                family = next((name for name in available if name not in used),
-                              family)
+            if available:
+                # 有可用族清单时才强制族唯一，避免同族候选占满 Beam 宽度
+                if family not in available or family in used:
+                    family = next((name for name in available if name not in used), "")
+                if not family or family in used:
+                    continue
             used.add(family)
+            index = len(plans) + 1
             presets = HYPERPARAM_PRESETS.get(
                 family, HYPERPARAM_PRESETS["logistic_regression"]
             )
@@ -242,11 +259,47 @@ class Planner:
         return plans
 
 
-class Coder:
-    """d. 生成可运行代码；检索证据进入 prompt。"""
+_CODE_FENCE_RE = re.compile(r"```(?:python)?\s*(.*?)```", re.DOTALL)
 
-    def __init__(self, llm: BaseLLM) -> None:
+
+def _extract_code(response) -> str:
+    """从 LLM 响应取代码：优先结构化字段，其次 markdown 代码块或裸代码。"""
+    parsed = response.parsed if isinstance(response.parsed, dict) else {}
+    code = parsed.get("code")
+    if isinstance(code, str) and code.strip():
+        return code.strip()
+    match = _CODE_FENCE_RE.search(response.raw or "")
+    if match:
+        return match.group(1).strip()
+    raw = (response.raw or "").strip()
+    return raw if "def build_pipeline" in raw else ""
+
+
+class Coder:
+    """d. 生成可运行代码；检索证据进入 prompt。
+
+    真实 LLM 返回的代码先过 AST 静态检查，通过才采用；解析失败或检查不过
+    就回退参数化模板。``last_source`` / ``last_reject_reason`` 记录本次走了
+    哪条路径，由工作流写进 ``RunTrace.code_sources``，不靠文档自述。
+    """
+
+    def __init__(self, llm: BaseLLM, checker: StaticChecker | None = None) -> None:
         self.llm = llm
+        self.checker = checker
+        self.last_source = "template"
+        self.last_reject_reason = ""
+
+    def _reject_reason(self, source: str, text_column: str) -> str:
+        """LLM 代码能否采用；返回空串表示可用，否则给出拒收原因。"""
+        if "def build_pipeline" not in source:
+            return "缺少 build_pipeline 契约"
+        if not text_column and "FEATURE_COLUMNS" not in source:
+            return "缺少 FEATURE_COLUMNS"
+        if self.checker is not None:
+            result = self.checker.check(source)
+            if not result.passed:
+                return "静态检查未通过：" + ",".join(result.failed_checks())
+        return ""
 
     def generate(self, plan: CandidatePlan, retrieval: RetrievalResult,
                  columns: list[str], induce_t1: bool = False,
@@ -265,11 +318,29 @@ class Coder:
                 f"{prompt_inputs}\n"
                 f"{retrieval.as_prompt_context()}")
         request = LLMRequest(role="Coder", system=SYSTEM_PROMPTS["Coder"], user=user)
-        self.llm.complete(request)
+        response = self.llm.complete(request)
         hyperparams = dict(plan.hyperparams)
         if text_column:
             hyperparams["text_column"] = text_column
-        return render(plan.model_family, rendered, hyperparams, task_type)
+        template = render(plan.model_family, rendered, hyperparams, task_type)
+        self.last_source = "template"
+        self.last_reject_reason = ""
+        if response.source == "mock":
+            # 规则模板输出只作契约示例，不冒充模型生成
+            self.last_reject_reason = "MockLLM 输出仅作契约示例"
+            return template
+        candidate = _extract_code(response)
+        if not candidate:
+            self.last_reject_reason = "响应中没有可解析的代码"
+            return template
+        reason = self._reject_reason(candidate, text_column)
+        if reason:
+            self.last_reject_reason = reason
+            logger.warning("LLM 代码未采用（%s），回退模板", reason)
+            return template
+        self.last_source = "llm"
+        logger.info("采用 LLM 生成代码：候选 %s", plan.plan_id)
+        return candidate
 
 
 class Reviewer:
@@ -292,9 +363,11 @@ class Verifier:
                run_result: DatasetRunResult) -> tuple[ValidationReport, list[MetricResult]]:
         metrics = (self.validator.evaluate_metrics(run_result.context)
                    if run_result.sandbox.passed else [])
+        # 重复 fit 的差值由沙箱实测，直接喂给「功能正确性 - 确定性」检查
         report = self.validator.validate(
             run_id=run_id, plan_id=plan_id, static=static,
             sandbox=run_result.sandbox, metrics=metrics,
+            repeat_variance=run_result.context.get("repeat_variance"),
         )
         return report, metrics
 
@@ -338,13 +411,37 @@ class Curator:
         anchor = next(
             (node.node_id for node in nodes if node.node_type is NodeType.CAPABILITY), None
         )
-        upgraded = f"{anchor}.v2" if anchor else None
         run_prefix = f"run.{trace.run_id}."
-        failure_prefix = f"failure.{trace.run_id}."
+
+        # 失败案例按错误签名跨 run 累积：签名已在图里就复用，不再重复造节点
+        existing_failures = {
+            node.attributes.get("error_signature"): node.node_id
+            for node in nodes if node.node_type is NodeType.FAILURE_CASE
+        }
+        new_signatures = {repair.error_signature for repair in trace.repairs} - set(
+            existing_failures
+        )
+
+        # 只有出现新失败签名才升版本：没有新经验时保留既有版本节点，
+        # 同一 run_id 重跑也不会反复 +1，保证产物可复现
+        upgraded = None
+        next_version = 0
+        if anchor and new_signatures:
+            prefix = f"{anchor}.v"
+            same_run = {node.node_id for node in nodes
+                        if node.attributes.get("run_id") == trace.run_id}
+            nodes = [node for node in nodes if node.node_id not in same_run]
+            edges = [edge for edge in edges
+                     if edge.source not in same_run and edge.target not in same_run]
+            versions = [int(node.node_id[len(prefix):]) for node in nodes
+                        if node.node_id.startswith(prefix)
+                        and node.node_id[len(prefix):].isdigit()]
+            next_version = (max(versions) if versions else 1) + 1
+            upgraded = f"{prefix}{next_version}"
 
         def stale(node_id: str) -> bool:
-            return (node_id.startswith((run_prefix, failure_prefix))
-                    or (upgraded is not None and node_id == upgraded))
+            # 只覆盖本 run 的验证运行节点；失败案例按签名复用，跨 run 保留经验
+            return node_id.startswith(run_prefix)
 
         # 同一 run_id 重跑时覆盖旧节点，避免反复运行让图谱无限膨胀
         nodes = [node for node in nodes if not stale(node.node_id)]
@@ -367,25 +464,37 @@ class Curator:
                                     edge_type=EdgeType.HAS_RUN))
         failure_ids: list[str] = []
         for index, repair in enumerate(trace.repairs, start=1):
+            known = existing_failures.get(repair.error_signature)
+            if known is not None:
+                failure_ids.append(known)
+                continue
             failure_id = f"failure.{trace.run_id}.{index:02d}"
             failure_ids.append(failure_id)
+            existing_failures[repair.error_signature] = failure_id
             nodes.append(KGNode(
                 node_id=failure_id, node_type=NodeType.FAILURE_CASE,
                 name=f"失败案例 {repair.error_signature}",
                 attributes={"error_signature": repair.error_signature,
                             "fix_strategy": repair.fix_strategy,
-                            "repair_round": repair.round},
+                            "repair_round": repair.round,
+                            "run_id": trace.run_id,
+                            "occurrence": 1},
             ))
             if anchor:
                 edges.append(KGEdge(source=anchor, target=failure_id,
                                     edge_type=EdgeType.RESULTED_IN))
         if anchor and failure_ids and upgraded is not None:
+            # 上一版本：v2 指向原始能力，v3 起指向前一版，形成版本链
+            previous = (f"{anchor}.v{next_version - 1}"
+                        if next_version > 2 else anchor)
             nodes.append(KGNode(
                 node_id=upgraded, node_type=NodeType.CAPABILITY,
-                name="修复后的能力版本", version="v2",
-                attributes={"derived_from": anchor},
+                name="修复后的能力版本", version=f"v{next_version}",
+                attributes={"derived_from": previous,
+                            "run_id": trace.run_id,
+                            "repair_rounds": len(trace.repairs)},
             ))
-            edges.append(KGEdge(source=upgraded, target=anchor,
+            edges.append(KGEdge(source=upgraded, target=previous,
                                 edge_type=EdgeType.DERIVED_FROM))
             edges.append(KGEdge(source=failure_ids[-1], target=upgraded,
                                 edge_type=EdgeType.FIXED_BY))

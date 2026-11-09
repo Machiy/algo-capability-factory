@@ -61,6 +61,7 @@ class RunEndpointTests(unittest.TestCase):
             report_path="outputs/reports/run_api.unit.md",
         )
         with patch("factory.workflow.Workflow") as workflow_cls:
+            workflow_cls.return_value.metric_name = "auc"
             workflow_cls.return_value.run.return_value = fake_trace
             client = TestClient(create_app(ROOT))
             response = client.post(
@@ -71,7 +72,10 @@ class RunEndpointTests(unittest.TestCase):
         self.assertTrue(body["passed"])
         self.assertEqual(body["interpreter_source"], "cassette")
         self.assertEqual(body["candidate_count"], 1)
-        self.assertEqual(body["candidates"][0]["auc"], 0.7843)
+        # 指标按任务透出：不再是固定 auc 字段，文本 / 回归场景同样可用
+        self.assertEqual(body["candidates"][0]["metrics"]["auc"], 0.7843)
+        self.assertEqual(body["candidates"][0]["primary_metric"], "auc")
+        self.assertEqual(body["test_metrics"], {})
         self.assertEqual(body["report_path"], "outputs/reports/run_api.unit.md")
 
     def test_run_rejects_missing_spec(self) -> None:

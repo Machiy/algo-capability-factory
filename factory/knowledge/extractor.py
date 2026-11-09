@@ -13,7 +13,7 @@ import hashlib
 import logging
 import re
 from abc import ABC, abstractmethod
-from itertools import pairwise
+from itertools import combinations
 from pathlib import Path
 from typing import Any
 
@@ -188,13 +188,67 @@ class BaseExtractor(ABC):
         """把源材料抽取为知识图谱契约。"""
 
 
-class _GraphBuilder:
-    """收集节点与边，并在输出前校验引用完整性。"""
+_ASCII_TERM_RE = re.compile(r"[A-Za-z]")
 
-    def __init__(self) -> None:
+
+def _flatten(value: Any) -> list[str]:
+    """把属性值摊平成字符串列表，供文本匹配使用。"""
+    if isinstance(value, (str, int, float)):
+        return [str(value)]
+    if isinstance(value, list):
+        return [str(item) for item in value]
+    if isinstance(value, dict):
+        return [str(item) for item in value.values()] + [str(key) for key in value]
+    return []
+
+
+def _node_text(node: KGNode) -> str:
+    """节点可被匹配的人读文本：名称 + 全部属性值。"""
+    parts = [node.name]
+    for value in node.attributes.values():
+        parts.extend(_flatten(value))
+    return " ".join(parts).lower()
+
+
+def _contains(text: str, term: str) -> bool:
+    """英文词按词边界匹配，避免 ``KS`` 命中 ``risk``；中文直接子串匹配。"""
+    if not term:
+        return False
+    if _ASCII_TERM_RE.search(term):
+        return re.search(rf"(?<![a-z]){re.escape(term)}(?![a-z])", text) is not None
+    return term in text
+
+
+def _terms(value: Any, min_length: int = 2) -> set[str]:
+    """把「AUC / KS / 成本损失」这类单元格拆成可匹配的关键词。"""
+    if not isinstance(value, str):
+        return set()
+    return {part.strip().lower() for part in value.split("/")
+            if len(part.strip()) >= min_length}
+
+
+DEFAULT_DATASET_PROFILE: dict[str, Any] = {
+    "name": "",
+    "target": "",
+    "forbidden_features": [],
+    "sensitive_features": [],
+    "split_policy": "temporal_holdout",
+}
+
+
+class _GraphBuilder:
+    """收集节点与边，并在输出前校验引用完整性。
+
+    ``dataset_profile`` 由任务配置（``verify_*.yaml``）构造后传入，避免把
+    某个数据集的标签名与敏感字段写死在抽取器里。
+    """
+
+    def __init__(self, dataset_profile: dict[str, Any] | None = None) -> None:
         self._nodes: dict[str, KGNode] = {}
         self._edges: list[KGEdge] = []
         self._edge_keys: set[tuple[str, str, EdgeType]] = set()
+        self._dataset_profile = {**DEFAULT_DATASET_PROFILE,
+                                 **(dataset_profile or {})}
 
     def add_node(self, node: KGNode) -> KGNode:
         existing = self._nodes.get(node.node_id)
@@ -280,16 +334,17 @@ class _GraphBuilder:
                 if len(row.cells) >= 2:
                     fields[row.cells[0]] = row.cells[1]
         node_id = f"dataset.{_slug(stem)}"
+        profile = self._dataset_profile
         self.add_node(KGNode(
             node_id=node_id,
             node_type=NodeType.DATASET,
-            name="UCI 信用卡客户下月违约数据集",
+            name=str(profile.get("name") or f"数据集：{stem}"),
             attributes={
                 "fields": fields,
-                "target": "default.payment.next.month",
-                "forbidden_features": ["ID"],
-                "sensitive_features": ["SEX", "AGE", "EDUCATION", "MARRIAGE"],
-                "split_policy": "temporal_holdout",
+                "target": str(profile.get("target", "")),
+                "forbidden_features": list(profile.get("forbidden_features", [])),
+                "sensitive_features": list(profile.get("sensitive_features", [])),
+                "split_policy": str(profile.get("split_policy", "temporal_holdout")),
             },
             evidence=[Evidence(path=doc.path, excerpt=body.strip()[:400],
                                sha256=sha256_text(body.strip()[:400]),
@@ -406,10 +461,16 @@ class _GraphBuilder:
         self.add_edge(env_id, anchor, EdgeType.EVIDENCED_BY)
 
     def add_semantic_edges(self) -> None:
-        """补齐 12+ 类语义关系，保证图谱可用于检索邻域扩展。"""
-        by_type = lambda kind: [
-            n for n in self._nodes.values() if n.node_type is kind
-        ]
+        """补齐语义关系；每条边都有可解释的匹配依据。
+
+        早期版本按列表下标轮转（``index % len(metrics)``）让每条能力连到不同
+        指标，边数好看但语义随机，评审问到「这条 REQUIRES 凭什么」就答不上来。
+        现在改为「名称或属性文本命中才连边」，宁可少连也不乱连；边数下降属于
+        正确性的代价，不靠位置补齐数量。
+        """
+        def by_type(kind: NodeType) -> list[KGNode]:
+            return [node for node in self._nodes.values() if node.node_type is kind]
+
         caps = by_type(NodeType.CAPABILITY)
         ops = by_type(NodeType.OPERATOR)
         metrics = by_type(NodeType.METRIC)
@@ -419,32 +480,115 @@ class _GraphBuilder:
         fails = by_type(NodeType.FAILURE_CASE)
         if not caps:
             return
-        for index, cap in enumerate(caps):
-            if datasets:
-                self.add_edge(cap.node_id, datasets[0].node_id, EdgeType.APPLIES_TO)
-            if envs:
+
+        # 关键词全部取自节点自身属性，不写死业务名词
+        metric_terms = {
+            node.node_id: (_terms(node.attributes.get("指标"))
+                           | _terms(node.attributes.get("检查项")))
+            for node in metrics
+        }
+        operator_terms = {
+            node.node_id: _terms(node.name) | {node.name.lower()} for node in ops
+        }
+        dataset_terms: set[str] = set()
+        for node in datasets:
+            for key in ("sensitive_features", "forbidden_features"):
+                dataset_terms.update(str(item).lower()
+                                     for item in node.attributes.get(key, []))
+            target = node.attributes.get("target")
+            if target:
+                dataset_terms.add(str(target).lower())
+        env_terms: set[str] = set()
+        for node in envs:
+            for dependency in node.attributes.get("lib_deps", []):
+                name = str(dependency).strip().lower()
+                if not name or name.startswith("__"):
+                    continue
+                env_terms.add(name)
+                # 依赖 ``sklearn.linear_model`` 意味着依赖 ``sklearn``
+                env_terms.add(name.split(".")[0])
+
+        texts = {cap.node_id: _node_text(cap) for cap in caps}
+
+        for cap in caps:
+            text = texts[cap.node_id]
+            section = str(cap.attributes.get("section", ""))
+            for node_id, terms in metric_terms.items():
+                if any(_contains(text, term) for term in terms):
+                    self.add_edge(cap.node_id, node_id, EdgeType.EVALUATED_BY)
+            for node_id, terms in operator_terms.items():
+                if any(_contains(text, term) for term in terms):
+                    self.add_edge(cap.node_id, node_id, EdgeType.USES)
+            if envs and any(_contains(text, term) for term in env_terms):
                 self.add_edge(cap.node_id, envs[0].node_id, EdgeType.DEPENDS_ON)
-            if metrics:
-                self.add_edge(cap.node_id, metrics[index % len(metrics)].node_id,
-                              EdgeType.EVALUATED_BY)
-            if ops:
-                self.add_edge(cap.node_id, ops[index % len(ops)].node_id, EdgeType.USES)
-        if datasets:
-            self.add_edge(caps[0].node_id, datasets[0].node_id, EdgeType.REQUIRES)
-        if ops:
-            self.add_edge(caps[0].node_id, ops[0].node_id, EdgeType.REQUIRES)
-        for cap in caps[1:4]:
-            self.add_edge(cap.node_id, caps[0].node_id, EdgeType.DERIVED_FROM)
-        for left, right in pairwise(caps[:4]):
-            self.add_edge(left.node_id, right.node_id, EdgeType.SIMILAR_TO)
-        if len(caps) > 4:
-            self.add_edge(caps[0].node_id, caps[4].node_id, EdgeType.TRANSFERABLE_TO)
-        for run in runs[:4]:
-            self.add_edge(caps[0].node_id, run.node_id, EdgeType.HAS_RUN)
-            if fails:
-                self.add_edge(run.node_id, fails[0].node_id, EdgeType.RESULTED_IN)
-        for fail in fails[:4]:
-            self.add_edge(fail.node_id, caps[0].node_id, EdgeType.FIXED_BY)
+            if datasets and ("适用条件" in section or "约束" in section):
+                self.add_edge(cap.node_id, datasets[0].node_id, EdgeType.APPLIES_TO)
+            if datasets and any(_contains(text, term) for term in dataset_terms):
+                self.add_edge(cap.node_id, datasets[0].node_id, EdgeType.REQUIRES)
+
+        # 版本谱系：同一 source_id 在多份材料出现时，后出现的派生自最早那份
+        by_source: dict[str, list[KGNode]] = {}
+        for cap in caps:
+            source_id = str(cap.attributes.get("source_id", "")).strip().lower()
+            if source_id:
+                by_source.setdefault(source_id, []).append(cap)
+        for group in by_source.values():
+            if len(group) > 1:
+                for other in group[1:]:
+                    self.add_edge(other.node_id, group[0].node_id, EdgeType.DERIVED_FROM)
+
+        # 相似 / 可迁移：按共享关键词判定；同章节记 SIMILAR_TO，跨章节记可迁移
+        shared: set[str] = set(dataset_terms)
+        for terms in metric_terms.values():
+            shared.update(terms)
+        for terms in operator_terms.values():
+            shared.update(terms)
+        signatures = {
+            cap.node_id: {term for term in shared if _contains(texts[cap.node_id], term)}
+            for cap in caps
+        }
+        for left, right in combinations(caps, 2):
+            if not (signatures[left.node_id] & signatures[right.node_id]):
+                continue
+            same_section = (str(left.attributes.get("section", ""))
+                            == str(right.attributes.get("section", "")))
+            edge_type = (EdgeType.SIMILAR_TO if same_section
+                         else EdgeType.TRANSFERABLE_TO)
+            self.add_edge(left.node_id, right.node_id, edge_type)
+
+        # 历史验证：运行记录按检查项 / 候选 id 反查对应能力
+        for run in runs:
+            terms = (_terms(run.attributes.get("检查项"))
+                     | _terms(run.attributes.get("指标")))
+            candidate = str(run.attributes.get("candidate_id", "")).strip().lower()
+            target = next((cap for cap in caps
+                           if any(_contains(texts[cap.node_id], term) for term in terms)),
+                          None)
+            if target is None and candidate:
+                target = next((cap for cap in caps
+                               if candidate in cap.node_id.lower()), None)
+            if target is None:
+                continue
+            self.add_edge(target.node_id, run.node_id, EdgeType.HAS_RUN)
+            for fail in fails:
+                if (run.attributes.get("run_id")
+                        and run.attributes.get("run_id") == fail.attributes.get("run_id")):
+                    self.add_edge(run.node_id, fail.node_id, EdgeType.RESULTED_IN)
+
+        # 失败案例：修复策略命中的能力才是它修好的对象
+        for fail in fails:
+            terms = (_terms(fail.attributes.get("fix_strategy"))
+                     | _terms(fail.attributes.get("修复策略"))
+                     | _terms(fail.attributes.get("定向修复")))
+            signature = str(fail.attributes.get("error_signature", "")).strip().lower()
+            target = next(
+                (cap for cap in caps
+                 if any(_contains(texts[cap.node_id], term) for term in terms)
+                 or (signature and signature in texts[cap.node_id])),
+                None,
+            )
+            if target is not None:
+                self.add_edge(fail.node_id, target.node_id, EdgeType.FIXED_BY)
 
     def build(self, source_files: list[str]) -> KnowledgeGraph:
         graph = KnowledgeGraph(nodes=list(self._nodes.values()),
@@ -454,12 +598,19 @@ class _GraphBuilder:
 
 
 class MockExtractor(BaseExtractor):
-    """规则模板抽取器：离线默认路径，输出确定、可复现。"""
+    """规则模板抽取器：离线默认路径，输出确定、可复现。
+
+    ``dataset_profile`` 来自 ``verify_*.yaml``，换数据集时只改配置，
+    抽取器不再内嵌某个数据集的标签名与敏感字段。
+    """
+
+    def __init__(self, dataset_profile: dict[str, Any] | None = None) -> None:
+        self.dataset_profile = dataset_profile or {}
 
     def extract(self, sources: list[SourceDocument]) -> KnowledgeGraph:
         if not sources:
             raise ExtractionError("源材料列表为空")
-        builder = _GraphBuilder()
+        builder = _GraphBuilder(self.dataset_profile)
         for doc in sources:
             anchor = builder.evidence_node(doc)
             stem = Path(doc.path).stem

@@ -36,6 +36,19 @@ class CandidateEvaluation(_StrictModel):
     repair_rounds: int = 0
 
 
+class TestEvaluation(_StrictModel):
+    """终评结论：最佳候选在 test 段的一次性评估。
+
+    ``consumed`` 为 True 表示 test 段已被本次运行消费；结果只用于报告，
+    不参与候选排序与修复决策，避免用未来数据调参。
+    """
+
+    plan_id: str = ""
+    consumed: bool = False
+    metrics: dict[str, float | None] = Field(default_factory=dict)
+    note: str = ""
+
+
 class RunTrace(_StrictModel):
     """一次 a–g 七步运行的可回放轨迹。
 
@@ -51,6 +64,8 @@ class RunTrace(_StrictModel):
     candidates: list[CandidateEvaluation] = Field(default_factory=list)
     repairs: list[RepairRecord] = Field(default_factory=list)
     kg_diff: dict[str, int] = Field(default_factory=dict)
+    # 每个候选的代码来源：llm（通过静态检查后采用）或 template（回退模板）
+    code_sources: dict[str, str] = Field(default_factory=dict)
     generated_files: list[str] = Field(default_factory=list)
     report_path: str = ""
     passed: bool = False
@@ -58,6 +73,7 @@ class RunTrace(_StrictModel):
     kg_mode: str = "with_kg"
     graph_source: str = "sources"
     used_historical_warnings: bool = False
+    test_evaluation: TestEvaluation | None = None
     notes: str = ""
 
 
@@ -66,4 +82,5 @@ __all__ = [
     "DatasetRunResult",
     "RepairRecord",
     "RunTrace",
+    "TestEvaluation",
 ]

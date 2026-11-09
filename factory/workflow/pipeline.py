@@ -31,7 +31,7 @@ from factory.config import Settings, TaskSettings, load_settings, load_task_sett
 from factory.contracts.knowledge import RetrievalResult
 from factory.contracts.models import CandidatePlan, CapabilitySpec, ValidationReport
 from factory.contracts.validation import StaticCheckResult
-from factory.contracts.workflow import CandidateEvaluation, RunTrace
+from factory.contracts.workflow import CandidateEvaluation, RunTrace, TestEvaluation
 from factory.knowledge import MockExtractor, read_sources
 from factory.knowledge.graph import load_graph
 from factory.llm import build_llm
@@ -95,7 +95,12 @@ def render_run_report(trace: RunTrace, reports: list[ValidationReport],
     if not text_mode:
         header.append("> T1 列名错误由规则模板模拟 LLM 的直觉命名，"
                       "并在子进程用真实数据集触发 `KeyError` 后定向修复。")
-    header.append("> test 集全程未访问。引用 cassette 回放的内容须另标注「离线回放」。")
+    test_eval = trace.test_evaluation
+    if test_eval is not None and test_eval.consumed:
+        header.append("> test 段仅在候选比较结束后对最佳候选评估一次，"
+                      "不参与排序与修复。引用 cassette 回放的内容须另标注「离线回放」。")
+    else:
+        header.append("> test 段本轮未消费。引用 cassette 回放的内容须另标注「离线回放」。")
     lines = [
         f"# 端到端运行报告 · {trace.run_id}",
         "",
@@ -120,20 +125,22 @@ def render_run_report(trace: RunTrace, reports: list[ValidationReport],
         "",
         f"## 2. 候选方案比较（Beam Top-3，主指标 {metric_name}）",
         "",
-        f"| 方案 | 模型族 | {metric_name} | 通过 | 修复轮次 |",
-        "|---|---|---|---|---|",
+        f"| 方案 | 模型族 | {metric_name} | 通过 | 代码来源 | 修复轮次 |",
+        "|---|---|---|---|---|---|",
     ]
     for item in sorted(trace.candidates, key=lambda c: -c.score):
         value = item.metrics.get(metric_name)
         value_text = "N/A" if value is None else f"{value:.4f}"
+        code_source = trace.code_sources.get(item.plan_id, "template")
         lines.append(f"| {item.plan_id} | {item.model_family} | {value_text} | "
-                     f"{'PASS' if item.passed else 'FAIL'} | {item.repair_rounds} |")
+                     f"{'PASS' if item.passed else 'FAIL'} | {code_source} | "
+                     f"{item.repair_rounds} |")
     lines.extend([
         "",
         "## 3. 四层验证结论",
         "",
-        "| 运行 | 接口 | 功能 | 指标 | 稳定性 | 错误签名 |",
-        "|---|---|---|---|---|---|",
+        "| 运行 | 接口 | 功能 | 指标 | 稳定性 | 确定性 Δ | 错误签名 |",
+        "|---|---|---|---|---|---|---|",
     ])
     for report in reports:
         interface = all(report.interface_checks.values())
@@ -141,10 +148,14 @@ def render_run_report(trace: RunTrace, reports: list[ValidationReport],
         metrics = all(report.threshold_checks.values()) if report.threshold_checks else False
         stable = not report.stability.get("timed_out") and not report.stability.get(
             "memory_exceeded")
+        # 确定性证据来自沙箱重复 fit 的实测差值；None 表示本轮未测
+        variance = report.stability.get("repeat_variance")
+        variance_text = "未测" if variance is None else f"{float(variance):.2e}"
         lines.append(
             f"| {report.plan_id} | {'PASS' if interface else 'FAIL'} | "
             f"{'PASS' if functional else 'FAIL'} | {'PASS' if metrics else 'FAIL'} | "
-            f"{'PASS' if stable else 'FAIL'} | {report.error_signature or '无'} |"
+            f"{'PASS' if stable else 'FAIL'} | {variance_text} | "
+            f"{report.error_signature or '无'} |"
         )
     lines.extend(["", "## 4. 修复轨迹", ""])
     if trace.repairs:
@@ -153,10 +164,21 @@ def render_run_report(trace: RunTrace, reports: list[ValidationReport],
                          f"{record.fix_strategy}（{record.outcome}）")
     else:
         lines.append("- 无失败轮次")
-    lines.extend(["", rationale, "", "## 5. 图谱沉淀 diff", ""])
+    lines.extend(["", rationale, "", "## 5. 终评（test 段，仅一次）", ""])
+    if test_eval is None:
+        lines.append("- 本轮未启用终评（`workflow.evaluate_on_test=false`）")
+    elif not test_eval.consumed:
+        lines.append(f"- 未消费 test 段：{test_eval.note}")
+    else:
+        lines.append(f"- 终评候选：`{test_eval.plan_id}`；{test_eval.note}")
+        lines.extend(["", "| 指标 | test 实测 |", "|---|---|"])
+        for name, value in test_eval.metrics.items():
+            value_text = "N/A" if value is None else f"{value:.4f}"
+            lines.append(f"| {name} | {value_text} |")
+    lines.extend(["", "## 6. 图谱沉淀 diff", ""])
     for key, value in trace.kg_diff.items():
         lines.append(f"- {key}：{value}")
-    lines.extend(["", "## 6. 产物", ""])
+    lines.extend(["", "## 7. 产物", ""])
     lines.extend(f"- `{item}`" for item in trace.generated_files)
     lines.append(f"- 回写图谱：`{kg_path}`")
     lines.extend(["", trace.notes, ""])
@@ -190,7 +212,7 @@ class Workflow:
             legacy_dir = (task.knowledge.legacy if task.knowledge.docs
                           else settings.paths.legacy)
             sources = read_sources(root, docs_dir, legacy_dir)
-            graph = MockExtractor().extract(sources)
+            graph = MockExtractor(task.dataset_profile).extract(sources)
             self.graph_source = "sources"
         else:
             graph = loaded
@@ -222,8 +244,8 @@ class Workflow:
         self.interpreter = Interpreter(llm, settings.llm)
         self.retriever = Retriever(graph, settings.knowledge.top_k,
                                    settings.knowledge.weights)
-        self.planner = Planner(llm)
-        self.coder = Coder(llm)
+        self.planner = Planner(llm, settings.workflow.beam_width)
+        self.coder = Coder(llm, checker)
         self.reviewer = Reviewer(checker)
         self.verifier = Verifier(FourLayerValidator(task))
         self.repairer = Repairer(llm)
@@ -233,15 +255,23 @@ class Workflow:
             task.dataset.target, sorted(excluded), n_samples,
             text_column=self.text_column, mode=self.sandbox_mode,
         )
-        group_column = task.sensitive_features[0] if task.sensitive_features else None
-        if group_column:
-            group_frame = pd.read_csv(data_path, usecols=[group_column])
-            self.groups = [int(value) for value in group_frame[group_column].iloc[
-                self.sandbox.train_end:self.sandbox.valid_end]]
-        else:
-            self.groups = []
-        self.max_rounds = 3
+        self.data_path = data_path
+        self.group_column = (task.sensitive_features[0]
+                             if task.sensitive_features else "")
+        self.groups = self._groups_for("valid")
+        # 修复轮次、确定性重复次数与终评开关均来自 workflow 配置段
+        self.max_rounds = settings.workflow.max_repair_rounds
+        self.determinism_repeat = settings.workflow.determinism_repeat
+        self.evaluate_on_test = settings.workflow.evaluate_on_test
         self._graph = self._build_graph()
+
+    def _groups_for(self, segment: str) -> list[int]:
+        """按评估段取敏感属性分组，供分组公平性指标使用。"""
+        if not self.group_column:
+            return []
+        start, end = self.sandbox.segment_bounds(segment)
+        frame = pd.read_csv(self.data_path, usecols=[self.group_column])
+        return [int(value) for value in frame[self.group_column].iloc[start:end]]
 
     def _build_graph(self):
         builder = StateGraph(_GraphState)
@@ -309,6 +339,8 @@ class Workflow:
         trace.used_historical_warnings = (not self.text_column) and any(
             "PAY_1" in warning for warning in state["retrieval"].failure_warnings
         )
+        # 记录代码来源：llm 表示 LLM 代码通过静态检查后采用，template 表示回退
+        trace.code_sources[plan.plan_id] = self.coder.last_source
         trace.steps.append(SEVEN_STEPS[3])
         return {
             "plan": plan, "source": source, "static": self.reviewer.review(source),
@@ -317,7 +349,8 @@ class Workflow:
         }
 
     def _n_execute(self, state: _GraphState) -> dict:
-        run_result = self.sandbox.run(state["source"])
+        # repeat>=2 时子进程内二次 fit，产出 repeat_variance 供确定性检查
+        run_result = self.sandbox.run(state["source"], repeat=self.determinism_repeat)
         if run_result.sandbox.passed:
             run_result.context["groups"] = self.groups
             run_result.context["cost_ratio"] = self.task.cost_ratio_fn_fp
@@ -376,6 +409,38 @@ class Workflow:
         return ("generate" if state["candidate_index"] < len(state["plans"])
                 else "sink")
 
+    def _finalize_on_test(self, trace: RunTrace) -> TestEvaluation:
+        """终评：最佳候选在 test 段只跑一次，结果仅入报告。
+
+        纪律：先按 valid 指标选出最佳候选，再消费 test；test 指标不参与
+        ``score`` 计算，也不触发新的修复轮次，避免用未来数据调参。
+        """
+        if not trace.candidates:
+            return TestEvaluation(consumed=False, note="无可评估候选，test 段未消费")
+        best = max(trace.candidates, key=lambda item: (item.passed, item.score))
+        generated = (self.root / self.settings.paths.generated /
+                     self.generated_subdir / f"candidate_{best.plan_id}.py")
+        if not generated.is_file():
+            return TestEvaluation(plan_id=best.plan_id, consumed=False,
+                                 note="最佳候选源码缺失，test 段未消费")
+        result = self.sandbox.run(generated.read_text(encoding="utf-8"), segment="test")
+        if not result.sandbox.passed:
+            return TestEvaluation(
+                plan_id=best.plan_id, consumed=True,
+                note=f"终评执行失败：{result.sandbox.error_signature}",
+            )
+        context = dict(result.context)
+        context["groups"] = self._groups_for("test")
+        context["cost_ratio"] = self.task.cost_ratio_fn_fp
+        context["threshold"] = 0.5
+        metrics = self.verifier.validator.evaluate_metrics(context)
+        logger.info("终评（test 段，仅一次）：候选=%s", best.plan_id)
+        return TestEvaluation(
+            plan_id=best.plan_id, consumed=True,
+            metrics={item.name: item.value for item in metrics},
+            note="test 段本次一次性消费，未参与候选排序与修复决策",
+        )
+
     def _n_sink(self, state: _GraphState) -> dict:
         trace = state["trace"]
         if self.use_knowledge:
@@ -386,6 +451,8 @@ class Workflow:
             trace.kg_diff = {}
         trace.steps.append(SEVEN_STEPS[6])
         trace.passed = any(item.passed for item in trace.candidates)
+        if self.evaluate_on_test:
+            trace.test_evaluation = self._finalize_on_test(trace)
         trace.notes = (
             f"模式 {trace.kg_mode}（图谱来源 {trace.graph_source}）；"
             f"候选 {len(state['plans'])} 个；修复 {len(trace.repairs)} 轮；"

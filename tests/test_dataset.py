@@ -126,9 +126,19 @@ class DatasetContractTests(unittest.TestCase):
                 self.assertIsInstance(payload, dict, path.name)
 
     def test_package_version(self) -> None:
+        """版本号三处必须一致：pyproject / 包 / default.yaml，避免发版后脱节。"""
+        import yaml
+
         import factory
 
-        self.assertEqual(factory.__version__, "1.0.2")
+        pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+        declared = next(
+            line.split("=")[1].strip().strip('"') for line in pyproject.splitlines()
+            if line.startswith("version =")
+        )
+        self.assertEqual(factory.__version__, declared)
+        config = yaml.safe_load((ROOT / "configs/default.yaml").read_text(encoding="utf-8"))
+        self.assertEqual(config["project"]["version"], declared)
 
     @unittest.skipUnless(importlib.util.find_spec("pydantic") is not None, "pydantic 未安装")
     def test_contracts_importable_when_dependencies_installed(self) -> None:

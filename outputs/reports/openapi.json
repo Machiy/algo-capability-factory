@@ -2,18 +2,21 @@
   "components": {
     "schemas": {
       "CandidateSummary": {
-        "description": "单个候选的摘要，指标只保留主指标避免响应过长。",
+        "description": "单个候选的摘要：指标按任务透出，分类 / 文本 / 回归都适用。\n\n早期版本固定返回 ``auc``，换成文本或回归任务时该字段恒为 ``null``；\n现在给出完整 ``metrics``，并用 ``primary_metric`` 指明当前任务的主指标。",
         "properties": {
-          "auc": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Auc"
+          "metrics": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Metrics",
+            "type": "object"
           },
           "model_family": {
             "title": "Model Family",
@@ -26,6 +29,22 @@
           "plan_id": {
             "title": "Plan Id",
             "type": "string"
+          },
+          "primary_metric": {
+            "default": "",
+            "title": "Primary Metric",
+            "type": "string"
+          },
+          "primary_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Value"
           },
           "repair_rounds": {
             "default": 0,
@@ -119,6 +138,20 @@
           "run_id": {
             "title": "Run Id",
             "type": "string"
+          },
+          "test_metrics": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Test Metrics",
+            "type": "object"
           }
         },
         "required": [
@@ -172,7 +205,7 @@
   "info": {
     "description": "基于 AI Agent 的算法能力工厂：提交自然语言能力描述，返回生成代码、四层验证结论与图谱沉淀。",
     "title": "AlgoCap Factory API",
-    "version": "1.0.2"
+    "version": "1.1.0"
   },
   "openapi": "3.1.0",
   "paths": {

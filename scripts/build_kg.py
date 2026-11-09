@@ -15,12 +15,13 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from factory.config import load_settings
+from factory.config import load_settings, load_task_settings
 from factory.contracts.knowledge import NodeType
 from factory.knowledge import HybridRetriever, build_knowledge_graph
 from factory.logging_setup import configure_logging
 
 DEFAULT_QUERY = "预测信用卡客户下月违约概率，时间外划分，成本敏感阈值，禁止数据泄漏"
+TASK_CONFIG = "configs/verify_credit.yaml"
 
 
 def main() -> int:
@@ -33,7 +34,9 @@ def main() -> int:
 
     configure_logging(args.log_level)
     settings = load_settings(ROOT / args.config)
-    graph = build_knowledge_graph(settings, ROOT)
+    task = load_task_settings(ROOT / TASK_CONFIG)
+    graph = build_knowledge_graph(settings, ROOT,
+                                  dataset_profile=task.dataset_profile)
     print(f"[P1] 节点 {len(graph.nodes)} / 边 {len(graph.edges)} / "
           f"能力节点 {len(graph.by_type(NodeType.CAPABILITY))}")
 

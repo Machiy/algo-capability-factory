@@ -16,7 +16,7 @@ from pathlib import Path
 import networkx as nx
 from pydantic import ValidationError
 
-from factory.config import load_settings
+from factory.config import load_settings, load_task_settings
 from factory.contracts.knowledge import EdgeType, KGNode, NodeType
 from factory.knowledge import (
     HybridRetriever,
@@ -36,9 +36,11 @@ class KnowledgeLayerTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.settings = load_settings(CONFIG_PATH)
+        cls.task = load_task_settings(ROOT / "configs/verify_credit.yaml")
+        cls.profile = cls.task.dataset_profile
         cls.sources = read_sources(ROOT, cls.settings.paths.docs, cls.settings.paths.legacy)
-        cls.graph = MockExtractor().extract(cls.sources)
-        build_knowledge_graph(cls.settings, ROOT)
+        cls.graph = MockExtractor(cls.profile).extract(cls.sources)
+        build_knowledge_graph(cls.settings, ROOT, dataset_profile=cls.profile)
 
     def test_source_materials_complete(self) -> None:
         self.assertEqual(len(self.sources), 7)
@@ -58,9 +60,11 @@ class KnowledgeLayerTests(unittest.TestCase):
 
     def test_m1_schema_coverage(self) -> None:
         self.assertEqual(len(NodeType), 9)
-        self.assertGreaterEqual(len(EdgeType), 12)
+        self.assertEqual(len(EdgeType), 13)
         used = {edge.edge_type for edge in self.graph.edges}
-        self.assertGreaterEqual(len(used), 12)
+        # 源材料里没有验证运行记录，HAS_RUN / RESULTED_IN / DERIVED_FROM 由
+        # Curator 回写时建立（见 test_workflow.CuratorTests），源图谱要求覆盖其余 10 类
+        self.assertGreaterEqual(len(used), 10)
 
     def test_m1_extraction_volume(self) -> None:
         self.assertGreaterEqual(len(self.graph.by_type(NodeType.CAPABILITY)), 15)
@@ -128,8 +132,8 @@ class KnowledgeLayerTests(unittest.TestCase):
 
     def test_json_export_is_deterministic(self) -> None:
         """重复构建产物字节一致，避免入库后每次跑测试都产生脏工作区。"""
-        first = MockExtractor().extract(self.sources)
-        second = MockExtractor().extract(self.sources)
+        first = MockExtractor(self.profile).extract(self.sources)
+        second = MockExtractor(self.profile).extract(self.sources)
         with tempfile.TemporaryDirectory() as tmp:
             path_a = KnowledgeGraphStore(first).export_json(Path(tmp) / "a.json")
             path_b = KnowledgeGraphStore(second).export_json(Path(tmp) / "b.json")

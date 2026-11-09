@@ -3,6 +3,12 @@
 超时与内存监控复用 P2 的 ``sandbox_env`` / ``process_memory_bytes``（psutil）；
 列名不存在、禁入模字段等数据陷阱会在子进程内抛出真实异常，供 Repairer
 按错误签名定向修复。
+
+``run`` 支持两种可选行为，对应四层验证里原先不成立的两项：
+
+* ``segment="test"``：改在末段评估，供「终评」使用，默认仍是 valid 段；
+* ``repeat=2``：在同一子进程内重建并二次 fit，把两次连续输出的最大绝对差
+  记为 ``repeat_variance``，供「功能正确性 - 确定性」层判定，避免该项恒真。
 """
 
 from __future__ import annotations
@@ -37,11 +43,13 @@ import sys
 import time
 import traceback
 
-candidate, data_path, target, train_end, valid_end, forbidden_json = sys.argv[1:7]
-mode = sys.argv[7] if len(sys.argv) > 7 else "tabular"
-text_column = sys.argv[8] if len(sys.argv) > 8 else ""
+candidate, data_path, target, train_end, eval_start, eval_end, repeat, forbidden_json = sys.argv[1:9]
+mode = sys.argv[9] if len(sys.argv) > 9 else "tabular"
+text_column = sys.argv[10] if len(sys.argv) > 10 else ""
 train_end = int(train_end)
-valid_end = int(valid_end)
+eval_start = int(eval_start)
+eval_end = int(eval_end)
+repeat = int(repeat) if str(repeat).strip() else 1
 forbidden = set(json.loads(forbidden_json))
 
 def _percentile(values, ratio):
@@ -65,6 +73,21 @@ def _predict_score(pipeline, features):
     except (AttributeError, NotImplementedError):
         return []
 
+def _score_vector(pipeline, features):
+    """统一取连续输出：回归直接 predict，分类优先概率，退化到决策函数。"""
+    if mode == "regression":
+        return [float(value) for value in pipeline.predict(features)]
+    scores = _predict_score(pipeline, features)
+    if scores:
+        return scores
+    return [float(value) for value in pipeline.predict(features)]
+
+def _build(namespace, features, labels):
+    """调用生成代码的 build_pipeline 并 fit；重复测量时据此重建。"""
+    pipeline = namespace["build_pipeline"]({})
+    pipeline.fit(features, labels)
+    return pipeline
+
 def _warm_predict(pipeline, features):
     """推理延迟探针：优先 predict_proba，没有就 predict。"""
     if hasattr(pipeline, "predict_proba"):
@@ -77,11 +100,11 @@ try:
     frame = pd.read_csv(data_path)
     labels = frame[target]
     y_train = labels.iloc[:train_end]
-    y_valid = labels.iloc[train_end:valid_end]
+    y_eval = labels.iloc[eval_start:eval_end]
     if mode == "text":
         texts = frame[text_column].astype(str)
         x_train = texts.iloc[:train_end]
-        x_valid = texts.iloc[train_end:valid_end]
+        x_eval = texts.iloc[eval_start:eval_end]
         feature_count = 1
     else:
         columns = namespace["FEATURE_COLUMNS"]
@@ -90,35 +113,39 @@ try:
             raise ValueError("ForbiddenFeature: " + ",".join(sorted(overlap)))
         features = frame[columns]
         x_train = features.iloc[:train_end]
-        x_valid = features.iloc[train_end:valid_end]
+        x_eval = features.iloc[eval_start:eval_end]
         feature_count = len(columns)
-    pipeline = namespace["build_pipeline"]({})
-    pipeline.fit(x_train, y_train)
+    pipeline = _build(namespace, x_train, y_train)
+    y_score = _score_vector(pipeline, x_eval)
+    train_score = _score_vector(pipeline, x_train)
     y_pred = None
-    if mode == "regression":
-        # 回归直接产出连续值；y_score 与 y_pred 同源，供 PSI 等可选指标复用
-        y_score = [float(value) for value in pipeline.predict(x_valid)]
-        train_score = [float(value) for value in pipeline.predict(x_train)]
-    else:
-        y_score = _predict_score(pipeline, x_valid)
-        train_score = _predict_score(pipeline, x_train)
-        if mode == "text":
-            y_pred = [value.item() if hasattr(value, "item") else value
-                      for value in pipeline.predict(x_valid)]
+    if mode == "text":
+        y_pred = [value.item() if hasattr(value, "item") else value
+                  for value in pipeline.predict(x_eval)]
+    # 确定性：同进程内重建并二次 fit，两次连续输出的最大绝对差
+    repeat_variance = None
+    if repeat >= 2:
+        second = _build(namespace, x_train, y_train)
+        repeat_variance = max(
+            (abs(left - right)
+             for left, right in zip(y_score, _score_vector(second, x_eval))),
+            default=0.0,
+        )
     latencies = []
-    for start in range(0, len(x_valid), 64):
-        chunk = x_valid.iloc[start:start + 64]
+    for start in range(0, len(x_eval), 64):
+        chunk = x_eval.iloc[start:start + 64]
         began = time.perf_counter()
         _warm_predict(pipeline, chunk)
         latencies.append((time.perf_counter() - began) * 1000.0 / len(chunk))
     print(json.dumps({
         "status": "ok",
-        "y_true": [float(value) for value in y_valid],
+        "y_true": [float(value) for value in y_eval],
         "y_score": y_score,
         "y_pred": y_pred,
         "reference": train_score[:500],
         "current": y_score[:500],
         "feature_count": feature_count,
+        "repeat_variance": repeat_variance,
         "inference_p50_ms": _percentile(latencies, 0.50),
         "inference_p95_ms": _percentile(latencies, 0.95),
     }))
@@ -164,10 +191,21 @@ class DatasetSandbox:
         self.text_column = text_column
         # mode 决定子进程如何取特征与产出：tabular 分类 / text 文本 / regression 回归
         self.mode = mode or ("text" if text_column else "tabular")
+        self.n_samples = n_samples
         self.train_end = int(n_samples * split.train_ratio)
         self.valid_end = int(n_samples * (split.train_ratio + split.valid_ratio))
+        self.test_end = n_samples
 
-    def run(self, source: str) -> DatasetRunResult:
+    def segment_bounds(self, segment: str = "valid") -> tuple[int, int]:
+        """返回评估段的 ``[start, end)``：valid 取中间段，test 取末段。"""
+        if segment == "test":
+            return self.valid_end, self.test_end
+        return self.train_end, self.valid_end
+
+    def run(self, source: str, segment: str = "valid",
+            repeat: int = 1) -> DatasetRunResult:
+        """执行生成代码；``segment`` 选评估段，``repeat>=2`` 时额外测确定性。"""
+        eval_start, eval_end = self.segment_bounds(segment)
         state: dict[str, Any] = {"peak": 0, "exceeded": False}
         with tempfile.TemporaryDirectory(prefix="factory_dataset_sandbox_") as tmp:
             workdir = Path(tmp)
@@ -178,8 +216,8 @@ class DatasetSandbox:
             env = sandbox_env()
             arguments = [
                 sys.executable, str(runner), str(candidate), str(self.data_path),
-                self.target, str(self.train_end), str(self.valid_end),
-                json.dumps(self.forbidden), self.mode, self.text_column,
+                self.target, str(self.train_end), str(eval_start), str(eval_end),
+                str(repeat), json.dumps(self.forbidden), self.mode, self.text_column,
             ]
             started = time.monotonic()
             proc = subprocess.Popen(
@@ -219,6 +257,8 @@ class DatasetSandbox:
             "y_pred": predicted,
             "reference": payload.get("reference", []),
             "current": payload.get("current", []),
+            "repeat_variance": payload.get("repeat_variance"),
+            "segment": segment,
         }
         signature = ("Timeout" if timed_out else
                      "MemoryLimitExceeded" if state["exceeded"] else
@@ -238,8 +278,8 @@ class DatasetSandbox:
             inference_p50_ms=payload.get("inference_p50_ms"),
             inference_p95_ms=payload.get("inference_p95_ms"),
         )
-        logger.info("数据沙箱：passed=%s 耗时=%.3fs 签名=%s",
-                    sandbox.passed, sandbox.duration_seconds, signature)
+        logger.info("数据沙箱[%s]：passed=%s 耗时=%.3fs 签名=%s",
+                    segment, sandbox.passed, sandbox.duration_seconds, signature)
         return DatasetRunResult(sandbox=sandbox, context=context if sandbox.passed else {})
 
     def _watch(self, proc: subprocess.Popen[str], state: dict[str, Any]) -> None:

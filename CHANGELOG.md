@@ -3,6 +3,35 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循
 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本对应一个 annotated tag 与 GitHub Release。
 
+## [1.1.0] - 2026-11-09
+
+对照代码走查结论做的真实性整改：把三处「文档说做了、代码没做」的检查补成真的，并修掉两处会让闭环失效的逻辑缺陷。对外契约只增不改（新增 `TestEvaluation`、`RunTrace.code_sources`、`WorkflowSettings`），端到端三条命令的指标与修复轨迹保持一致。
+
+### 新增
+
+- **确定性实测**：`DatasetSandbox.run(repeat=2)` 在同一子进程内重建并二次 fit，两次连续输出的最大绝对差写入 `SandboxResult` 的 `repeat_variance`；`deterministic` 不再恒为 True。次数由 `workflow.determinism_repeat` 控制。
+- **test 段终评**：`DatasetSandbox.run(segment="test")` 改在末段评估；工作流在候选比较结束后对最佳候选消费一次 test，结果写入 `RunTrace.test_evaluation` 与报告第 5 节，不参与排序与修复。开关 `workflow.evaluate_on_test`。
+- **Coder 采用 LLM 代码**：真实 LLM 返回的代码先过 AST 静态检查，通过才采用；缺 `build_pipeline`、缺 `FEATURE_COLUMNS`、危险 import 均回退算法模板，原因记入 `RunTrace.code_sources` 与日志。Mock 输出标注为「仅作契约示例」。
+- `WorkflowSettings`：`beam_width` / `max_repair_rounds` / `determinism_repeat` / `evaluate_on_test` 全部从 `configs/default.yaml` 读取（此前 `workflow` 段存在但从未被加载）。
+
+### 变更
+
+- **知识图谱边语义**：从「按列表下标轮转」改为「名称或属性文本命中才连边」，主场景 259→188 边、文本场景 33→15 边；`DEPENDS_ON` 按顶层包名匹配（`sklearn.linear_model` → `sklearn`）。
+- **失败经验跨轮复用**：`Curator` 对 `FailureCase` 按 `error_signature` 去重，不再随 `run_id` 覆盖删除；只有出现新签名才升级能力版本，版本号按图中 `<anchor>.vN` 递增并形成版本链。
+- **Planner 候选**：先按算法族去重再截断到 `beam_width`，避免同族候选占满宽度。
+- **检索**：Top-K 命中后做一跳邻域扩展，邻居按边类型加权加分。
+- **API**：`CandidateSummary.auc` 改为通用 `metrics` + `primary_metric` / `primary_value`，文本与回归任务的 `/run` 响应不再返回 `null`；新增 `RunResponse.test_metrics`。
+- **抽取器**：Dataset 节点的名称、标签、禁入模字段、敏感字段、划分策略改由 `verify_*.yaml` 派生的 `dataset_profile` 提供，不再写死在 `extractor.py`。
+- `configs/default.yaml` 的 `project.version` 与包版本对齐。
+
+### 移除
+
+- `requirements.txt` 中的 `streamlit`：全仓零引用，题目「Web 界面、CLI 或 API」三选一已由 CLI + API 满足。
+
+### 测试
+
+- 新增 13 个用例：确定性（正向 + 非确定性检测）、test 段隔离、终评契约、代码来源四条路径、配置生效与缺省回退、API 通用指标。全量 139 个用例通过，`ruff check` 全绿。
+
 ## [1.0.2] - 2026-11-09
 
 评审视角代码走查后的健壮性修复，不改架构与对外契约。

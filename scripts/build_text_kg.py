@@ -36,6 +36,7 @@ def main() -> int:
         docs_dir=task.knowledge.docs,
         legacy_dir=task.knowledge.legacy,
         prefix="text_",
+        dataset_profile=task.dataset_profile,
     )
     counts = {kind.value: len(graph.by_type(kind)) for kind in NodeType}
     print(f"[text-kg] 节点 {len(graph.nodes)} / 边 {len(graph.edges)}")

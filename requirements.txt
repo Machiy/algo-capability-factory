@@ -31,7 +31,6 @@ jinja2>=3.1,<4
 typer>=0.12,<0.16
 fastapi>=0.112,<0.116
 uvicorn[standard]>=0.30,<0.35
-streamlit>=1.37,<2
 
 # ---- 测试与代码质量（P5 验收：ruff check 无 error / pytest 全绿）----
 pytest>=8.3,<9

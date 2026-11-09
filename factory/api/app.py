@@ -40,12 +40,18 @@ class RunRequest(BaseModel):
 
 
 class CandidateSummary(BaseModel):
-    """单个候选的摘要，指标只保留主指标避免响应过长。"""
+    """单个候选的摘要：指标按任务透出，分类 / 文本 / 回归都适用。
+
+    早期版本固定返回 ``auc``，换成文本或回归任务时该字段恒为 ``null``；
+    现在给出完整 ``metrics``，并用 ``primary_metric`` 指明当前任务的主指标。
+    """
 
     plan_id: str
     model_family: str
     passed: bool
-    auc: float | None = None
+    metrics: dict[str, float | None] = Field(default_factory=dict)
+    primary_metric: str = ""
+    primary_value: float | None = None
     repair_rounds: int = 0
 
 
@@ -59,6 +65,8 @@ class RunResponse(BaseModel):
     candidate_count: int
     repair_count: int
     candidates: list[CandidateSummary]
+    # 终评结果（test 段一次性评估）；未启用终评时为空
+    test_metrics: dict[str, float | None] = Field(default_factory=dict)
     report_path: str
 
 
@@ -99,7 +107,8 @@ def create_app(root: Path | None = None) -> Any:
                 update={"provider": "mock", "role_providers": {}}
             )
         try:
-            trace = Workflow(settings, task, base).run(payload.spec, payload.run_id)
+            workflow = Workflow(settings, task, base)
+            trace = workflow.run(payload.spec, payload.run_id)
         except (FileNotFoundError, ValueError) as exc:
             # 配置 / 数据 / 标识非法属于调用方问题，回 400 并给出可读原因
             logger.warning("运行请求被拒绝：%s", exc)
@@ -114,11 +123,14 @@ def create_app(root: Path | None = None) -> Any:
                 plan_id=item.plan_id,
                 model_family=item.model_family,
                 passed=item.passed,
-                auc=item.metrics.get("auc"),
+                metrics=dict(item.metrics),
+                primary_metric=workflow.metric_name,
+                primary_value=item.metrics.get(workflow.metric_name),
                 repair_rounds=item.repair_rounds,
             )
             for item in sorted(trace.candidates, key=lambda c: -c.score)
         ]
+        test_eval = getattr(trace, "test_evaluation", None)
         return RunResponse(
             run_id=trace.run_id,
             passed=trace.passed,
@@ -127,6 +139,7 @@ def create_app(root: Path | None = None) -> Any:
             candidate_count=len(trace.candidates),
             repair_count=len(trace.repairs),
             candidates=candidates,
+            test_metrics=dict(test_eval.metrics) if test_eval is not None else {},
             report_path=trace.report_path,
         )
 

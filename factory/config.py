@@ -144,6 +144,38 @@ class TaskSettings(_ConfigModel):
     def cost_ratio_fn_fp(self) -> float:
         return float(self.constraints.get("cost_ratio_fn_fp", 5.0))
 
+    @property
+    def dataset_profile(self) -> dict[str, Any]:
+        """抽取器消费的数据集画像。
+
+        标签名、敏感列与划分策略都来自本任务配置，抽取器不再内嵌某个
+        数据集的这些常量；换场景只改 ``verify_*.yaml``。
+        """
+        name = Path(self.dataset.path).stem if self.dataset.path else ""
+        return {
+            "name": name,
+            "target": self.dataset.target,
+            "forbidden_features": list(self.dataset.forbidden_features),
+            "sensitive_features": self.sensitive_features,
+            "split_policy": self.split.strategy,
+        }
+
+
+class WorkflowSettings(_ConfigModel):
+    """``configs/default.yaml`` 的 workflow 段：候选宽度与修复上限。
+
+    这两个数值原先只写在 YAML 里、代码里另有一份硬编码，改配置不生效；
+    现在由这里统一读取，缺省时退回默认值，保证旧配置仍可加载。
+    """
+
+    beam_width: int = Field(default=3, ge=1, le=10)
+    max_repair_rounds: int = Field(default=3, ge=0, le=10)
+    # 同一候选在 valid 段重复 fit 的次数：>=2 才有确定性证据，1 表示跳过该项
+    determinism_repeat: int = Field(default=2, ge=1, le=3)
+    # 是否在全部候选比较完后对最佳候选跑一次 test 终评（只报告，不参与排序）
+    evaluate_on_test: bool = True
+    roles: list[str] = Field(default_factory=list)
+
 
 class Settings(_ConfigModel):
     """配置契约的总入口。"""
@@ -152,6 +184,7 @@ class Settings(_ConfigModel):
     paths: PathsSettings
     runtime: RuntimeSettings = Field(default_factory=RuntimeSettings)
     llm: LLMSettings = Field(default_factory=LLMSettings)
+    workflow: WorkflowSettings = Field(default_factory=WorkflowSettings)
 
 
 def _read_mapping(path: Path) -> dict:
@@ -174,6 +207,7 @@ def load_settings(config_path: str | Path) -> Settings:
         paths=PathsSettings(**payload["paths"]),
         runtime=RuntimeSettings(**payload.get("runtime", {})),
         llm=LLMSettings(**payload.get("llm", {})),
+        workflow=WorkflowSettings(**payload.get("workflow", {})),
     )
 
 
@@ -193,6 +227,7 @@ __all__ = [
     "RuntimeSettings",
     "Settings",
     "TaskSettings",
+    "WorkflowSettings",
     "load_settings",
     "load_task_settings",
 ]

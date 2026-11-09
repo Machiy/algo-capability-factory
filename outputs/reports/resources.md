@@ -9,20 +9,20 @@
 
 | 模型族 | 样本数 | 重复 | 耗时中位数 (s) | 耗时最大 (s) | 峰值内存 (MB) | 推理 P95 (ms/行) | 是否通过 |
 |---|---|---|---|---|---|---|---|
-| logistic_regression | 30000 | 3 | 2.344 | 2.359 | 175.14 | 0.0132 | PASS |
-| hist_gradient_boosting | 30000 | 3 | 2.453 | 2.468 | 179.17 | 0.0316 | PASS |
-| random_forest | 30000 | 3 | 5.453 | 5.516 | 178.32 | 0.1117 | PASS |
-| logistic_regression | 300000 | 1 | 3.281 | 3.281 | 352.89 | 0.0118 | PASS |
-| hist_gradient_boosting | 300000 | 1 | 7.359 | 7.359 | 330.95 | 0.0670 | PASS |
-| random_forest | 300000 | 1 | 29.688 | 29.688 | 355.88 | 0.1042 | PASS |
+| logistic_regression | 30000 | 3 | 2.109 | 2.125 | 170.97 | 0.0114 | PASS |
+| hist_gradient_boosting | 30000 | 3 | 2.454 | 2.468 | 178.99 | 0.0317 | PASS |
+| random_forest | 30000 | 3 | 5.375 | 5.406 | 178.77 | 0.1084 | PASS |
+| logistic_regression | 300000 | 1 | 3.344 | 3.344 | 368.07 | 0.0119 | PASS |
+| hist_gradient_boosting | 300000 | 1 | 7.453 | 7.453 | 331.28 | 0.0677 | PASS |
+| random_forest | 300000 | 1 | 29.860 | 29.860 | 371.30 | 0.1028 | PASS |
 
 ## 2. 放大倍数（同族 N× / 1×）
 
 | 模型族 | 耗时放大 | 峰值内存放大 | 推理 P95 放大 |
 |---|---|---|---|
-| logistic_regression | 1.40× | 2.01× | 0.89× |
-| hist_gradient_boosting | 3.00× | 1.85× | 2.12× |
-| random_forest | 5.44× | 2.00× | 0.93× |
+| logistic_regression | 1.59× | 2.15× | 1.04× |
+| hist_gradient_boosting | 3.04× | 1.85× | 2.14× |
+| random_forest | 5.56× | 2.08× | 0.95× |
 
 ## 3. 口径与使用方式
 

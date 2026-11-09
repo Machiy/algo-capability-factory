@@ -1,7 +1,7 @@
 # 全局默认配置；任务级配置见 verify_*.yaml
 project:
   name: algocap-factory
-  version: 0.1.0
+  version: 1.1.0
   seed: 42
   log_level: INFO
 
@@ -61,6 +61,10 @@ knowledge:
 workflow:
   beam_width: 3
   max_repair_rounds: 3
+  # 同一候选重复 fit 次数：>=2 才产出确定性证据（repeat_variance）
+  determinism_repeat: 2
+  # 候选比较结束后对最佳候选跑一次 test 终评；只进报告，不参与排序与修复
+  evaluate_on_test: true
   roles:
     - Interpreter
     - Retriever

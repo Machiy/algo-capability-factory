@@ -278,71 +278,26 @@
     <edge source="cap.sms_data_dictionary.ST1" target="evidence.sms_data_dictionary" id="0">
       <data key="d27">EVIDENCED_BY</data>
     </edge>
-    <edge source="cap.sms_data_dictionary.ST1" target="metric.sms_policy.r01" id="0">
-      <data key="d27">EVALUATED_BY</data>
-    </edge>
-    <edge source="cap.sms_data_dictionary.ST1" target="cap.sms_data_dictionary.ST2" id="0">
-      <data key="d27">SIMILAR_TO</data>
-    </edge>
-    <edge source="cap.sms_data_dictionary.ST1" target="cap.sms_policy.S1" id="0">
-      <data key="d27">TRANSFERABLE_TO</data>
-    </edge>
     <edge source="cap.sms_data_dictionary.ST2" target="evidence.sms_data_dictionary" id="0">
       <data key="d27">EVIDENCED_BY</data>
-    </edge>
-    <edge source="cap.sms_data_dictionary.ST2" target="metric.sms_policy.macro_f1" id="0">
-      <data key="d27">EVALUATED_BY</data>
-    </edge>
-    <edge source="cap.sms_data_dictionary.ST2" target="cap.sms_data_dictionary.ST1" id="0">
-      <data key="d27">DERIVED_FROM</data>
-    </edge>
-    <edge source="cap.sms_data_dictionary.ST2" target="cap.sms_data_dictionary.ST3" id="0">
-      <data key="d27">SIMILAR_TO</data>
     </edge>
     <edge source="cap.sms_data_dictionary.ST3" target="evidence.sms_data_dictionary" id="0">
       <data key="d27">EVIDENCED_BY</data>
     </edge>
-    <edge source="cap.sms_data_dictionary.ST3" target="metric.sms_policy.r01" id="0">
-      <data key="d27">EVALUATED_BY</data>
-    </edge>
-    <edge source="cap.sms_data_dictionary.ST3" target="cap.sms_data_dictionary.ST1" id="0">
-      <data key="d27">DERIVED_FROM</data>
-    </edge>
-    <edge source="cap.sms_data_dictionary.ST3" target="cap.sms_data_dictionary.ST4" id="0">
-      <data key="d27">SIMILAR_TO</data>
-    </edge>
     <edge source="cap.sms_data_dictionary.ST4" target="evidence.sms_data_dictionary" id="0">
       <data key="d27">EVIDENCED_BY</data>
-    </edge>
-    <edge source="cap.sms_data_dictionary.ST4" target="metric.sms_policy.macro_f1" id="0">
-      <data key="d27">EVALUATED_BY</data>
-    </edge>
-    <edge source="cap.sms_data_dictionary.ST4" target="cap.sms_data_dictionary.ST1" id="0">
-      <data key="d27">DERIVED_FROM</data>
     </edge>
     <edge source="fail.sms_failure_review.FR-01" target="evidence.sms_failure_review" id="0">
       <data key="d27">EVIDENCED_BY</data>
     </edge>
-    <edge source="fail.sms_failure_review.FR-01" target="cap.sms_data_dictionary.ST1" id="0">
-      <data key="d27">FIXED_BY</data>
-    </edge>
     <edge source="fail.sms_failure_review.FR-02" target="evidence.sms_failure_review" id="0">
       <data key="d27">EVIDENCED_BY</data>
-    </edge>
-    <edge source="fail.sms_failure_review.FR-02" target="cap.sms_data_dictionary.ST1" id="0">
-      <data key="d27">FIXED_BY</data>
     </edge>
     <edge source="cap.sms_policy.S1" target="evidence.sms_policy" id="0">
       <data key="d27">EVIDENCED_BY</data>
     </edge>
-    <edge source="cap.sms_policy.S1" target="metric.sms_policy.r01" id="0">
-      <data key="d27">EVALUATED_BY</data>
-    </edge>
     <edge source="cap.sms_policy.S2" target="evidence.sms_policy" id="0">
       <data key="d27">EVIDENCED_BY</data>
-    </edge>
-    <edge source="cap.sms_policy.S2" target="metric.sms_policy.macro_f1" id="0">
-      <data key="d27">EVALUATED_BY</data>
     </edge>
     <edge source="cap.sms_policy.S3" target="evidence.sms_policy" id="0">
       <data key="d27">EVIDENCED_BY</data>
@@ -353,20 +308,11 @@
     <edge source="cap.sms_policy.S4" target="evidence.sms_policy" id="0">
       <data key="d27">EVIDENCED_BY</data>
     </edge>
-    <edge source="cap.sms_policy.S4" target="metric.sms_policy.macro_f1" id="0">
-      <data key="d27">EVALUATED_BY</data>
-    </edge>
     <edge source="cap.sms_policy.S5" target="evidence.sms_policy" id="0">
       <data key="d27">EVIDENCED_BY</data>
     </edge>
-    <edge source="cap.sms_policy.S5" target="metric.sms_policy.r01" id="0">
-      <data key="d27">EVALUATED_BY</data>
-    </edge>
     <edge source="cap.sms_policy.S6" target="evidence.sms_policy" id="0">
       <data key="d27">EVIDENCED_BY</data>
-    </edge>
-    <edge source="cap.sms_policy.S6" target="metric.sms_policy.macro_f1" id="0">
-      <data key="d27">EVALUATED_BY</data>
     </edge>
     <edge source="metric.sms_policy.r01" target="evidence.sms_policy" id="0">
       <data key="d27">EVIDENCED_BY</data>

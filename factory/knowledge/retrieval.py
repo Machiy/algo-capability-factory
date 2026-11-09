@@ -9,10 +9,12 @@ from __future__ import annotations
 
 import logging
 import re
+from typing import ClassVar
 
 from rank_bm25 import BM25Okapi
 
 from factory.contracts.knowledge import (
+    EdgeType,
     Evidence,
     KGNode,
     KnowledgeGraph,
@@ -103,6 +105,15 @@ class HybridRetriever:
                                      score=round(score, 6), reasons=reasons,
                                      evidence=evidence))
         hits.sort(key=lambda hit: (-hit.score, hit.node_id))
+        # 图邻域扩展：Top-K 的一跳邻居按边类型折扣加分，弥补 BM25 只认词面
+        # 的局限（例如命中「阈值」节点后可连带召回 EVALUATED_BY 的指标节点）
+        neighbors = self._neighbors({hit.node_id for hit in hits[:limit]})
+        for hit in hits:
+            weight = neighbors.get(hit.node_id)
+            if weight:
+                hit.reasons["graph_neighbor"] = weight
+                hit.score = round(hit.score + self._NEIGHBOR_BONUS * weight, 6)
+        hits.sort(key=lambda hit: (-hit.score, hit.node_id))
         result = RetrievalResult(
             query=query,
             top_k=limit,
@@ -112,6 +123,44 @@ class HybridRetriever:
         )
         logger.info("检索 query=%r 命中 %d 项", query, len(result.hits))
         return result
+
+    # 邻域加分的上限：相关性仍是主项，图结构只做同分段的排序微调
+    _NEIGHBOR_BONUS: ClassVar[float] = 0.10
+
+    # 不同关系对「相关」的贡献不同：证据节点不参与打分，故不计权重
+    _EDGE_WEIGHTS: ClassVar[dict[EdgeType, float]] = {
+        EdgeType.EVALUATED_BY: 1.0,
+        EdgeType.USES: 1.0,
+        EdgeType.REQUIRES: 0.8,
+        EdgeType.DERIVED_FROM: 0.8,
+        EdgeType.HAS_RUN: 0.8,
+        EdgeType.RESULTED_IN: 0.8,
+        EdgeType.FIXED_BY: 0.8,
+        EdgeType.SIMILAR_TO: 0.6,
+        EdgeType.PRECEDES: 0.6,
+        EdgeType.TRANSFERABLE_TO: 0.6,
+        EdgeType.APPLIES_TO: 0.4,
+        EdgeType.DEPENDS_ON: 0.2,
+        EdgeType.EVIDENCED_BY: 0.0,
+    }
+
+    def _neighbors(self, node_ids: set[str]) -> dict[str, float]:
+        """一跳邻域：返回邻居节点 id 与其最高边权重。"""
+        weights: dict[str, float] = {}
+        for edge in self.graph.edges:
+            score = self._EDGE_WEIGHTS.get(edge.edge_type, 0.0)
+            if score <= 0:
+                continue
+            if edge.source in node_ids:
+                candidate = edge.target
+            elif edge.target in node_ids:
+                candidate = edge.source
+            else:
+                continue
+            if candidate in node_ids:
+                continue
+            weights[candidate] = max(weights.get(candidate, 0.0), score)
+        return weights
 
     def _constraints(self, limit: int) -> list[str]:
         """汇总适用条件，供 Planner 生成候选方案时遵守。"""

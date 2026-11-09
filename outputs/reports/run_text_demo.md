@@ -2,11 +2,11 @@
 
 > 本报告为真实运行的产物。核心闭环演示走 `MockLLM` 规则模板路径
 > （开发要求 g），生成代码在子进程用真实数据集执行，指标均为实测，未造数值。
-> test 集全程未访问。引用 cassette 回放的内容须另标注「离线回放」。
+> test 段仅在候选比较结束后对最佳候选评估一次，不参与排序与修复。引用 cassette 回放的内容须另标注「离线回放」。
 
 - 能力描述：把短信分类为垃圾短信或正常短信，输出准确率与宏平均F1
 - 能力理解来源：mock
-- 知识图谱：with_kg（图谱来源 sources）
+- 知识图谱：with_kg（图谱来源 after_run）
 - 历史失败经验命中：否
 - 七步流程：执行完成（a.Parse → b.Retrieve → c.Plan → d.Generate → e.Execute+Validate → f.Diagnose+Repair → g.Sink 均有产物）
 - 四层全通过：**PASS**
@@ -19,11 +19,11 @@
 
 ```text
 # 检索证据（query=把短信分类为垃圾短信或正常短信，输出准确率与宏平均F1）
+- [0.475] [macro_f1] 0.90 (metric.sms_policy.macro_f1)
+- [0.460] [r01] 0.95 (metric.sms_policy.r01)
 - [0.375] [ST1] 大小写与标点不统一 (cap.sms_data_dictionary.ST1)
 - [0.375] [ST2] 正文含电话号码与短链接 (cap.sms_data_dictionary.ST2)
 - [0.375] [ST3] 极短文本与重复文本 (cap.sms_data_dictionary.ST3)
-- [0.375] [ST4] 标签分布偏斜 (cap.sms_data_dictionary.ST4)
-- [0.375] [S1] 文本长度 (cap.sms_policy.S1)
 ## 适用条件
 - [S1] 文本长度：少于 3 个字符的样本不参与训练，避免噪声主导词表
 - [S2] 语言范围：当前仅覆盖英文短信；中文短信需要另行分词，不能直接复用本词表
@@ -37,19 +37,19 @@
 
 ## 2. 候选方案比较（Beam Top-3，主指标 accuracy）
 
-| 方案 | 模型族 | accuracy | 通过 | 修复轮次 |
-|---|---|---|---|---|
-| plan.02 | linear_svc | 0.9803 | PASS | 0 |
-| plan.01 | logistic_regression | 0.9785 | PASS | 0 |
-| plan.03 | complement_nb | 0.9731 | PASS | 0 |
+| 方案 | 模型族 | accuracy | 通过 | 代码来源 | 修复轮次 |
+|---|---|---|---|---|---|
+| plan.02 | linear_svc | 0.9803 | PASS | template | 0 |
+| plan.01 | logistic_regression | 0.9785 | PASS | template | 0 |
+| plan.03 | complement_nb | 0.9731 | PASS | template | 0 |
 
 ## 3. 四层验证结论
 
-| 运行 | 接口 | 功能 | 指标 | 稳定性 | 错误签名 |
-|---|---|---|---|---|---|
-| plan.01 | PASS | PASS | PASS | PASS | 无 |
-| plan.02 | PASS | PASS | PASS | PASS | 无 |
-| plan.03 | PASS | PASS | PASS | PASS | 无 |
+| 运行 | 接口 | 功能 | 指标 | 稳定性 | 确定性 Δ | 错误签名 |
+|---|---|---|---|---|---|---|
+| plan.01 | PASS | PASS | PASS | PASS | 0.00e+00 | 无 |
+| plan.02 | PASS | PASS | PASS | PASS | 0.00e+00 | 无 |
+| plan.03 | PASS | PASS | PASS | PASS | 0.00e+00 | 无 |
 
 ## 4. 修复轨迹
 
@@ -61,16 +61,25 @@
 - 修复轨迹：无
 - 依据：检索到的适用条件约束候选方案，历史失败规避项触发列名映射修复。
 
-## 5. 图谱沉淀 diff
+## 5. 终评（test 段，仅一次）
 
-- nodes_added：3
-- edges_added：3
+- 终评候选：`plan.02`；test 段本次一次性消费，未参与候选排序与修复决策
 
-## 6. 产物
+| 指标 | test 实测 |
+|---|---|
+| accuracy | 0.9821 |
+| macro_f1 | 0.9625 |
+
+## 6. 图谱沉淀 diff
+
+- nodes_added：0
+- edges_added：0
+
+## 7. 产物
 
 - `outputs/generated/text/candidate_plan.01.py`
 - `outputs/generated/text/candidate_plan.02.py`
 - `outputs/generated/text/candidate_plan.03.py`
 - 回写图谱：`outputs/kg/capabilities_text_after_run.json`
 
-模式 with_kg（图谱来源 sources）；候选 3 个；修复 0 轮；历史失败经验命中 否；检索证据 5 项已注入 Planner 与 Coder prompt。
+模式 with_kg（图谱来源 after_run）；候选 3 个；修复 0 轮；历史失败经验命中 否；检索证据 5 项已注入 Planner 与 Coder prompt。
