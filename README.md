@@ -323,7 +323,7 @@ python -m factory --check
 
 **干净环境实测（P5 记录）**：在系统临时目录新建空 venv，仅执行一次 `pip install -r requirements.txt`（106 个包，无冲突），随后直接跑通 `ruff check`（全绿）、当时的 104 个用例与端到端 `factory run`（`四层全通过=True`、`理解来源=cassette`、退出码 0），未安装任何清单外依赖。P6 未引入任何新的第三方依赖（文本与仓库抽取均用已有的 pandas / scikit-learn / 标准库），因此该结论继续成立；补充用例后当前全量测试为 **128 个**，在项目 venv 中全部通过。
 
-**持续集成**：`.github/workflows/ci.yml` 在 Python 3.11 / 3.12 上依次执行 `ruff check`、全量单元测试、两条端到端命令（信用卡违约 + 短信文本），并对输出断言 `四层全通过=True`；端到端走默认 provider（Interpreter 用已入库 cassette），因此 CI 不依赖任何 API key。
+**持续集成**：`.github/workflows/ci.yml` 在 **Python 3.11 / 3.12** 上执行 `ruff check`、全量单元测试与三条端到端命令（信用卡违约 / 短信文本 / 需求量回归），并对输出断言 `四层全通过=True`。矩阵按事件分流：`pull_request` 只跑 3.12（反馈快），`push` 到 `main` 与手动触发跑 3.11 + 3.12（为声明的 `requires-python >= 3.11` 提供证据）。端到端走默认 provider（Interpreter 用已入库 cassette），因此 CI 不依赖任何 API key。
 
 **关于 LLM**：默认配置是「`Interpreter` 走 `cassette`（真实 DeepSeek 录制响应），其余角色走规则模板」—— 即**能力理解这一环由真实 LLM 驱动**，其余环节保持确定性。`llm.role_providers` 控制按角色路由，`--mock` 会关闭路由、强制全链路规则模板。本地部署模型在本项目不可行（CPU 推理过慢），因此按开发要求 g 的「API 调用方式」接入 **DeepSeek 的 OpenAI 兼容接口**：把 `llm.provider` 切到 `openai_compat`，按 `.env.example` 把 `LLM_API_KEY` 填进 `.env` 或设为环境变量即可。官方端点 `https://api.deepseek.com`、当前示例模型 `deepseek-flash`。真实响应的解析结构（`target.name`、`data_split`、`threshold_selection`、`feature_constraints`、`evaluation`）会被映射进 `CapabilitySpec`，端到端报告里的 `能力理解来源=cassette` 就是这条证据。
 
