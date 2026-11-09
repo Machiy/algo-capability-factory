@@ -63,6 +63,7 @@ class FourLayerValidator:
             "timed_out": sandbox.timed_out,
             "memory_exceeded": sandbox.memory_exceeded,
             "repeat_variance": repeat_variance,
+            "inference_p95_ms": sandbox.inference_p95_ms,
         }
         failed = [
             name

@@ -21,7 +21,11 @@ from typing import Any
 from factory.config import RuntimeSettings, SplitSpec
 from factory.contracts.validation import SandboxResult
 from factory.contracts.workflow import DatasetRunResult
-from factory.runtime.sandbox import process_memory_bytes, sandbox_env
+from factory.runtime.sandbox import (
+    kill_process_tree,
+    process_memory_bytes,
+    sandbox_env,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -29,12 +33,20 @@ DATASET_RUNNER = '''\
 import json
 import runpy
 import sys
+import time
 import traceback
 
 candidate, data_path, target, train_end, valid_end, forbidden_json = sys.argv[1:7]
 train_end = int(train_end)
 valid_end = int(valid_end)
 forbidden = set(json.loads(forbidden_json))
+
+def _percentile(values, ratio):
+    ordered = sorted(values)
+    if not ordered:
+        return None
+    index = min(len(ordered) - 1, max(0, int(round(ratio * (len(ordered) - 1)))))
+    return round(ordered[index], 4)
 
 try:
     import pandas as pd
@@ -54,6 +66,12 @@ try:
     pipeline.fit(x_train, y_train)
     valid_score = pipeline.predict_proba(x_valid)[:, 1]
     train_score = pipeline.predict_proba(x_train)[:, 1]
+    latencies = []
+    for start in range(0, len(x_valid), 64):
+        chunk = x_valid.iloc[start:start + 64]
+        began = time.perf_counter()
+        pipeline.predict_proba(chunk)
+        latencies.append((time.perf_counter() - began) * 1000.0 / len(chunk))
     print(json.dumps({
         "status": "ok",
         "y_true": [float(value) for value in y_valid],
@@ -61,6 +79,8 @@ try:
         "reference": [float(value) for value in train_score[:500]],
         "current": [float(value) for value in valid_score[:500]],
         "feature_count": len(columns),
+        "inference_p50_ms": _percentile(latencies, 0.50),
+        "inference_p95_ms": _percentile(latencies, 0.95),
     }))
 except Exception:
     traceback.print_exc(file=sys.stderr)
@@ -119,7 +139,7 @@ class DatasetSandbox:
             try:
                 stdout, stderr = proc.communicate(timeout=self.runtime.timeout_seconds)
             except subprocess.TimeoutExpired:
-                proc.kill()
+                kill_process_tree(proc)
                 stdout, stderr = proc.communicate()
                 timed_out = True
             duration = time.monotonic() - started
@@ -151,6 +171,8 @@ class DatasetSandbox:
             timed_out=timed_out,
             memory_exceeded=bool(state["exceeded"]),
             error_signature=signature,
+            inference_p50_ms=payload.get("inference_p50_ms"),
+            inference_p95_ms=payload.get("inference_p95_ms"),
         )
         logger.info("数据沙箱：passed=%s 耗时=%.3fs 签名=%s",
                     sandbox.passed, sandbox.duration_seconds, signature)
@@ -164,7 +186,7 @@ class DatasetSandbox:
                 state["peak"] = max(int(state["peak"]), usage)
                 if usage > limit:
                     state["exceeded"] = True
-                    proc.kill()
+                    kill_process_tree(proc)
                     return
             time.sleep(0.05)
 

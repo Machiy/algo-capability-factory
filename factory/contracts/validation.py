@@ -39,6 +39,9 @@ class SandboxResult(_StrictModel):
     timed_out: bool = False
     memory_exceeded: bool = False
     error_signature: str | None = None
+    # 推理延迟（毫秒 / 单条），由沙箱子进程按批实测，供资源消耗分析使用
+    inference_p50_ms: float | None = None
+    inference_p95_ms: float | None = None
 
 
 class MetricSpec(_StrictModel):

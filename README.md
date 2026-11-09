@@ -242,6 +242,7 @@ python -m factory run --spec "预测信用卡客户下月违约概率，按5:1�
 python scripts/build_kg.py               # 构建能力图谱与检索产物
 python scripts/verify_baseline.py        # baseline 四层验证自检
 python scripts/run_ablation.py           # 有 KG / 无 KG 消融对比
+python scripts/resource_benchmark.py     # 1× / 10× 资源消耗与性能基准
 python scripts/record_llm.py             # 录制真实 DeepSeek 调用（需 key）
 python -m unittest discover -s tests -v  # 全量测试
 
@@ -411,6 +412,18 @@ def build_pipeline(config):
 
 有 KG 组从回写图谱读到上一轮的 `KeyError: PAY_1` 失败案例，Coder 首轮即改用 `PAY_0`，省掉一次失败执行；无 KG 组没有这条证据，先踩 T1 再修复。两组 AUC 完全一致，说明沉淀改变的是过程效率而非指标口径，未做任何数值美化。完整对比见 `outputs/reports/ablation.md`。
 
+**性能与资源消耗（实测，`scripts/resource_benchmark.py`）**
+
+同一批模板候选在 1×（30,000 行）与 10×（300,000 行、有放回抽样）数据上的实测值，全部取自子进程沙箱，不是估算：
+
+| 模型族 | 样本数 | 耗时中位数 (s) | 峰值内存 (MB) | 推理 P95 (ms/行) | 放大后耗时 | 放大后内存 |
+|---|---|---|---|---|---|---|
+| logistic_regression | 30,000 | 2.34 | 175.14 | 0.013 | 3.28 s（1.40×） | 352.89（2.01×） |
+| hist_gradient_boosting | 30,000 | 2.45 | 179.17 | 0.032 | 7.36 s（3.00×） | 330.95（1.85×） |
+| random_forest | 30,000 | 5.45 | 178.32 | 0.112 | 29.69 s（5.44×） | 355.88（2.00×） |
+
+结论：样本量 10 倍时，内存约为 2×（主要来自 pandas 数据框常驻），耗时按模型复杂度分化——线性模型 1.4×、梯度提升 3.0×、随机森林 5.4×；三者都在 60s / 2GB 沙箱上限内。完整表格与口径说明见 `outputs/reports/resources.md`，复现命令 `python scripts/resource_benchmark.py`。
+
 ---
 
 ## 9. 遇到的挑战和解决方案
@@ -423,6 +436,7 @@ def build_pipeline(config):
 | **时间泄漏**：标签为「下月」违约，随机划分会让模型看到未来信息，指标虚高 | 时间外划分 + `PRECEDES` 约束强制 `Pipeline` 且 fit 仅 on train + AST 静态泄漏检查；test 集仅在终评使用一次 |
 | **无大模型 / 无额度时 demo 跑不起来** | `BaseLLM` 抽象 + `MockLLM` 规则模板为默认路径，真实 LLM 仅作增强，prompt 模板与输出 schema 落盘以保证确定性 |
 | **生成代码不可信** | 独立子进程沙箱 + 超时 / 内存限制 + AST import 白名单 + 临时目录 + 禁读标签路径；网络库（`socket` / `urllib` / `requests` / `httpx`）不在白名单内，生成代码无法 import 出网 |
+| **内存上限曾是纸面约束**：Windows 下 venv 的 `python.exe` 是 redirector，会再拉起真正的解释器子进程，只读父进程 RSS 只有 4MB 左右，看门狗永远不触发 | 改为对整棵进程树求和（`psutil.children(recursive=True)`），超限时按进程树终止；报告中峰值内存从 4MB 级假数据变为 170MB 级实测值，并新增 `test_peak_memory_covers_whole_process_tree`、`test_memory_limit_is_enforced` 两个回归用例 |
 | **知识图谱容易沦为静态展示** | 检索结果强制进入 Planner / Coder prompt，`PRECEDES` 参与验证，并做「有 KG / 无 KG」消融对比写入报告 |
 | **修复退化为反复重试** | 先做错误分类再按签名定向修复，最多 3 轮，每轮记录 `(错误签名, 修复动作, 结果)` 三元组 |
 | **敏感属性与公平性** | 敏感字段不入模，仅用于分组 AUC 审计，README 明确不作部署建议；把公平性做成 `Metric` 插件 |

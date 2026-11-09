@@ -86,11 +86,48 @@ except Exception:
 
 
 def process_memory_bytes(proc: subprocess.Popen[str]) -> int | None:
-    """用 psutil 跨平台读取子进程常驻内存；已退出或不可访问时返回 ``None``。"""
+    """用 psutil 跨平台读取子进程**进程树**的常驻内存之和。
+
+    Windows 下 ``sys.executable`` 若是 venv 的 redirector，会再拉起一个真正的
+    解释器子进程；只读 ``proc.pid`` 的 RSS 会得到 4MB 级别的假数据，内存上限
+    因此形同虚设。这里对整棵进程树求和，保证限额判定有效。
+    """
     try:
-        return int(psutil.Process(proc.pid).memory_info().rss)
+        root = psutil.Process(proc.pid)
+        total = int(root.memory_info().rss)
     except psutil.Error:
         return None
+    for child in _descendants(root):
+        try:
+            total += int(child.memory_info().rss)
+        except psutil.Error:
+            continue
+    return total
+
+
+def _descendants(root: psutil.Process) -> list[psutil.Process]:
+    """返回全部后代进程；子进程瞬间退出时返回已取到的部分。"""
+    try:
+        return root.children(recursive=True)
+    except psutil.Error:
+        return []
+
+
+def kill_process_tree(proc: subprocess.Popen[str]) -> None:
+    """终止子进程及其全部后代，避免只杀到 venv redirector 而留下真解释器。"""
+    try:
+        descendants = psutil.Process(proc.pid).children(recursive=True)
+    except psutil.Error:
+        descendants = []
+    for child in descendants:
+        try:
+            child.kill()
+        except psutil.Error:
+            continue
+    try:
+        proc.kill()
+    except OSError:
+        pass
 
 
 def _error_signature(stderr: str) -> str:
@@ -139,7 +176,7 @@ class SubprocessSandbox:
             try:
                 stdout, stderr = proc.communicate(timeout=self.runtime.timeout_seconds)
             except subprocess.TimeoutExpired:
-                proc.kill()
+                kill_process_tree(proc)
                 stdout, stderr = proc.communicate()
                 timed_out = True
             duration = time.monotonic() - started
@@ -190,9 +227,14 @@ class SubprocessSandbox:
                 state["peak"] = max(int(state["peak"]), usage)
                 if usage > limit_bytes:
                     state["exceeded"] = True
-                    proc.kill()
+                    kill_process_tree(proc)
                     return
             time.sleep(0.05)
 
 
-__all__ = ["SubprocessSandbox", "process_memory_bytes", "sandbox_env"]
+__all__ = [
+    "SubprocessSandbox",
+    "kill_process_tree",
+    "process_memory_bytes",
+    "sandbox_env",
+]

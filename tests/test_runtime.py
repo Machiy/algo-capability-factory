@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import os
 import unittest
 from pathlib import Path
 
@@ -63,6 +64,16 @@ def build_pipeline(config):
     for index in range(200000000):
         total += index
     return total
+'''
+
+# 分配 120MB 并用一段忙循环拖住生命周期，保证内存看门狗有采样窗口
+MEMORY_HEAVY_SOURCE = '''
+def build_pipeline(config):
+    blob = bytearray(120 * 1024 * 1024)
+    total = 0
+    for index in range(20000000):
+        total += index
+    return total + len(blob)
 '''
 
 
@@ -153,6 +164,25 @@ class SandboxTests(unittest.TestCase):
         self.assertTrue(result.timed_out)
         self.assertFalse(result.passed)
         self.assertEqual(result.error_signature, "Timeout")
+
+    def test_peak_memory_covers_whole_process_tree(self) -> None:
+        """回归：venv redirector 会再拉子进程，只读父进程 RSS 会得到 4MB 假数据。"""
+        check = self.checker.check(MEMORY_HEAVY_SOURCE)
+        self.assertTrue(check.passed, check.violations)
+        result = SubprocessSandbox(self.runtime).run(MEMORY_HEAVY_SOURCE, check)
+        self.assertTrue(result.passed, result.stderr)
+        self.assertIsNotNone(result.peak_memory_mb)
+        self.assertGreater(result.peak_memory_mb or 0.0, 50.0)
+
+    @unittest.skipUnless(os.name == "nt", "POSIX 下内存上限由 RLIMIT_AS 兜底")
+    def test_memory_limit_is_enforced(self) -> None:
+        runtime = RuntimeSettings(**{**self.runtime.model_dump(),
+                                     "memory_limit_mb": 100})
+        check = self.checker.check(MEMORY_HEAVY_SOURCE)
+        result = SubprocessSandbox(runtime).run(MEMORY_HEAVY_SOURCE, check)
+        self.assertTrue(result.memory_exceeded)
+        self.assertFalse(result.passed)
+        self.assertEqual(result.error_signature, "MemoryLimitExceeded")
 
     def test_runtime_settings_from_yaml(self) -> None:
         self.assertEqual(self.runtime.timeout_seconds, 60)
