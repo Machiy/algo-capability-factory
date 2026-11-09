@@ -10,6 +10,24 @@
 
 ---
 
+## 5 分钟验收路径
+
+> 无 GPU、无 Docker、无数据库、无需 API key；数据与 cassette 均已入库，**断网可跑**。
+
+| # | 命令 | 应看到 |
+|---|---|---|
+| 0 | `python -m venv .venv` → 激活（Windows `.venv\Scripts\activate`，Linux/macOS `source .venv/bin/activate`）→ `pip install -r requirements.txt` | 一次性安装完成，无需清单外依赖 |
+| 1 | `python -m ruff check .` | `All checks passed!` |
+| 2 | `python -m unittest discover -s tests` | `Ran 122 tests ... OK` |
+| 3 | `python -m factory run --spec "预测信用卡客户下月违约概率，时间外划分，按 5:1 成本比选阈值，禁止 ID 入模。"` | `四层全通过=True 理解来源=cassette 候选=3 修复=3`；最佳候选 HGB AUC 0.7843 |
+| 4 | `python -m factory run --spec "把短信分类为垃圾短信或正常短信，输出准确率与宏平均F1" --mock --task-config configs/verify_text.yaml --run-id text_demo --kg-out capabilities_text_after_run.json --gen-dir text` | `四层全通过=True`；linear_svc accuracy 0.9803 |
+
+**只看一个文件**：`outputs/reports/run_demo.md` —— 七步轨迹、检索证据、候选排名、四层结论、修复轨迹、图谱 diff 全在里面。
+**只看一处修复**：该报告第 4 节 `KeyError: PAY_1 → 按 Dataset 列名映射把 PAY_1 改为 PAY_0`（数据自带的 T1 陷阱，非人为埋 bug）。
+**只看图谱**：浏览器打开 `outputs/kg/kg.html`（PyVis 可视化），或 `outputs/kg/graph.graphml`（任意图工具）。
+
+---
+
 ## 核心闭环
 
 ```
