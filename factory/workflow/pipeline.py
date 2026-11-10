@@ -36,6 +36,7 @@ from factory.contracts.workflow import CandidateEvaluation, RunTrace, TestEvalua
 from factory.intake import IntakeGuide, SpecRejected, render_guidance
 from factory.knowledge import MockExtractor, read_sources
 from factory.knowledge.graph import load_graph
+from factory.knowledge.merge import merge_graphs
 from factory.llm import build_llm
 from factory.logging_setup import write_trace
 from factory.runtime import StaticChecker
@@ -114,10 +115,31 @@ def render_intake_section(guidance: IntakeGuidance | None) -> list[str]:
     return lines
 
 
+KG_DIFF_LABELS = {
+    "nodes_added": "新增节点",
+    "edges_added": "新增边",
+    "runs_recorded": "运行记录 ValidationRun（本次留痕，可随重跑覆盖）",
+    "failures_merged": "失败案例证据合并（独立 run 数累加）",
+    "lessons_promoted": "本次提升为教训（跨运行知识）",
+    "lessons_total": "图谱内教训总数",
+}
+
+
+def render_kg_diff(diff: dict[str, int]) -> list[str]:
+    """把图谱 diff 分成「知识」与「运行记录」两类，避免把日志当成沉淀成果。"""
+    if not diff:
+        return ["- 消融对照组不回写图谱（避免污染实验口径）"]
+    lines = ["> 运行记录只用于追溯、可被重跑覆盖；教训跨运行成立，随证据累积置信度。", ""]
+    for key, value in diff.items():
+        lines.append(f"- {KG_DIFF_LABELS.get(key, key)}：{value}")
+    return lines
+
+
 def render_run_report(trace: RunTrace, reports: list[ValidationReport],
                       rationale: str, path: Path, metric_name: str = "auc",
                       task_config: str = "verify_credit.yaml",
                       kg_path: str = "outputs/kg/capabilities_after_run.json",
+                      run_log_path: str = "",
                       text_mode: bool = False) -> Path:
     """生成端到端报告：七步轨迹、候选排名、修复轨迹、四层结论与图谱 diff。"""
     header = [
@@ -150,7 +172,7 @@ def render_run_report(trace: RunTrace, reports: list[ValidationReport],
         "> 的业务门槛；接口 / 功能 / 稳定性结论见第 3 节，失败记录已回写 FailureCase。",
         "",
         *render_intake_section(trace.intake),
-        "## 1. 检索证据（进入 Planner / Coder prompt）",
+        f"## 1. 检索证据（进入 Planner / Coder prompt，含 {len(trace.lessons)} 条系统级教训）",
         "",
         "```text",
         trace.retrieval_prompt,
@@ -208,12 +230,13 @@ def render_run_report(trace: RunTrace, reports: list[ValidationReport],
         for name, value in test_eval.metrics.items():
             value_text = "N/A" if value is None else f"{value:.4f}"
             lines.append(f"| {name} | {value_text} |")
-    lines.extend(["", "## 6. 图谱沉淀 diff", ""])
-    for key, value in trace.kg_diff.items():
-        lines.append(f"- {key}：{value}")
+    lines.extend(["", "## 6. 图谱沉淀（知识 vs 运行记录）", ""])
+    lines.extend(render_kg_diff(trace.kg_diff))
+    if run_log_path:
+        lines.extend(["", f"- 运行日志另存：`{run_log_path}`（仅追溯，不参与检索）"])
     lines.extend(["", "## 7. 产物", ""])
     lines.extend(f"- `{item}`" for item in trace.generated_files)
-    lines.append(f"- 回写图谱：`{kg_path}`")
+    lines.append(f"- 回写图谱（知识）：`{kg_path}`")
     lines.extend(["", trace.notes, ""])
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(lines), encoding="utf-8")
@@ -239,18 +262,25 @@ class Workflow:
         self.generated_subdir = generated_subdir
         after_run = root / settings.paths.kg / kg_filename
         loaded = load_graph(after_run) if use_knowledge else None
+        # 场景自带能力材料时抽自己的子图，避免把其他领域的约束注入 prompt；
+        # 共享材料（工程教训库）无论哪个场景都读，系统级知识不按场景切分
+        docs_dir = task.knowledge.docs or settings.paths.docs
+        legacy_dir = (task.knowledge.legacy if task.knowledge.docs
+                      else settings.paths.legacy)
+        shared = task.knowledge.shared or settings.knowledge.shared_docs
         if loaded is None:
-            # 场景自带能力材料时抽自己的子图，避免把其他领域的约束注入 prompt
-            docs_dir = task.knowledge.docs or settings.paths.docs
-            legacy_dir = (task.knowledge.legacy if task.knowledge.docs
-                          else settings.paths.legacy)
-            sources = read_sources(root, docs_dir, legacy_dir)
+            sources = read_sources(root, docs_dir, legacy_dir, shared)
             graph = MockExtractor(task.dataset_profile).extract(sources)
             self.graph_source = "sources"
         else:
-            graph = loaded
-            self.graph_source = "after_run"
-            logger.info("加载上一轮回写图谱：%s（%d 节点）", after_run, len(loaded.nodes))
+            # 材料知识以最新抽取为准，运行沉淀（失败案例 / 教训 / 能力版本）叠加其上。
+            # 直接整份沿用旧图谱会让新增材料与新增教训规则永远不生效。
+            fresh = MockExtractor(task.dataset_profile).extract(
+                read_sources(root, docs_dir, legacy_dir, shared))
+            graph = merge_graphs(fresh, loaded)
+            self.graph_source = "sources+after_run"
+            logger.info("加载上一轮回写图谱：%s（%d 节点），与材料抽取合并",
+                        after_run, len(loaded.nodes))
         # 入口引导：描述不可执行时先追问 / 给示例，不把噪声直接灌进七步闭环。
         # 判据来自两个 yaml 的 intake 段，本类只负责编排。
         self.intake = IntakeGuide(
@@ -284,13 +314,15 @@ class Workflow:
         checker = StaticChecker(settings.runtime, task.dataset)
         self.interpreter = Interpreter(llm, settings.llm)
         self.retriever = Retriever(graph, settings.knowledge.top_k,
-                                   settings.knowledge.weights)
+                                   settings.knowledge.weights,
+                                   settings.knowledge.lesson_prompt_limit)
         self.planner = Planner(llm, settings.workflow.beam_width)
         self.coder = Coder(llm, checker)
         self.reviewer = Reviewer(checker)
         self.verifier = Verifier(FourLayerValidator(task))
         self.repairer = Repairer(llm)
-        self.curator = Curator(graph, llm)
+        self.curator = Curator(graph, llm,
+                               settings.knowledge.lesson_promote_threshold)
         self.sandbox = DatasetSandbox(
             settings.runtime, task.split, data_path,
             task.dataset.target, sorted(excluded), n_samples,
@@ -357,6 +389,7 @@ class Workflow:
             retrieval = RetrievalResult(query=state["spec_text"], top_k=0)
         trace = state["trace"]
         trace.retrieval_prompt = retrieval.as_prompt_context()
+        trace.lessons = list(retrieval.lessons)
         trace.kg_mode = "with_kg" if self.use_knowledge else "without_kg"
         trace.graph_source = self.graph_source
         trace.steps.append(SEVEN_STEPS[1])
@@ -489,9 +522,13 @@ class Workflow:
 
     def _n_sink(self, state: _GraphState) -> dict:
         trace = state["trace"]
+        run_log_path = ""
         if self.use_knowledge:
             kg_out = self.root / self.settings.paths.kg / self.kg_filename
             trace.kg_diff = self.curator.sink(trace, state["reports"], kg_out)
+            if self.curator.last_run_log_path is not None:
+                run_log_path = self.curator.last_run_log_path.relative_to(
+                    self.root).as_posix()
         else:
             # 消融对照组不回写，避免污染实验
             trace.kg_diff = {}
@@ -512,6 +549,7 @@ class Workflow:
             metric_name=self.metric_name,
             task_config=Path(self.task_config).name,
             kg_path=f"{self.settings.paths.kg}/{self.kg_filename}",
+            run_log_path=run_log_path,
             text_mode=bool(self.text_column),
         ).relative_to(self.root).as_posix()
         write_trace(
@@ -611,4 +649,5 @@ def run_from_cli(spec_text: str, mock: bool = False,
     return 0
 
 
-__all__ = ["Workflow", "render_intake_section", "render_run_report", "run_from_cli"]
+__all__ = ["Workflow", "render_intake_section", "render_kg_diff",
+           "render_run_report", "run_from_cli"]

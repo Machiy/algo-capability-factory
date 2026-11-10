@@ -43,8 +43,9 @@ class KnowledgeLayerTests(unittest.TestCase):
         build_knowledge_graph(cls.settings, ROOT, dataset_profile=cls.profile)
 
     def test_source_materials_complete(self) -> None:
-        self.assertEqual(len(self.sources), 7)
-        self.assertEqual(len({doc.doc_type for doc in self.sources}), 7)
+        # 6 份业务材料 + 1 份工程教训库（系统层面知识，跨场景共享）
+        self.assertEqual(len(self.sources), 8)
+        self.assertEqual(len({doc.doc_type for doc in self.sources}), 8)
         for doc in self.sources:
             with self.subTest(path=doc.path):
                 self.assertTrue(doc.content)
@@ -59,7 +60,8 @@ class KnowledgeLayerTests(unittest.TestCase):
         self.assertEqual(len(self.graph.node_index()), len(self.graph.nodes))
 
     def test_m1_schema_coverage(self) -> None:
-        self.assertEqual(len(NodeType), 9)
+        # 9 类节点 + Lesson（教训）：知识层与运行日志层在 schema 上就分开
+        self.assertEqual(len(NodeType), 10)
         self.assertEqual(len(EdgeType), 13)
         used = {edge.edge_type for edge in self.graph.edges}
         # 源材料里没有验证运行记录，HAS_RUN / RESULTED_IN / DERIVED_FROM 由

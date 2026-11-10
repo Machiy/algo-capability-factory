@@ -18,11 +18,12 @@ from pathlib import Path
 
 from factory.agents.templates import list_templates, render
 from factory.config import LLMSettings
-from factory.contracts.knowledge import KnowledgeGraph, RetrievalResult
+from factory.contracts.knowledge import KGNode, KnowledgeGraph, RetrievalResult
 from factory.contracts.llm import LLMRequest
 from factory.contracts.models import CandidatePlan, CapabilitySpec, TaskType, ValidationReport
 from factory.contracts.validation import MetricResult, StaticCheckResult
 from factory.contracts.workflow import DatasetRunResult, RepairRecord, RunTrace
+from factory.knowledge.lessons import confidence_for, promote_failures
 from factory.knowledge.retrieval import HybridRetriever
 from factory.llm.base import BaseLLM
 from factory.llm.demo import SYSTEM_PROMPT, build_demo_request
@@ -211,8 +212,8 @@ class Retriever:
     """b. 从能力图谱检索证据。"""
 
     def __init__(self, graph: KnowledgeGraph, top_k: int,
-                 weights: dict[str, float]) -> None:
-        self._retriever = HybridRetriever(graph, top_k, weights)
+                 weights: dict[str, float], lesson_limit: int = 5) -> None:
+        self._retriever = HybridRetriever(graph, top_k, weights, lesson_limit)
 
     def retrieve(self, description: str) -> RetrievalResult:
         return self._retriever.retrieve(description)
@@ -429,12 +430,55 @@ class Repairer:
         return fixed, record
 
 
-class Curator:
-    """g. 回写 ValidationRun / FailureCase / 能力新版本，产出图谱 diff。"""
+def _run_ids_of(node: KGNode) -> list[str]:
+    """失败案例的证据 run 列表；兼容早期只写了单个 ``run_id`` 的节点。"""
+    runs = [str(item) for item in node.attributes.get("run_ids") or []]
+    single = node.attributes.get("run_id")
+    if single and str(single) not in runs:
+        runs.append(str(single))
+    return runs
 
-    def __init__(self, graph: KnowledgeGraph, llm: BaseLLM) -> None:
+
+def _accumulate_failure(node: KGNode, run_id: str, fix: str) -> KGNode:
+    """累加失败案例的独立 run 数；同一 run 重跑视为同一条证据。"""
+    attributes = dict(node.attributes)
+    runs = _run_ids_of(node)
+    if run_id not in runs:
+        runs.append(run_id)
+    attributes["run_ids"] = runs
+    attributes["occurrences"] = len(runs)
+    if fix and not attributes.get("fix_strategy"):
+        attributes["fix_strategy"] = fix
+    return node.model_copy(update={"attributes": attributes})
+
+
+def _refresh_lesson(node: KGNode, observed: dict[str, int]) -> KGNode:
+    """已沉淀的教训随新证据更新次数与置信度，而不是产生同义新节点。"""
+    signatures = [str(item) for item in node.attributes.get("signatures") or []]
+    occurrences = int(node.attributes.get("occurrences") or 1)
+    seen = max([observed.get(signature, 0) for signature in signatures] or [0])
+    if seen <= occurrences:
+        return node
+    attributes = {**node.attributes, "occurrences": seen,
+                  "confidence": confidence_for(seen)}
+    return node.model_copy(update={"attributes": attributes})
+
+
+class Curator:
+    """g. 沉淀：运行日志留痕，教训与能力版本才是可复用知识。
+
+    分工明确——``ValidationRun`` 记录「某次跑了什么」，同一 run 重跑覆盖；
+    失败案例按错误签名累积**独立 run 数**，达到阈值后提升为 ``Lesson``；
+    能力版本只记录「因为哪条教训、修了哪些签名」，避免空壳版本节点。
+    """
+
+    def __init__(self, graph: KnowledgeGraph, llm: BaseLLM,
+                 lesson_threshold: int = 2) -> None:
         self.graph = graph
         self.llm = llm
+        self.lesson_threshold = lesson_threshold
+        # 运行日志（ValidationRun）单独落盘，交付图谱只保留知识节点
+        self.last_run_log_path: Path | None = None
 
     def sink(self, trace: RunTrace, reports: list[ValidationReport],
              out_path: Path) -> dict[str, int]:
@@ -448,13 +492,25 @@ class Curator:
         )
         run_prefix = f"run.{trace.run_id}."
 
-        # 失败案例按错误签名跨 run 累积：签名已在图里就复用，不再重复造节点
-        existing_failures = {
-            node.attributes.get("error_signature"): node.node_id
+        # 失败案例按签名累积「独立 run 数」：同一 run 重跑不重复计数，保证幂等，
+        # 也就不会让一次偶发失败凭重跑次数变成「知识」
+        failure_by_signature = {
+            str(node.attributes.get("error_signature")): node
             for node in nodes if node.node_type is NodeType.FAILURE_CASE
         }
+        merged = 0
+        for repair in trace.repairs:
+            node = failure_by_signature.get(repair.error_signature)
+            if node is None:
+                continue
+            updated = _accumulate_failure(node, trace.run_id, repair.fix_strategy)
+            if updated.attributes != node.attributes:
+                nodes = [updated if item.node_id == node.node_id else item
+                         for item in nodes]
+                failure_by_signature[repair.error_signature] = updated
+                merged += 1
         new_signatures = {repair.error_signature for repair in trace.repairs} - set(
-            existing_failures
+            failure_by_signature
         )
 
         # 只有出现新失败签名才升版本：没有新经验时保留既有版本节点，
@@ -499,35 +555,59 @@ class Curator:
                                     edge_type=EdgeType.HAS_RUN))
         failure_ids: list[str] = []
         for index, repair in enumerate(trace.repairs, start=1):
-            known = existing_failures.get(repair.error_signature)
+            known = failure_by_signature.get(repair.error_signature)
             if known is not None:
-                failure_ids.append(known)
+                failure_ids.append(known.node_id)
                 continue
             failure_id = f"failure.{trace.run_id}.{index:02d}"
             failure_ids.append(failure_id)
-            existing_failures[repair.error_signature] = failure_id
-            nodes.append(KGNode(
+            node = KGNode(
                 node_id=failure_id, node_type=NodeType.FAILURE_CASE,
                 name=f"失败案例 {repair.error_signature}",
                 attributes={"error_signature": repair.error_signature,
                             "fix_strategy": repair.fix_strategy,
                             "repair_round": repair.round,
                             "run_id": trace.run_id,
-                            "occurrence": 1},
-            ))
+                            "run_ids": [trace.run_id],
+                            "occurrences": 1},
+            )
+            failure_by_signature[repair.error_signature] = node
+            nodes.append(node)
             if anchor:
                 edges.append(KGEdge(source=anchor, target=failure_id,
                                     edge_type=EdgeType.RESULTED_IN))
+        # 教训优先于版本：先把累积够次数的失败案例提升为系统级知识，
+        # 版本节点再引用这些教训，形成「现象 → 教训 → 修复」的可追溯链路
+        interim = self.graph.model_copy(update={"nodes": nodes, "edges": edges})
+        records, lesson_nodes, lesson_edges = promote_failures(interim,
+                                                               self.lesson_threshold)
+        nodes.extend(lesson_nodes)
+        edges.extend(lesson_edges)
+        observed = {
+            str(node.attributes.get("error_signature")):
+                int(node.attributes.get("occurrences") or 1)
+            for node in nodes if node.node_type is NodeType.FAILURE_CASE
+        }
+        nodes = [_refresh_lesson(node, observed) if node.node_type is NodeType.LESSON
+                 else node for node in nodes]
+
         if anchor and failure_ids and upgraded is not None:
             # 上一版本：v2 指向原始能力，v3 起指向前一版，形成版本链
             previous = (f"{anchor}.v{next_version - 1}"
                         if next_version > 2 else anchor)
+            fixed = sorted(str(item) for item in new_signatures)
+            related = [node.node_id for node in nodes
+                       if node.node_type is NodeType.LESSON
+                       and set(node.attributes.get("signatures") or []) & set(fixed)]
             nodes.append(KGNode(
                 node_id=upgraded, node_type=NodeType.CAPABILITY,
-                name="修复后的能力版本", version=f"v{next_version}",
+                name=f"修复后的能力版本（{'、'.join(fixed)}）",
+                version=f"v{next_version}",
                 attributes={"derived_from": previous,
                             "run_id": trace.run_id,
-                            "repair_rounds": len(trace.repairs)},
+                            "repair_rounds": len(trace.repairs),
+                            "fixed_signatures": fixed,
+                            "lesson_ids": related},
             ))
             edges.append(KGEdge(source=upgraded, target=previous,
                                 edge_type=EdgeType.DERIVED_FROM))
@@ -535,12 +615,34 @@ class Curator:
                                 edge_type=EdgeType.FIXED_BY))
         updated = self.graph.model_copy(update={"nodes": nodes, "edges": edges})
         updated.validate_references()
-        KnowledgeGraphStore(updated).export_json(out_path)
-        request = LLMRequest(role="Curator", system=SYSTEM_PROMPTS["Curator"],
-                             user=f"回写 {len(nodes)} 节点，修复 {len(trace.repairs)} 轮")
+        lessons_total = sum(1 for node in nodes if node.node_type is NodeType.LESSON)
+        # 交付图谱只留知识：本轮产生的运行日志另存一个文件，避免「一打开沉淀
+        # 产物全是 run.xxx」。材料里的历史实验记录属于证据型知识，仍留在图谱中。
+        log_ids = {f"{run_prefix}{index:02d}" for index in range(1, len(reports) + 1)}
+        knowledge_nodes = [node for node in nodes if node.node_id not in log_ids]
+        knowledge_ids = {node.node_id for node in knowledge_nodes}
+        knowledge_edges = [edge for edge in edges
+                           if edge.source in knowledge_ids and edge.target in knowledge_ids]
+        KnowledgeGraphStore(KnowledgeGraph(
+            nodes=knowledge_nodes, edges=knowledge_edges,
+            source_files=list(updated.source_files),
+        )).export_json(out_path)
+        self.last_run_log_path = out_path.with_name(f"{out_path.stem}_runs.json")
+        KnowledgeGraphStore(KnowledgeGraph(
+            nodes=[node for node in nodes if node.node_id in log_ids],
+        )).export_json(self.last_run_log_path)
+        request = LLMRequest(
+            role="Curator", system=SYSTEM_PROMPTS["Curator"],
+            user=(f"回写 {len(nodes)} 节点（教训 {lessons_total} 条），"
+                  f"修复 {len(trace.repairs)} 轮"),
+        )
         self.llm.complete(request)
         return {"nodes_added": len(nodes) - len(self.graph.nodes),
-                "edges_added": len(edges) - len(self.graph.edges)}
+                "edges_added": len(edges) - len(self.graph.edges),
+                "runs_recorded": len(reports),
+                "failures_merged": merged,
+                "lessons_promoted": len(records),
+                "lessons_total": lessons_total}
 
     def explain(self, trace: RunTrace) -> str:
         """自然语言解释方案设计依据（加分项）。"""

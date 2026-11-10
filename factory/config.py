@@ -73,7 +73,14 @@ class KnowledgeSettings(_ConfigModel):
     graph_path: str
     sqlite_path: str
     extraction_results: list[str] = Field(default_factory=list)
+    # 跨场景共享的材料：工程教训库这类系统级知识，换任务也要继续生效
+    shared_docs: list[str] = Field(default_factory=list)
     retrieval: RetrievalSettings = Field(default_factory=RetrievalSettings)
+    # 同一错误签名在多少个独立 run 中出现后，才允许提升为跨运行的教训；
+    # 阈值设在配置里，避免把「偶发一次失败」直接写成知识
+    lesson_promote_threshold: int = Field(default=2, ge=1)
+    # 注入 prompt 的教训条数上限：教训要生效，不能把上下文挤爆
+    lesson_prompt_limit: int = Field(default=5, ge=0)
 
     @property
     def top_k(self) -> int:
@@ -163,6 +170,8 @@ class KnowledgeSourceSettings(_ConfigModel):
 
     docs: str = ""
     legacy: str = ""
+    # 场景可额外声明共享材料；留空则沿用 default.yaml 的 knowledge.shared_docs
+    shared: list[str] = Field(default_factory=list)
 
 
 class IntakeElementSettings(_ConfigModel):

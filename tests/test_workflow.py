@@ -282,7 +282,8 @@ class DatasetSandboxTests(unittest.TestCase):
 
 
 class CuratorTests(unittest.TestCase):
-    def test_sink_adds_validation_and_failure_nodes(self) -> None:
+    def test_sink_splits_knowledge_from_run_log(self) -> None:
+        """交付图谱只留知识，运行日志另存一个文件 —— 避免「沉淀产物全是日志」。"""
         settings = load_settings(CONFIG)
         sources = read_sources(ROOT, settings.paths.docs, settings.paths.legacy)
         graph = MockExtractor().extract(sources)
@@ -297,15 +298,21 @@ class CuratorTests(unittest.TestCase):
             out = Path(tmp) / "kg.json"
             diff = curator.sink(trace, reports, out)
             payload = json.loads(out.read_text(encoding="utf-8"))
+            run_log = json.loads((Path(tmp) / "kg_runs.json").read_text(encoding="utf-8"))
         self.assertGreater(diff["nodes_added"], 0)
         self.assertGreater(diff["edges_added"], 0)
-        self.assertGreater(len(payload["nodes"]), len(graph.nodes))
+        node_ids = {node["node_id"] for node in payload["nodes"]}
+        node_types = {node["node_type"] for node in payload["nodes"]}
+        # 本轮运行日志不进交付图谱；材料里的历史实验记录仍作为证据保留
+        self.assertNotIn("run.unit.01", node_ids)
+        self.assertIn("FailureCase", node_types)
+        self.assertEqual(diff["runs_recorded"], len(reports))
+        self.assertEqual([node["node_type"] for node in run_log["nodes"]],
+                         ["ValidationRun"] * len(reports))
         edge_types = {edge["edge_type"] for edge in payload["edges"]}
-        self.assertIn("HAS_RUN", edge_types)
+        self.assertIn("RESULTED_IN", edge_types)
         self.assertIn("DERIVED_FROM", edge_types)
         self.assertIn("FIXED_BY", edge_types)
-        # 回写后应覆盖 schema 的绝大多数关系（源图谱只有 10 类）
-        self.assertGreaterEqual(len(edge_types), 12)
 
 
 class PersistenceTests(unittest.TestCase):
@@ -362,8 +369,12 @@ class PersistenceTests(unittest.TestCase):
             second_path = Path(tmp) / "b.json"
             second.sink(trace, reports, second_path)
             graph_after_second = load_graph(second_path)
+            first_log = json.loads((Path(tmp) / "a_runs.json").read_text(encoding="utf-8"))
+            second_log = json.loads((Path(tmp) / "b_runs.json").read_text(encoding="utf-8"))
         self.assertEqual(len(graph_after_second.nodes), len(graph_after_first.nodes))
         self.assertEqual(len(graph_after_second.edges), len(graph_after_first.edges))
+        # 知识图与运行日志都幂等：同一 run 重跑不膨胀
+        self.assertEqual(len(second_log["nodes"]), len(first_log["nodes"]))
 
 
 class WorkflowConfigTests(unittest.TestCase):

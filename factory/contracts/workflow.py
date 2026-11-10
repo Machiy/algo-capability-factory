@@ -62,6 +62,8 @@ class RunTrace(_StrictModel):
     spec: str
     steps: list[str] = Field(default_factory=list)
     retrieval_prompt: str = ""
+    # 本次注入 prompt 的系统级教训（跨运行知识），与 failure_warnings 分开留证
+    lessons: list[str] = Field(default_factory=list)
     # 入口引导结论：证明「用户输入被体检过」，CLARIFY 也可继续运行
     intake: IntakeGuidance | None = None
     candidates: list[CandidateEvaluation] = Field(default_factory=list)

@@ -426,6 +426,423 @@
           "doc_type": "风控策略"
         }
       ]
+    },
+    {
+      "node_id": "evidence.engineering_lessons",
+      "node_type": "Evidence",
+      "name": "证据源：assets/docs/engineering_lessons.md",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "path": "assets/docs/engineering_lessons.md",
+        "doc_type": "工程教训",
+        "file_sha256": "53dda1833ae55b0db5fbf9e6338976ef89feb21142a2fe4a861b8a4fca584ed9"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/engineering_lessons.md",
+          "excerpt": "# 工程教训库（系统层面）\n\n本文件记录本项目在真实运行中踩过、且**换任务依然成立**的系统级坑点与教训。\n与 `assets/docs/data_dictionary.md` 的已知数据问题（T1–T4）不同：那四条只对\n信用卡数据集成立，本文件的条目属于平台、沙箱、验证语义、图谱与 LLM 通路。\n\n一条合格的教训必须同时给出：**现象**（能观测到什么）、**根因**（系统层面，\n不是这一",
+          "sha256": "25c793eb72a110e210e9419131a225f383f9e2f006490da3a3a568e9fa3065ec",
+          "doc_type": "工程教训"
+        }
+      ]
+    },
+    {
+      "node_id": "lesson.engineering_lessons.LE1",
+      "node_type": "Lesson",
+      "name": "[LE1] 内存看门狗永不触发，占用早已超过 2GB 仍判定通过",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "LE1",
+        "scope": "runtime",
+        "scope_label": "运行环境",
+        "symptom": "内存看门狗永不触发，占用早已超过 2GB 仍判定通过",
+        "root_cause": "Windows 虚拟环境里的 `python.exe` 是重定向器，读父进程 RSS 只有约 4MB，按单进程计量完全失真",
+        "action": "改为 `psutil.Process.children(recursive=True)` 对整棵进程树求和，超限即终止子进程",
+        "prevention": "资源基准与四层验证共用同一套内存口径，并构造超限用例验证看门狗真的会触发",
+        "applies_to": "跨场景通用",
+        "section": "教训速查",
+        "record_kind": "knowledge",
+        "occurrences": 1,
+        "run_ids": [],
+        "signatures": [],
+        "confidence": 0.9,
+        "source": "seeded"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/engineering_lessons.md",
+          "excerpt": "| LE1 | 运行环境 | 内存看门狗永不触发，占用早已超过 2GB 仍判定通过 | Windows 虚拟环境里的 `python.exe` 是重定向器，读父进程 RSS 只有约 4MB，按单进程计量完全失真 | 改为 `psutil.Process.children(recursive=True)` 对整棵进程树求和，超限即终止子进程 | 资源基准与四层验证共用同一套内存口径，并构造超限用例验证看门狗真的会触发 | 跨场景通用 |",
+          "sha256": "96208b52581c50243a9eb4729e29d5385c55b256a57835669a12ba3b102e7c2e",
+          "doc_type": "工程教训"
+        }
+      ]
+    },
+    {
+      "node_id": "lesson.engineering_lessons.LE2",
+      "node_type": "Lesson",
+      "name": "[LE2] 本地跑通的 CLI 断言在 CI 上随机失败",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "LE2",
+        "scope": "platform",
+        "scope_label": "平台",
+        "symptom": "本地跑通的 CLI 断言在 CI 上随机失败",
+        "root_cause": "Typer 检测到终端后自动着色，输出里混入 ANSI 转义序列，按纯文本匹配必然失配",
+        "action": "子进程设 `NO_COLOR=1`、`TERM=dumb`，断言前统一剥离 ANSI",
+        "prevention": "所有 CLI 断言走同一个输出归一化函数，不各写一份",
+        "applies_to": "跨场景通用",
+        "section": "教训速查",
+        "record_kind": "knowledge",
+        "occurrences": 1,
+        "run_ids": [],
+        "signatures": [],
+        "confidence": 0.9,
+        "source": "seeded"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/engineering_lessons.md",
+          "excerpt": "| LE2 | 平台 | 本地跑通的 CLI 断言在 CI 上随机失败 | Typer 检测到终端后自动着色，输出里混入 ANSI 转义序列，按纯文本匹配必然失配 | 子进程设 `NO_COLOR=1`、`TERM=dumb`，断言前统一剥离 ANSI | 所有 CLI 断言走同一个输出归一化函数，不各写一份 | 跨场景通用 |",
+          "sha256": "07c16afc6ec01ecf7e67bcfc4c299c3dd9a3c22887b898840736de73bf559908",
+          "doc_type": "工程教训"
+        }
+      ]
+    },
+    {
+      "node_id": "lesson.engineering_lessons.LE3",
+      "node_type": "Lesson",
+      "name": "[LE3] 证据 SHA-256 在 Windows 上校验失败，Linux 正常",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "LE3",
+        "scope": "platform",
+        "scope_label": "平台",
+        "symptom": "证据 SHA-256 在 Windows 上校验失败，Linux 正常",
+        "root_cause": "Git 检出的换行是 CRLF，与原文 LF 不同，同一内容算出不同哈希",
+        "action": "`read_sources` 读入后归一化换行再计算哈希",
+        "prevention": "哈希只对归一化后的文本计算，测试重算时复用同一入口",
+        "applies_to": "跨场景通用",
+        "section": "教训速查",
+        "record_kind": "knowledge",
+        "occurrences": 1,
+        "run_ids": [],
+        "signatures": [],
+        "confidence": 0.9,
+        "source": "seeded"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/engineering_lessons.md",
+          "excerpt": "| LE3 | 平台 | 证据 SHA-256 在 Windows 上校验失败，Linux 正常 | Git 检出的换行是 CRLF，与原文 LF 不同，同一内容算出不同哈希 | `read_sources` 读入后归一化换行再计算哈希 | 哈希只对归一化后的文本计算，测试重算时复用同一入口 | 跨场景通用 |",
+          "sha256": "27dc406651cc2bcf9464e36f574f769b1de15068a45cb3065e61b7fca83b994d",
+          "doc_type": "工程教训"
+        }
+      ]
+    },
+    {
+      "node_id": "lesson.engineering_lessons.LE4",
+      "node_type": "Lesson",
+      "name": "[LE4] 报告写着四层验证，实际只有两层在生效：确定性恒为 True，test 段从未被读取",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "LE4",
+        "scope": "validation",
+        "scope_label": "验证",
+        "symptom": "报告写着四层验证，实际只有两层在生效：确定性恒为 True，test 段从未被读取",
+        "root_cause": "检查项只存在于报告字段里，没有代码真正读取对应输入",
+        "action": "沙箱支持 `repeat>=2` 的同进程二次 fit 与 `segment=\"test\"`；工作流在候选比较结束后消费一次 test",
+        "prevention": "每个检查项都必须配一个「不通过」的构造用例，否则不许写进报告",
+        "applies_to": "跨场景通用",
+        "section": "教训速查",
+        "record_kind": "knowledge",
+        "occurrences": 1,
+        "run_ids": [],
+        "signatures": [],
+        "confidence": 0.9,
+        "source": "seeded"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/engineering_lessons.md",
+          "excerpt": "| LE4 | 验证 | 报告写着四层验证，实际只有两层在生效：确定性恒为 True，test 段从未被读取 | 检查项只存在于报告字段里，没有代码真正读取对应输入 | 沙箱支持 `repeat>=2` 的同进程二次 fit 与 `segment=\"test\"`；工作流在候选比较结束后消费一次 test | 每个检查项都必须配一个「不通过」的构造用例，否则不许写进报告 | 跨场景通用 |",
+          "sha256": "6e6192a6458d7c60f4ab8914d1bb2b2448e6d8ba8f1f5aa1b22c61c7e9266bbe",
+          "doc_type": "工程教训"
+        }
+      ]
+    },
+    {
+      "node_id": "lesson.engineering_lessons.LE5",
+      "node_type": "Lesson",
+      "name": "[LE5] 边很多，但追问「这两点为什么相连」答不出来",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "LE5",
+        "scope": "knowledge",
+        "scope_label": "图谱",
+        "symptom": "边很多，但追问「这两点为什么相连」答不出来",
+        "root_cause": "连边按 `index % len(metrics)` 轮转，与内容无关，属于凑数量",
+        "action": "改为名称或属性文本命中才连边，宁可边少",
+        "prevention": "每条边都要能回答「凭什么连」，答不出就删",
+        "applies_to": "跨场景通用",
+        "section": "教训速查",
+        "record_kind": "knowledge",
+        "occurrences": 1,
+        "run_ids": [],
+        "signatures": [],
+        "confidence": 0.9,
+        "source": "seeded"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/engineering_lessons.md",
+          "excerpt": "| LE5 | 图谱 | 边很多，但追问「这两点为什么相连」答不出来 | 连边按 `index % len(metrics)` 轮转，与内容无关，属于凑数量 | 改为名称或属性文本命中才连边，宁可边少 | 每条边都要能回答「凭什么连」，答不出就删 | 跨场景通用 |",
+          "sha256": "8cec1bd46fc5ade6f9aa00d2fa7237e4afa42f221b8cef4dd79a00aba7c632fa",
+          "doc_type": "工程教训"
+        }
+      ]
+    },
+    {
+      "node_id": "lesson.engineering_lessons.LE6",
+      "node_type": "Lesson",
+      "name": "[LE6] 修复退化成反复重试，同一错误连修三轮仍失败",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "LE6",
+        "scope": "workflow",
+        "scope_label": "编排",
+        "symptom": "修复退化成反复重试，同一错误连修三轮仍失败",
+        "root_cause": "没有先分类错误签名，直接整段重新生成代码",
+        "action": "建立「签名 → 策略」表，只改必要片段，最多 3 轮",
+        "prevention": "每轮修复必须记录签名与策略，重复签名立即停止该路线",
+        "applies_to": "跨场景通用",
+        "section": "教训速查",
+        "record_kind": "knowledge",
+        "occurrences": 1,
+        "run_ids": [],
+        "signatures": [],
+        "confidence": 0.9,
+        "source": "seeded"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/engineering_lessons.md",
+          "excerpt": "| LE6 | 编排 | 修复退化成反复重试，同一错误连修三轮仍失败 | 没有先分类错误签名，直接整段重新生成代码 | 建立「签名 → 策略」表，只改必要片段，最多 3 轮 | 每轮修复必须记录签名与策略，重复签名立即停止该路线 | 跨场景通用 |",
+          "sha256": "d27f6f23b7ad7fc17c3d4ea195c261423399ce5028ccc1759d4e354766f451fb",
+          "doc_type": "工程教训"
+        }
+      ]
+    },
+    {
+      "node_id": "lesson.engineering_lessons.LE7",
+      "node_type": "Lesson",
+      "name": "[LE7] 传入 `../../x` 的请求能把产物写到仓库外",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "LE7",
+        "scope": "platform",
+        "scope_label": "平台",
+        "symptom": "传入 `../../x` 的请求能把产物写到仓库外",
+        "root_cause": "把用户输入原样拼进文件名，只做了字符串拼接",
+        "action": "接口层做字符集 pattern 校验并拒绝 `..`，工作流侧再兜底一次",
+        "prevention": "任何用户输入进入路径前先校验字符集与相对路径，双层校验",
+        "applies_to": "跨场景通用",
+        "section": "教训速查",
+        "record_kind": "knowledge",
+        "occurrences": 1,
+        "run_ids": [],
+        "signatures": [],
+        "confidence": 0.9,
+        "source": "seeded"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/engineering_lessons.md",
+          "excerpt": "| LE7 | 平台 | 传入 `../../x` 的请求能把产物写到仓库外 | 把用户输入原样拼进文件名，只做了字符串拼接 | 接口层做字符集 pattern 校验并拒绝 `..`，工作流侧再兜底一次 | 任何用户输入进入路径前先校验字符集与相对路径，双层校验 | 跨场景通用 |",
+          "sha256": "74cd70e4e87b9d81746b7583965d6ebe8b02cc52a72ecf90e891b5c4814d38c7",
+          "doc_type": "工程教训"
+        }
+      ]
+    },
+    {
+      "node_id": "lesson.engineering_lessons.LE8",
+      "node_type": "Lesson",
+      "name": "[LE8] 报告里把离线回放说成实时调用，评审无法区分",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "LE8",
+        "scope": "llm",
+        "scope_label": "LLM",
+        "symptom": "报告里把离线回放说成实时调用，评审无法区分",
+        "root_cause": "响应来源没有落到产物里，只在日志里出现",
+        "action": "把来源写进 `RunTrace.interpreter_source`，报告逐条标注",
+        "prevention": "任何「实测」结论必须能追溯来源，回放内容单独标注",
+        "applies_to": "跨场景通用",
+        "section": "教训速查",
+        "record_kind": "knowledge",
+        "occurrences": 1,
+        "run_ids": [],
+        "signatures": [],
+        "confidence": 0.9,
+        "source": "seeded"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/engineering_lessons.md",
+          "excerpt": "| LE8 | LLM | 报告里把离线回放说成实时调用，评审无法区分 | 响应来源没有落到产物里，只在日志里出现 | 把来源写进 `RunTrace.interpreter_source`，报告逐条标注 | 任何「实测」结论必须能追溯来源，回放内容单独标注 | 跨场景通用 |",
+          "sha256": "5fa155899daa05def9065a57ea6d44e519ce806c2f251d9d984faac2d5c044a0",
+          "doc_type": "工程教训"
+        }
+      ]
+    },
+    {
+      "node_id": "lesson.engineering_lessons.LE9",
+      "node_type": "Lesson",
+      "name": "[LE9] Coder 明明调用了 LLM，产物却全是模板代码",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "LE9",
+        "scope": "llm",
+        "scope_label": "LLM",
+        "symptom": "Coder 明明调用了 LLM，产物却全是模板代码",
+        "root_cause": "LLM 返回的代码没过静态检查就被丢弃，且丢弃原因没有留痕",
+        "action": "先过 AST 白名单与契约检查，通过即采用；失败回退模板并写 `code_sources`",
+        "prevention": "回退路径必须写进 trace，不能静默回退",
+        "applies_to": "跨场景通用",
+        "section": "教训速查",
+        "record_kind": "knowledge",
+        "occurrences": 1,
+        "run_ids": [],
+        "signatures": [],
+        "confidence": 0.9,
+        "source": "seeded"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/engineering_lessons.md",
+          "excerpt": "| LE9 | LLM | Coder 明明调用了 LLM，产物却全是模板代码 | LLM 返回的代码没过静态检查就被丢弃，且丢弃原因没有留痕 | 先过 AST 白名单与契约检查，通过即采用；失败回退模板并写 `code_sources` | 回退路径必须写进 trace，不能静默回退 | 跨场景通用 |",
+          "sha256": "1be07bf69797e3ba1bf08baf66a6ca48f916dbc809bbf758a4f7be95f5597f94",
+          "doc_type": "工程教训"
+        }
+      ]
+    },
+    {
+      "node_id": "lesson.engineering_lessons.LE10",
+      "node_type": "Lesson",
+      "name": "[LE10] 同一候选两次 fit 的指标不同，报告却声称确定性通过",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "LE10",
+        "scope": "runtime",
+        "scope_label": "运行环境",
+        "symptom": "同一候选两次 fit 的指标不同，报告却声称确定性通过",
+        "root_cause": "随机种子未固定，或同一进程重复 fit 带来状态污染",
+        "action": "显式固定 `random_state`，并在子进程内二次 fit 比较输出",
+        "prevention": "确定性必须实测（最大绝对差），不能靠声明",
+        "applies_to": "跨场景通用",
+        "section": "教训速查",
+        "record_kind": "knowledge",
+        "occurrences": 1,
+        "run_ids": [],
+        "signatures": [],
+        "confidence": 0.9,
+        "source": "seeded"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/engineering_lessons.md",
+          "excerpt": "| LE10 | 运行环境 | 同一候选两次 fit 的指标不同，报告却声称确定性通过 | 随机种子未固定，或同一进程重复 fit 带来状态污染 | 显式固定 `random_state`，并在子进程内二次 fit 比较输出 | 确定性必须实测（最大绝对差），不能靠声明 | 跨场景通用 |",
+          "sha256": "ab0a267a339b81fa656a64ea8c860621e52dc5f66e2a059fa904c264a5f73fe9",
+          "doc_type": "工程教训"
+        }
+      ]
+    },
+    {
+      "node_id": "lesson.engineering_lessons.LE11",
+      "node_type": "Lesson",
+      "name": "[LE11] 图谱做得很全，但生成代码看不出受过它影响",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "LE11",
+        "scope": "knowledge",
+        "scope_label": "检索",
+        "symptom": "图谱做得很全，但生成代码看不出受过它影响",
+        "root_cause": "渲染与注入是两套逻辑，检索结果只用于展示",
+        "action": "统一走 `RetrievalResult.as_prompt_context()`，Planner 与 Coder 强制使用",
+        "prevention": "注入内容要写进 trace 留证，报告可回放",
+        "applies_to": "跨场景通用",
+        "section": "教训速查",
+        "record_kind": "knowledge",
+        "occurrences": 1,
+        "run_ids": [],
+        "signatures": [],
+        "confidence": 0.9,
+        "source": "seeded"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/engineering_lessons.md",
+          "excerpt": "| LE11 | 检索 | 图谱做得很全，但生成代码看不出受过它影响 | 渲染与注入是两套逻辑，检索结果只用于展示 | 统一走 `RetrievalResult.as_prompt_context()`，Planner 与 Coder 强制使用 | 注入内容要写进 trace 留证，报告可回放 | 跨场景通用 |",
+          "sha256": "3ff5f0701d7ac18856531e1434cec3ee9c61f0c91cdfbc9bb22ca8cfe1813f44",
+          "doc_type": "工程教训"
+        }
+      ]
+    },
+    {
+      "node_id": "lesson.engineering_lessons.LE12",
+      "node_type": "Lesson",
+      "name": "[LE12] 换一个任务类型就要改核心验证器，改动风险高",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "source_id": "LE12",
+        "scope": "workflow",
+        "scope_label": "编排",
+        "symptom": "换一个任务类型就要改核心验证器，改动风险高",
+        "root_cause": "任务假设（指标、划分、数据列）写死在代码里，而非配置里",
+        "action": "指标与门槛下沉到 `verify_*.yaml`，新增任务只加配置与插件",
+        "prevention": "新增任务类型时不许改核心模块，只允许新增配置与注册插件",
+        "applies_to": "跨场景通用",
+        "section": "教训速查",
+        "record_kind": "knowledge",
+        "occurrences": 1,
+        "run_ids": [],
+        "signatures": [],
+        "confidence": 0.9,
+        "source": "seeded"
+      },
+      "evidence": [
+        {
+          "path": "assets/docs/engineering_lessons.md",
+          "excerpt": "| LE12 | 编排 | 换一个任务类型就要改核心验证器，改动风险高 | 任务假设（指标、划分、数据列）写死在代码里，而非配置里 | 指标与门槛下沉到 `verify_*.yaml`，新增任务只加配置与插件 | 新增任务类型时不许改核心模块，只允许新增配置与注册插件 | 跨场景通用 |",
+          "sha256": "bd8d90b49f84d6b72397e663ca2a8316f2b91239a47a0b3fae44b309872e6138",
+          "doc_type": "工程教训"
+        }
+      ]
     }
   ],
   "edges": [
@@ -514,6 +931,78 @@
       "attributes": {}
     },
     {
+      "source": "lesson.engineering_lessons.LE1",
+      "target": "evidence.engineering_lessons",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "lesson.engineering_lessons.LE2",
+      "target": "evidence.engineering_lessons",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "lesson.engineering_lessons.LE3",
+      "target": "evidence.engineering_lessons",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "lesson.engineering_lessons.LE4",
+      "target": "evidence.engineering_lessons",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "lesson.engineering_lessons.LE5",
+      "target": "evidence.engineering_lessons",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "lesson.engineering_lessons.LE6",
+      "target": "evidence.engineering_lessons",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "lesson.engineering_lessons.LE7",
+      "target": "evidence.engineering_lessons",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "lesson.engineering_lessons.LE8",
+      "target": "evidence.engineering_lessons",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "lesson.engineering_lessons.LE9",
+      "target": "evidence.engineering_lessons",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "lesson.engineering_lessons.LE10",
+      "target": "evidence.engineering_lessons",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "lesson.engineering_lessons.LE11",
+      "target": "evidence.engineering_lessons",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
+      "source": "lesson.engineering_lessons.LE12",
+      "target": "evidence.engineering_lessons",
+      "edge_type": "EVIDENCED_BY",
+      "attributes": {}
+    },
+    {
       "source": "cap.sms_policy.S3",
       "target": "metric.sms_policy.r01",
       "edge_type": "EVALUATED_BY",
@@ -523,7 +1012,8 @@
   "source_files": [
     "assets/docs/text/sms_data_dictionary.md",
     "assets/docs/text/sms_failure_review.md",
-    "assets/docs/text/sms_policy.md"
+    "assets/docs/text/sms_policy.md",
+    "assets/docs/engineering_lessons.md"
   ],
-  "content_sha256": "a84075c0e7642b5691c510b6af80f6d72875c8cb825173ace4c25427bf45c5a7"
+  "content_sha256": "1e94f559dc6be9304f24fc78c5bb3f9d05fce905153f5715bc6858c3a7e1ccbb"
 }

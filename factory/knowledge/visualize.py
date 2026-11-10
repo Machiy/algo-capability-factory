@@ -21,6 +21,8 @@ COLOR_BY_TYPE: dict[NodeType, str] = {
     NodeType.ENVIRONMENT: "#6C757D",
     NodeType.VALIDATION_RUN: "#6A4C93",
     NodeType.FAILURE_CASE: "#D7263D",
+    # 教训是真正的沉淀产物，用最醒目的颜色与运行日志区分
+    NodeType.LESSON: "#F4A259",
     NodeType.EVIDENCE: "#8D99AE",
 }
 

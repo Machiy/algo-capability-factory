@@ -1,6 +1,19 @@
 <?xml version='1.0' encoding='utf-8'?>
 <graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
-  <key id="d27" for="edge" attr.name="edge_type" attr.type="string" />
+  <key id="d40" for="edge" attr.name="edge_type" attr.type="string" />
+  <key id="d39" for="node" attr.name="attr_source" attr.type="string" />
+  <key id="d38" for="node" attr.name="attr_confidence" attr.type="double" />
+  <key id="d37" for="node" attr.name="attr_signatures" attr.type="string" />
+  <key id="d36" for="node" attr.name="attr_run_ids" attr.type="string" />
+  <key id="d35" for="node" attr.name="attr_occurrences" attr.type="long" />
+  <key id="d34" for="node" attr.name="attr_record_kind" attr.type="string" />
+  <key id="d33" for="node" attr.name="attr_applies_to" attr.type="string" />
+  <key id="d32" for="node" attr.name="attr_prevention" attr.type="string" />
+  <key id="d31" for="node" attr.name="attr_action" attr.type="string" />
+  <key id="d30" for="node" attr.name="attr_root_cause" attr.type="string" />
+  <key id="d29" for="node" attr.name="attr_symptom" attr.type="string" />
+  <key id="d28" for="node" attr.name="attr_scope_label" attr.type="string" />
+  <key id="d27" for="node" attr.name="attr_scope" attr.type="string" />
   <key id="d26" for="node" attr.name="attr_口径" attr.type="string" />
   <key id="d25" for="node" attr.name="attr_门槛" attr.type="string" />
   <key id="d24" for="node" attr.name="attr_指标" attr.type="string" />
@@ -275,50 +288,386 @@
       <data key="d26">验证集，兼顾 spam 少数类</data>
       <data key="d15">{"指标": 1.0, "门槛": 0.9}</data>
     </node>
+    <node id="evidence.engineering_lessons">
+      <data key="d0">evidence.engineering_lessons</data>
+      <data key="d1">Evidence</data>
+      <data key="d2">证据源：assets/docs/engineering_lessons.md</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d7">assets/docs/engineering_lessons.md</data>
+      <data key="d8">工程教训</data>
+      <data key="d9">53dda1833ae55b0db5fbf9e6338976ef89feb21142a2fe4a861b8a4fca584ed9</data>
+    </node>
+    <node id="lesson.engineering_lessons.LE1">
+      <data key="d0">lesson.engineering_lessons.LE1</data>
+      <data key="d1">Lesson</data>
+      <data key="d2">[LE1] 内存看门狗永不触发，占用早已超过 2GB 仍判定通过</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">LE1</data>
+      <data key="d27">runtime</data>
+      <data key="d28">运行环境</data>
+      <data key="d29">内存看门狗永不触发，占用早已超过 2GB 仍判定通过</data>
+      <data key="d30">Windows 虚拟环境里的 `python.exe` 是重定向器，读父进程 RSS 只有约 4MB，按单进程计量完全失真</data>
+      <data key="d31">改为 `psutil.Process.children(recursive=True)` 对整棵进程树求和，超限即终止子进程</data>
+      <data key="d32">资源基准与四层验证共用同一套内存口径，并构造超限用例验证看门狗真的会触发</data>
+      <data key="d33">跨场景通用</data>
+      <data key="d11">教训速查</data>
+      <data key="d34">knowledge</data>
+      <data key="d35">1</data>
+      <data key="d36">[]</data>
+      <data key="d37">[]</data>
+      <data key="d38">0.9</data>
+      <data key="d39">seeded</data>
+    </node>
+    <node id="lesson.engineering_lessons.LE2">
+      <data key="d0">lesson.engineering_lessons.LE2</data>
+      <data key="d1">Lesson</data>
+      <data key="d2">[LE2] 本地跑通的 CLI 断言在 CI 上随机失败</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">LE2</data>
+      <data key="d27">platform</data>
+      <data key="d28">平台</data>
+      <data key="d29">本地跑通的 CLI 断言在 CI 上随机失败</data>
+      <data key="d30">Typer 检测到终端后自动着色，输出里混入 ANSI 转义序列，按纯文本匹配必然失配</data>
+      <data key="d31">子进程设 `NO_COLOR=1`、`TERM=dumb`，断言前统一剥离 ANSI</data>
+      <data key="d32">所有 CLI 断言走同一个输出归一化函数，不各写一份</data>
+      <data key="d33">跨场景通用</data>
+      <data key="d11">教训速查</data>
+      <data key="d34">knowledge</data>
+      <data key="d35">1</data>
+      <data key="d36">[]</data>
+      <data key="d37">[]</data>
+      <data key="d38">0.9</data>
+      <data key="d39">seeded</data>
+    </node>
+    <node id="lesson.engineering_lessons.LE3">
+      <data key="d0">lesson.engineering_lessons.LE3</data>
+      <data key="d1">Lesson</data>
+      <data key="d2">[LE3] 证据 SHA-256 在 Windows 上校验失败，Linux 正常</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">LE3</data>
+      <data key="d27">platform</data>
+      <data key="d28">平台</data>
+      <data key="d29">证据 SHA-256 在 Windows 上校验失败，Linux 正常</data>
+      <data key="d30">Git 检出的换行是 CRLF，与原文 LF 不同，同一内容算出不同哈希</data>
+      <data key="d31">`read_sources` 读入后归一化换行再计算哈希</data>
+      <data key="d32">哈希只对归一化后的文本计算，测试重算时复用同一入口</data>
+      <data key="d33">跨场景通用</data>
+      <data key="d11">教训速查</data>
+      <data key="d34">knowledge</data>
+      <data key="d35">1</data>
+      <data key="d36">[]</data>
+      <data key="d37">[]</data>
+      <data key="d38">0.9</data>
+      <data key="d39">seeded</data>
+    </node>
+    <node id="lesson.engineering_lessons.LE4">
+      <data key="d0">lesson.engineering_lessons.LE4</data>
+      <data key="d1">Lesson</data>
+      <data key="d2">[LE4] 报告写着四层验证，实际只有两层在生效：确定性恒为 True，test 段从未被读取</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">LE4</data>
+      <data key="d27">validation</data>
+      <data key="d28">验证</data>
+      <data key="d29">报告写着四层验证，实际只有两层在生效：确定性恒为 True，test 段从未被读取</data>
+      <data key="d30">检查项只存在于报告字段里，没有代码真正读取对应输入</data>
+      <data key="d31">沙箱支持 `repeat&gt;=2` 的同进程二次 fit 与 `segment="test"`；工作流在候选比较结束后消费一次 test</data>
+      <data key="d32">每个检查项都必须配一个「不通过」的构造用例，否则不许写进报告</data>
+      <data key="d33">跨场景通用</data>
+      <data key="d11">教训速查</data>
+      <data key="d34">knowledge</data>
+      <data key="d35">1</data>
+      <data key="d36">[]</data>
+      <data key="d37">[]</data>
+      <data key="d38">0.9</data>
+      <data key="d39">seeded</data>
+    </node>
+    <node id="lesson.engineering_lessons.LE5">
+      <data key="d0">lesson.engineering_lessons.LE5</data>
+      <data key="d1">Lesson</data>
+      <data key="d2">[LE5] 边很多，但追问「这两点为什么相连」答不出来</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">LE5</data>
+      <data key="d27">knowledge</data>
+      <data key="d28">图谱</data>
+      <data key="d29">边很多，但追问「这两点为什么相连」答不出来</data>
+      <data key="d30">连边按 `index % len(metrics)` 轮转，与内容无关，属于凑数量</data>
+      <data key="d31">改为名称或属性文本命中才连边，宁可边少</data>
+      <data key="d32">每条边都要能回答「凭什么连」，答不出就删</data>
+      <data key="d33">跨场景通用</data>
+      <data key="d11">教训速查</data>
+      <data key="d34">knowledge</data>
+      <data key="d35">1</data>
+      <data key="d36">[]</data>
+      <data key="d37">[]</data>
+      <data key="d38">0.9</data>
+      <data key="d39">seeded</data>
+    </node>
+    <node id="lesson.engineering_lessons.LE6">
+      <data key="d0">lesson.engineering_lessons.LE6</data>
+      <data key="d1">Lesson</data>
+      <data key="d2">[LE6] 修复退化成反复重试，同一错误连修三轮仍失败</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">LE6</data>
+      <data key="d27">workflow</data>
+      <data key="d28">编排</data>
+      <data key="d29">修复退化成反复重试，同一错误连修三轮仍失败</data>
+      <data key="d30">没有先分类错误签名，直接整段重新生成代码</data>
+      <data key="d31">建立「签名 → 策略」表，只改必要片段，最多 3 轮</data>
+      <data key="d32">每轮修复必须记录签名与策略，重复签名立即停止该路线</data>
+      <data key="d33">跨场景通用</data>
+      <data key="d11">教训速查</data>
+      <data key="d34">knowledge</data>
+      <data key="d35">1</data>
+      <data key="d36">[]</data>
+      <data key="d37">[]</data>
+      <data key="d38">0.9</data>
+      <data key="d39">seeded</data>
+    </node>
+    <node id="lesson.engineering_lessons.LE7">
+      <data key="d0">lesson.engineering_lessons.LE7</data>
+      <data key="d1">Lesson</data>
+      <data key="d2">[LE7] 传入 `../../x` 的请求能把产物写到仓库外</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">LE7</data>
+      <data key="d27">platform</data>
+      <data key="d28">平台</data>
+      <data key="d29">传入 `../../x` 的请求能把产物写到仓库外</data>
+      <data key="d30">把用户输入原样拼进文件名，只做了字符串拼接</data>
+      <data key="d31">接口层做字符集 pattern 校验并拒绝 `..`，工作流侧再兜底一次</data>
+      <data key="d32">任何用户输入进入路径前先校验字符集与相对路径，双层校验</data>
+      <data key="d33">跨场景通用</data>
+      <data key="d11">教训速查</data>
+      <data key="d34">knowledge</data>
+      <data key="d35">1</data>
+      <data key="d36">[]</data>
+      <data key="d37">[]</data>
+      <data key="d38">0.9</data>
+      <data key="d39">seeded</data>
+    </node>
+    <node id="lesson.engineering_lessons.LE8">
+      <data key="d0">lesson.engineering_lessons.LE8</data>
+      <data key="d1">Lesson</data>
+      <data key="d2">[LE8] 报告里把离线回放说成实时调用，评审无法区分</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">LE8</data>
+      <data key="d27">llm</data>
+      <data key="d28">LLM</data>
+      <data key="d29">报告里把离线回放说成实时调用，评审无法区分</data>
+      <data key="d30">响应来源没有落到产物里，只在日志里出现</data>
+      <data key="d31">把来源写进 `RunTrace.interpreter_source`，报告逐条标注</data>
+      <data key="d32">任何「实测」结论必须能追溯来源，回放内容单独标注</data>
+      <data key="d33">跨场景通用</data>
+      <data key="d11">教训速查</data>
+      <data key="d34">knowledge</data>
+      <data key="d35">1</data>
+      <data key="d36">[]</data>
+      <data key="d37">[]</data>
+      <data key="d38">0.9</data>
+      <data key="d39">seeded</data>
+    </node>
+    <node id="lesson.engineering_lessons.LE9">
+      <data key="d0">lesson.engineering_lessons.LE9</data>
+      <data key="d1">Lesson</data>
+      <data key="d2">[LE9] Coder 明明调用了 LLM，产物却全是模板代码</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">LE9</data>
+      <data key="d27">llm</data>
+      <data key="d28">LLM</data>
+      <data key="d29">Coder 明明调用了 LLM，产物却全是模板代码</data>
+      <data key="d30">LLM 返回的代码没过静态检查就被丢弃，且丢弃原因没有留痕</data>
+      <data key="d31">先过 AST 白名单与契约检查，通过即采用；失败回退模板并写 `code_sources`</data>
+      <data key="d32">回退路径必须写进 trace，不能静默回退</data>
+      <data key="d33">跨场景通用</data>
+      <data key="d11">教训速查</data>
+      <data key="d34">knowledge</data>
+      <data key="d35">1</data>
+      <data key="d36">[]</data>
+      <data key="d37">[]</data>
+      <data key="d38">0.9</data>
+      <data key="d39">seeded</data>
+    </node>
+    <node id="lesson.engineering_lessons.LE10">
+      <data key="d0">lesson.engineering_lessons.LE10</data>
+      <data key="d1">Lesson</data>
+      <data key="d2">[LE10] 同一候选两次 fit 的指标不同，报告却声称确定性通过</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">LE10</data>
+      <data key="d27">runtime</data>
+      <data key="d28">运行环境</data>
+      <data key="d29">同一候选两次 fit 的指标不同，报告却声称确定性通过</data>
+      <data key="d30">随机种子未固定，或同一进程重复 fit 带来状态污染</data>
+      <data key="d31">显式固定 `random_state`，并在子进程内二次 fit 比较输出</data>
+      <data key="d32">确定性必须实测（最大绝对差），不能靠声明</data>
+      <data key="d33">跨场景通用</data>
+      <data key="d11">教训速查</data>
+      <data key="d34">knowledge</data>
+      <data key="d35">1</data>
+      <data key="d36">[]</data>
+      <data key="d37">[]</data>
+      <data key="d38">0.9</data>
+      <data key="d39">seeded</data>
+    </node>
+    <node id="lesson.engineering_lessons.LE11">
+      <data key="d0">lesson.engineering_lessons.LE11</data>
+      <data key="d1">Lesson</data>
+      <data key="d2">[LE11] 图谱做得很全，但生成代码看不出受过它影响</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">LE11</data>
+      <data key="d27">knowledge</data>
+      <data key="d28">检索</data>
+      <data key="d29">图谱做得很全，但生成代码看不出受过它影响</data>
+      <data key="d30">渲染与注入是两套逻辑，检索结果只用于展示</data>
+      <data key="d31">统一走 `RetrievalResult.as_prompt_context()`，Planner 与 Coder 强制使用</data>
+      <data key="d32">注入内容要写进 trace 留证，报告可回放</data>
+      <data key="d33">跨场景通用</data>
+      <data key="d11">教训速查</data>
+      <data key="d34">knowledge</data>
+      <data key="d35">1</data>
+      <data key="d36">[]</data>
+      <data key="d37">[]</data>
+      <data key="d38">0.9</data>
+      <data key="d39">seeded</data>
+    </node>
+    <node id="lesson.engineering_lessons.LE12">
+      <data key="d0">lesson.engineering_lessons.LE12</data>
+      <data key="d1">Lesson</data>
+      <data key="d2">[LE12] 换一个任务类型就要改核心验证器，改动风险高</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d10">LE12</data>
+      <data key="d27">workflow</data>
+      <data key="d28">编排</data>
+      <data key="d29">换一个任务类型就要改核心验证器，改动风险高</data>
+      <data key="d30">任务假设（指标、划分、数据列）写死在代码里，而非配置里</data>
+      <data key="d31">指标与门槛下沉到 `verify_*.yaml`，新增任务只加配置与插件</data>
+      <data key="d32">新增任务类型时不许改核心模块，只允许新增配置与注册插件</data>
+      <data key="d33">跨场景通用</data>
+      <data key="d11">教训速查</data>
+      <data key="d34">knowledge</data>
+      <data key="d35">1</data>
+      <data key="d36">[]</data>
+      <data key="d37">[]</data>
+      <data key="d38">0.9</data>
+      <data key="d39">seeded</data>
+    </node>
     <edge source="cap.sms_data_dictionary.ST1" target="evidence.sms_data_dictionary" id="0">
-      <data key="d27">EVIDENCED_BY</data>
+      <data key="d40">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.sms_data_dictionary.ST2" target="evidence.sms_data_dictionary" id="0">
-      <data key="d27">EVIDENCED_BY</data>
+      <data key="d40">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.sms_data_dictionary.ST3" target="evidence.sms_data_dictionary" id="0">
-      <data key="d27">EVIDENCED_BY</data>
+      <data key="d40">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.sms_data_dictionary.ST4" target="evidence.sms_data_dictionary" id="0">
-      <data key="d27">EVIDENCED_BY</data>
+      <data key="d40">EVIDENCED_BY</data>
     </edge>
     <edge source="fail.sms_failure_review.FR-01" target="evidence.sms_failure_review" id="0">
-      <data key="d27">EVIDENCED_BY</data>
+      <data key="d40">EVIDENCED_BY</data>
     </edge>
     <edge source="fail.sms_failure_review.FR-02" target="evidence.sms_failure_review" id="0">
-      <data key="d27">EVIDENCED_BY</data>
+      <data key="d40">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.sms_policy.S1" target="evidence.sms_policy" id="0">
-      <data key="d27">EVIDENCED_BY</data>
+      <data key="d40">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.sms_policy.S2" target="evidence.sms_policy" id="0">
-      <data key="d27">EVIDENCED_BY</data>
+      <data key="d40">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.sms_policy.S3" target="evidence.sms_policy" id="0">
-      <data key="d27">EVIDENCED_BY</data>
+      <data key="d40">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.sms_policy.S3" target="metric.sms_policy.r01" id="0">
-      <data key="d27">EVALUATED_BY</data>
+      <data key="d40">EVALUATED_BY</data>
     </edge>
     <edge source="cap.sms_policy.S4" target="evidence.sms_policy" id="0">
-      <data key="d27">EVIDENCED_BY</data>
+      <data key="d40">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.sms_policy.S5" target="evidence.sms_policy" id="0">
-      <data key="d27">EVIDENCED_BY</data>
+      <data key="d40">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.sms_policy.S6" target="evidence.sms_policy" id="0">
-      <data key="d27">EVIDENCED_BY</data>
+      <data key="d40">EVIDENCED_BY</data>
     </edge>
     <edge source="metric.sms_policy.r01" target="evidence.sms_policy" id="0">
-      <data key="d27">EVIDENCED_BY</data>
+      <data key="d40">EVIDENCED_BY</data>
     </edge>
     <edge source="metric.sms_policy.macro_f1" target="evidence.sms_policy" id="0">
-      <data key="d27">EVIDENCED_BY</data>
+      <data key="d40">EVIDENCED_BY</data>
+    </edge>
+    <edge source="lesson.engineering_lessons.LE1" target="evidence.engineering_lessons" id="0">
+      <data key="d40">EVIDENCED_BY</data>
+    </edge>
+    <edge source="lesson.engineering_lessons.LE2" target="evidence.engineering_lessons" id="0">
+      <data key="d40">EVIDENCED_BY</data>
+    </edge>
+    <edge source="lesson.engineering_lessons.LE3" target="evidence.engineering_lessons" id="0">
+      <data key="d40">EVIDENCED_BY</data>
+    </edge>
+    <edge source="lesson.engineering_lessons.LE4" target="evidence.engineering_lessons" id="0">
+      <data key="d40">EVIDENCED_BY</data>
+    </edge>
+    <edge source="lesson.engineering_lessons.LE5" target="evidence.engineering_lessons" id="0">
+      <data key="d40">EVIDENCED_BY</data>
+    </edge>
+    <edge source="lesson.engineering_lessons.LE6" target="evidence.engineering_lessons" id="0">
+      <data key="d40">EVIDENCED_BY</data>
+    </edge>
+    <edge source="lesson.engineering_lessons.LE7" target="evidence.engineering_lessons" id="0">
+      <data key="d40">EVIDENCED_BY</data>
+    </edge>
+    <edge source="lesson.engineering_lessons.LE8" target="evidence.engineering_lessons" id="0">
+      <data key="d40">EVIDENCED_BY</data>
+    </edge>
+    <edge source="lesson.engineering_lessons.LE9" target="evidence.engineering_lessons" id="0">
+      <data key="d40">EVIDENCED_BY</data>
+    </edge>
+    <edge source="lesson.engineering_lessons.LE10" target="evidence.engineering_lessons" id="0">
+      <data key="d40">EVIDENCED_BY</data>
+    </edge>
+    <edge source="lesson.engineering_lessons.LE11" target="evidence.engineering_lessons" id="0">
+      <data key="d40">EVIDENCED_BY</data>
+    </edge>
+    <edge source="lesson.engineering_lessons.LE12" target="evidence.engineering_lessons" id="0">
+      <data key="d40">EVIDENCED_BY</data>
     </edge>
   </graph>
 </graphml>

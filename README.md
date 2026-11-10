@@ -4,8 +4,8 @@
 
 > 面向「信用卡客户下月违约预测」，实现从自然语言能力描述到可运行算法代码的端到端半自主生成，跑通 **能力抽取 → 能力复刻 → 能力验证 → 能力沉淀** 完整闭环。对应题目：《基于 AI Agent 的算法能力系统开发》。
 
-- **当前版本** `1.2.0`，变更记录见 [`CHANGELOG.md`](CHANGELOG.md)，开发阶段与提交对照见 [`AGENTS.md`](AGENTS.md)。
-- **落地范围** P0–P6 全部完成：a–g 七步闭环、六层结构、入口输入引导、三种 LLM 后端（Mock / DeepSeek / cassette 回放）。`ruff` 全绿、163 个用例通过，CI 覆盖 Python 3.11 / 3.12 与三条端到端。
+- **当前版本** `1.3.0`，变更记录见 [`CHANGELOG.md`](CHANGELOG.md)，开发阶段与提交对照见 [`AGENTS.md`](AGENTS.md)。
+- **落地范围** P0–P6 全部完成：a–g 七步闭环、六层结构、入口输入引导、知识沉淀分层（教训 vs 日志）、三种 LLM 后端（Mock / DeepSeek / cassette 回放）。`ruff` 全绿、177 个用例通过，CI 覆盖 Python 3.11 / 3.12 与三条端到端。
 - **最新实测** 3 候选（LR / RF / HGB），最佳候选 `random_forest` 四层全 PASS：valid AUC 0.7899，test AUC 0.7883。
 
 ---
@@ -18,7 +18,7 @@
 |---|---|---|
 | 0 | `python -m venv .venv` → 激活（Windows `.venv\Scripts\activate`，Linux/macOS `source .venv/bin/activate`）→ `pip install -r requirements.txt` | 一次性安装完成，无需清单外依赖 |
 | 1 | `python -m ruff check .` | `All checks passed!` |
-| 2 | `python -m unittest discover -s tests` | `Ran 163 tests ... OK` |
+| 2 | `python -m unittest discover -s tests` | `Ran 177 tests ... OK` |
 | 3 | `python -m factory guide` | 打印输入引导菜单：4 项要素、可复制的合格示例、3 个可用场景、图谱已沉淀能力分组；`--spec "随便写点什么"` 只体检不跑闭环 |
 | 4 | `python -m factory run --spec "预测信用卡客户下月违约概率，时间外划分，按 5:1 成本比选阈值，禁止 ID 入模。"` | `四层全通过=True 理解来源=cassette 候选=3`；最佳候选 random_forest AUC 0.7899。修复轮次取决于是否已有回写图谱：仓库自带 `capabilities_after_run.json` 时为 **1**（T1 经验命中，首轮即避开），删掉该文件再跑为 **2**（现场复现 `KeyError: PAY_1` → 定向修复，再处理指标层） |
 | 5 | `python -m factory run --spec "把短信分类为垃圾短信或正常短信，输出准确率与宏平均F1" --mock --task-config configs/verify_text.yaml --run-id text_demo --kg-out capabilities_text_after_run.json --gen-dir text` | `四层全通过=True`；linear_svc accuracy 0.9803 |
@@ -41,7 +41,7 @@
    ↓ d 生成                 Coder      → 可运行代码（build_pipeline 契约）
    ↓ e 验证                 Verifier   → 四层验证（接口 / 功能 / 指标 / 稳定性）
    ↓ f 修复                 Repairer   → 错误签名定向修复，最多 3 轮
-   ↓ g 沉淀                 Curator    → 回写 ValidationRun / FailureCase / 能力 v+1
+   ↓ g 沉淀                 Curator    → 失败案例按签名累积 → 教训提升 / 能力 v+1，运行日志另存
                               ↓
                      验证报告 + 候选排名 + 设计依据 + 图谱 diff
 ```
@@ -70,7 +70,7 @@
 | 层 | 模块 | 职责 |
 |---|---|---|
 | L0 契约 | `contracts/` | `CapabilitySpec`、`CandidatePlan`、`ValidationReport`（Pydantic），全系统唯一数据协议 |
-| L1 知识 | `knowledge/` | Schema、材料抽取器、真实仓库 AST 抽取器、NetworkX 图 + SQLite、混合检索、PyVis 可视化 |
+| L1 知识 | `knowledge/` | Schema、材料抽取器、真实仓库 AST 抽取器、NetworkX 图 + SQLite、混合检索、教训提炼（`lessons.py`）、图谱合并（`merge.py`）、PyVis 可视化 |
 | L2 Agent | `agents/`、`workflow/` | 8 个角色、LangGraph 状态机、Beam Search、修复策略表 |
 | L2 支撑 | `llm/` | `BaseLLM` 抽象与三实现：`MockLLM`（默认）、`OpenAICompatLLM`（DeepSeek）、`RecordedLLM`（cassette 回放） |
 | L3 执行 | `runtime/` | 子进程沙箱、AST 静态检查、超时 / 内存限制、错误分类器 |
@@ -98,6 +98,7 @@
 | 项目业务规则 | 时间外划分、禁 `ID` / 敏感字段、T1–T4 列名映射、成本比阈值、证据 SHA-256、`verify_*.yaml` 门槛 | 场景合规约束，通用库不会内置 | 无对应现成库 |
 | 接入 | Typer CLI + FastAPI | 现成框架，CLI 有 `--version` / `--check` / `guide` / `run` / `api`，API 五端点并自动导出 OpenAPI | `argparse` 已替换；Streamlit 权衡后未做——题目为「或」，只增依赖不增评分点 |
 | 输入引导 | 自研规则引擎 `factory/intake/` | 判据是项目特定语义（目标 / 数据 / 指标 / 约束是否表达、描述更像哪个场景），结论要同时进终端、API 与报告 | Guardrails / NeMo Guardrails 面向 LLM 输出安全与对话流程，需额外模型与配置；Pydantic 只校验字段类型与字符集，覆盖不到「要素完备度」与「场景错配」 |
+| 知识沉淀 | 自研教训层 `factory/knowledge/lessons.py`（签名规则表 + 提升逻辑） | 需要「错误签名 → 根因 → 处置 → 预防」的项目特定映射、可解释的置信度，且必须离线可复现 | MLflow / W&B 记录的是 run 级指标与参数，正是「日志」，不做知识抽象也不会进 prompt；Neo4j / RDF 推理需要额外服务与 schema，本项目规模用不上；LangGraph 的 checkpoint 只存会话状态，不区分知识与日志 |
 | 算法栈 | pandas + scikit-learn + imbalanced-learn | 全 CPU、秒级、确定性强，`Pipeline` 天然防泄漏 | 算法模板用标准库 `str.format`，不为单文件模板引入 Jinja2（Jinja2 仅用于报告） |
 
 **仓库结构**
@@ -106,11 +107,11 @@
 algo-capability-factory/
 ├── README.md  CHANGELOG.md  AGENTS.md  requirements.txt  .env.example  pyproject.toml  .gitignore
 ├── configs/     default.yaml + verify_{credit,text,regression}.yaml
-├── factory/     45 个模块：contracts / knowledge / agents / llm / runtime / validation / workflow / intake / api
+├── factory/     47 个模块：contracts / knowledge / agents / llm / runtime / validation / workflow / intake / api
 ├── scripts/     数据准备、图谱构建、消融、资源基准、仓库抽取、cassette 录制（11 个）
 ├── assets/      data/、docs/(+text/)、legacy/、repo/scorecardpy/、llm_cassettes/
 ├── outputs/     generated/、reports/、kg/（runs/ 为临时轨迹，不入库）
-└── tests/       16 个测试文件 / 163 个用例
+└── tests/       16 个测试文件 / 177 个用例
 ```
 
 内部规划文档（`PLAN.md`）、原始数据包与 `_archive/` 不纳入版本控制。
@@ -119,7 +120,7 @@ algo-capability-factory/
 
 ## 3. 能力知识图谱 schema 和示例
 
-**节点（9 类）**
+**节点（10 类）**
 
 | 节点 | 关键属性 |
 |---|---|
@@ -129,9 +130,18 @@ algo-capability-factory/
 | `Metric` | name、direction、applicable_task、threshold、plugin_ref |
 | `Dataset` | columns、target、split_policy、known_issues |
 | `Environment` | python_version、packages、seed、resource_limit |
-| `ValidationRun` | run_id、candidate_id、metrics、passed、duration、peak_memory、timestamp |
-| `FailureCase` | error_type、traceback_sig、root_cause、fix_strategy、occurrence |
+| `ValidationRun` | run_id、candidate_id、metrics、passed、duration、peak_memory（**运行日志**，可丢弃） |
+| `FailureCase` | error_signature、fix_strategy、run_ids、occurrences（单次现象，按签名累积） |
+| `Lesson` | scope、symptom、root_cause、action、prevention、applies_to、occurrences、confidence（**系统级知识**） |
 | `Evidence` | path、excerpt、sha256、doc_type |
+
+**知识 ≠ 日志（1.3.0）**：`ValidationRun` 只说明「某次跑了什么」，可被同一 run 重跑覆盖，并且**不参与检索**；`Lesson` 回答「什么条件下会遇到什么现象、为什么、怎么处置、怎么预防」，随独立 run 数累积置信度并注入 Planner / Coder 的 prompt。两者在 schema、检索与产物文件三个层面分开：
+
+| 层面 | 运行日志 | 系统级知识 |
+|---|---|---|
+| Schema | `ValidationRun`（`attributes.run_id`） | `Lesson` + `FailureCase`（按签名累积） |
+| 检索 | 排除，不占 prompt 名额 | 教训单独一段注入，实测教训优先 |
+| 产物 | 同目录 `*_runs.json`，仅追溯 | `<kg>.json` 主图，可直接复用 |
 
 **边（13 类，与 `factory/contracts/knowledge.py` 的 `EdgeType` 枚举一致）**
 
@@ -139,8 +149,9 @@ algo-capability-factory/
 |---|---|
 | `REQUIRES`、`USES`、`EVALUATED_BY`、`APPLIES_TO`、`DEPENDS_ON`、`EVIDENCED_BY` | 输入输出、适用条件、评价指标、依赖环境与证据来源 |
 | `PRECEDES` | 编码 pipeline 顺序与「fit 仅 on train」约束，验证期做静态泄漏检查 |
-| `HAS_RUN` → `RESULTED_IN` → `FIXED_BY` | 沉淀闭环：`Capability → ValidationRun → FailureCase → Capability(v+1)` |
-| `DERIVED_FROM`、`TRANSFERABLE_TO`、`SIMILAR_TO` | 版本谱系、跨场景迁移、检索邻域扩展 |
+| `HAS_RUN` → `RESULTED_IN` → `FIXED_BY` | 沉淀闭环：`Capability → ValidationRun(日志) → FailureCase → Capability(v+1)` |
+| `DERIVED_FROM` | 版本谱系，以及 `Lesson ← FailureCase` 的教训溯源 |
+| `TRANSFERABLE_TO`、`SIMILAR_TO` | 跨场景迁移、检索邻域扩展 |
 
 **六要素落地**
 
@@ -151,7 +162,7 @@ algo-capability-factory/
 | 适用条件 | 额度区间、需 ≥6 期账单历史、样本期 2005-04 至 2005-09、敏感字段使用限制、漏报/误报成本比 5:1、最低 KS 门槛、仅作辅助决策 |
 | 评价指标 | AUC、KS、PR-AUC、F1、成本加权损失、PSI、分组 AUC |
 | 依赖环境 | Python 3.11、pandas / scikit-learn / imbalanced-learn，纯 CPU，固定 seed，60s / 2GB 上限 |
-| 历史验证结果 | 每轮 `ValidationRun` 的指标、修复轨迹、候选排名、耗时与内存 |
+| 历史验证结果 | 每轮 `ValidationRun` 的指标、耗时与内存（日志层）；由失败案例按签名提升的 `Lesson`（知识层：根因 / 处置 / 预防 / 置信度） |
 
 ```json
 {
@@ -166,15 +177,15 @@ algo-capability-factory/
 }
 ```
 
-**按场景拆分子图**：`verify_*.yaml` 的 `knowledge.docs` 指向该场景材料目录，工作流从中抽独立子图，检索只命中本场景的约束与失败经验——避免「文本任务拿到 `PAY_1` 列名约束」这类跨域噪声。
+**按场景拆分子图**：`verify_*.yaml` 的 `knowledge.docs` 指向该场景材料目录，工作流从中抽独立子图，检索只命中本场景的约束与失败经验——避免「文本任务拿到 `PAY_1` 列名约束」这类跨域噪声。**但工程教训库例外**：`knowledge.shared_docs` 让它进入每个场景，系统级知识不按业务领域切分。
 
 | 场景 | 材料 | 子图规模 | 产物 |
 |---|---|---|---|
-| 信用卡违约（主） | `assets/docs/` + `assets/legacy/` | 95 节点 / 188 边 / 36 类能力 | `capabilities.json`、`graph.graphml`、`kg.html` |
-| 短信垃圾过滤 | `assets/docs/text/` | 17 节点 / 15 边 / 10 类能力 | `text_capabilities.json`、`text_graph.graphml`、`text_kg.html` |
+| 信用卡违约（主） | `assets/docs/`（7 份）+ `assets/legacy/` | 108 节点 / 200 边 / 36 类能力 / 12 条教训 | `capabilities.json`、`graph.graphml`、`kg.html` |
+| 短信垃圾过滤 | `assets/docs/text/`（3 份）+ 共享教训库 | 30 节点 / 27 边 / 10 类能力 / 12 条教训 | `text_capabilities.json`、`text_graph.graphml`、`text_kg.html` |
 | 真实开源仓库 `scorecardpy`（MIT） | `assets/repo/` | 95 节点 / 248 边 / 81 个公开能力 | `repo_capabilities.json`、`repo_graph.graphml` |
 
-源材料没有验证运行记录，因此源图谱覆盖 10 类关系（主场景）/ 3 类（仓库子图）；`HAS_RUN` / `RESULTED_IN` / `DERIVED_FROM` 在 Curator 回写后补齐，回写图谱覆盖 13 类。
+源图谱覆盖 10 类关系（主场景）/ 3 类（仓库子图）；`RESULTED_IN` / `DERIVED_FROM` / `FIXED_BY` 由 Curator 回写补齐，回写后的知识图覆盖 12 类。`HAS_RUN` 只在内存里连接运行日志，日志另存 `*_runs.json`，不写进交付图谱。
 
 **仓库抽取细节**：函数 / 方法 → `Capability`（id `cap.repo.scorecardpy.<module>.<func>`）；docstring `Params` / `Returns` 段 → 结构化参数（21 个函数有，其余用签名兜底）；module 级 import → `Environment`（实测 8 个第三方依赖）；签名行 + docstring 首行 → `Evidence`（`sha256` 可重算）；函数体内点号调用 → `USES`。抽取器只做 `ast.parse`，**不 import、不执行**被抽取代码。复现：`python scripts/extract_repo.py`。
 
@@ -205,7 +216,7 @@ algo-capability-factory/
 | Reviewer | 代码 → AST 静态评审（危险 import、泄漏、契约签名） |
 | Verifier | 沙箱结果 → 四层 `ValidationReport` |
 | Repairer | 错误签名 → 定向修复补丁（不重写全量） |
-| Curator | 报告 → KG 回写 + 方案设计依据说明 |
+| Curator | 报告 → 失败案例累积 → 教训提升 + 能力版本 + 日志分离 + 设计依据说明 |
 
 **状态机**
 
@@ -236,7 +247,18 @@ Parse → Retrieve → Plan → Generate → StaticCheck → Execute → Validat
 | `MetricBelowThreshold` | 检索历史高分方案 → 切换模型族 / 加采样 / 网格搜成本最优阈值 |
 | `ImportError` / `Timeout` / `Nondeterminism` | 换白名单库 / 降采样换轻量模型 / 注入 `random_state` |
 
-每个 `(错误签名 → 修复动作 → 结果)` 三元组回写为 `FailureCase` 与新版 `Capability`，构成可复用经验。
+每个 `(错误签名 → 修复动作 → 结果)` 三元组先回写为 `FailureCase`（带 `run_ids` 与 `occurrences`），同一签名在**独立 run** 中出现 ≥ `knowledge.lesson_promote_threshold`（默认 2）次后提升为 `Lesson`：写明根因、处置、预防、适用面与置信度，并连 `DERIVED_FROM` 回到失败案例。一个 run 内重跑不会重复计数，因此偶发失败不会被重跑次数"喂"成知识。
+
+**记忆分层：什么该被记住**
+
+| 层 | 内容 | 归属 | 参与检索 |
+|---|---|---|---|
+| 运行日志 | 本轮每个候选的指标、耗时、是否通过 | `*_runs.json`、`trace_*.json` | 否，不占 prompt 名额 |
+| 单次现象 | `FailureCase`：错误签名、当次处置、独立 run 数 | 知识图谱 | 是（历史失败规避项） |
+| 系统级知识 | `Lesson`：现象 / 根因 / 处置 / 预防 / 适用面 / 置信度 | 知识图谱 | 是（`## 系统级教训`，实测优先） |
+| 能力版本 | `Capability(v+1)`：因哪些签名升版、引用了哪些教训 | 知识图谱 | 是 |
+
+图谱加载方式也随之调整：**本次材料抽取 + 上次回写的运行沉淀合并**。材料是唯一事实来源（改了 `assets/docs/` 立即生效，不会因为"有回写文件"而永远读旧内容），沉淀只继承失败案例、教训与能力版本，`run.*` 日志不进交付图谱。
 
 ---
 
@@ -282,13 +304,15 @@ python -m unittest discover -s tests -v
 |---|---|
 | `outputs/generated/{,text/,regression/}candidate_*.py` | 生成 / 修复后的算法代码 |
 | `outputs/reports/run_*.md` | 四层验证报告、候选排名、修复轨迹、设计依据 |
+| `outputs/kg/capabilities_after_run.json` | 回写后的**知识图谱**：能力 + 失败案例 + 教训（不含运行日志） |
+| `outputs/kg/capabilities_after_run_runs.json` | 本轮**运行日志**：仅追溯用，不参与检索 |
 | `outputs/kg/graph.graphml`、`kg.html` | 回写后的能力图谱与可视化 |
 | `outputs/runs/trace_*.json` | 七步流程可回放轨迹（运行时临时产物，不入库） |
 | `assets/llm_cassettes/*.json` | 脱敏后的真实 LLM 对话与响应，供离线回放（入库） |
 
 **最小依赖**：核心闭环需 `pydantic`、`PyYAML`、`pandas`、`scikit-learn`、`networkx`、`langgraph`、`rank-bm25`、`markdown-it-py`、`psutil`、`structlog`（全部为现成库，`requirements.txt` 已锁版本区间）；`pyvis`、`Jinja2`、`Typer`、`openai` 按入口加载。全量清单 23 个直接依赖，含传递依赖共 106 个安装包。
 
-**干净环境实测（P5 记录）**：空 venv 仅执行一次 `pip install -r requirements.txt`（无冲突），随后跑通 `ruff check`（全绿）、端到端 `factory run`（`四层全通过=True`、退出码 0），未安装任何清单外依赖；P6 与 1.1.x 未新增第三方依赖，1.2.0 只加代码不加依赖，当前全量测试 163 个。
+**干净环境实测（P5 记录）**：空 venv 仅执行一次 `pip install -r requirements.txt`（无冲突），随后跑通 `ruff check`（全绿）、端到端 `factory run`（`四层全通过=True`、退出码 0），未安装任何清单外依赖；P6、1.1.x、1.2.0 与 1.3.0 均未新增第三方依赖（教训提炼与日志分离只用标准库 + 现有 pydantic），当前全量测试 177 个。
 
 **持续集成**：`.github/workflows/ci.yml` 用 matrix 并行 **Python 3.11**（最低版本）与 **3.12**（本地实测版本），各自执行 `ruff check`、全量单元测试与三条端到端（信用卡 / 短信 / 回归），断言 `四层全通过=True`。端到端走默认 provider（Interpreter 用已入库 cassette），CI 不依赖任何 API key。
 
@@ -324,6 +348,7 @@ python -m unittest discover -s tests -v
 | `repo/scorecardpy/` | 真实开源仓库（MIT） | 13 个模块 / 81 个函数的签名、依赖、docstring 与行号证据 |
 | `docs/expert_rules.md`、`docs/experiment_log.md` | 专家经验 / 实验记录 | WOE 分箱、还款状态衍生、阈值经验、历史调参结果 |
 | `docs/test_report.md`、`docs/failure_review.md` | 测试报告 / 失败复盘 | 失败案例、泄漏事故、指标口径 |
+| `docs/engineering_lessons.md` | 工程教训库（跨场景共享） | LE1–LE12 系统级坑点：现象 / 根因 / 处置 / 预防 / 适用面 |
 | `docs/text/{sms_data_dictionary,sms_policy,sms_failure_review}.md` | 文本场景材料（3 份） | 字段与 ST1–ST4 问题、S1–S6 条件与门槛、FR-01/02 复盘 |
 
 **已知数据陷阱**（核心领域知识与真实失败案例来源）
@@ -408,7 +433,7 @@ def build_pipeline(config):
 | 能力理解 | `能力理解来源=cassette`、`spec_id=spec.next_month_default`（真实 DeepSeek 响应，离线回放） |
 | 候选方案 | 3 个（三种算法族）：LR 0.72061（FAIL）、**RF 0.78990（PASS）**、HGB 0.78434（PASS） |
 | 修复轨迹 | 源材料首轮复现 `KeyError: PAY_1` → 映射为 `PAY_0`，再处理指标层（2 轮）；有回写图谱时 T1 经验命中，仅剩指标层（1 轮） |
-| 图谱沉淀 | `outputs/kg/capabilities_after_run.json`：首轮新增 ValidationRun / FailureCase / 能力 v2；失败案例按错误签名去重 |
+| 图谱沉淀 | `capabilities_after_run.json`（知识：112 节点含 13 条教训、14 个失败案例）+ `capabilities_after_run_runs.json`（运行日志 3 条）；失败案例按错误签名去重，教训按签名去重并累积独立 run 数 |
 | 确定性实测 | 三个候选同一子进程内二次 fit，两次输出最大绝对差均为 `0.00e+00` |
 | test 终评 | 最佳候选 `plan.02` 一次性评估：AUC 0.7883、KS 0.4399、F1 0.4590、PSI 0.0681、分组 AUC 差 0.0201；不参与排序与修复 |
 | 代码来源 | 默认 mock 路径全为 `template`（Mock 输出不冒充模型生成）；真实 DeepSeek 下 3 候选有 2 个采用 LLM 代码（`plan.02` AUC 0.78992，可区分于模板 0.78990），采用前均过 AST 静态检查 |
@@ -433,6 +458,25 @@ def build_pipeline(config):
 | 候选 AUC（降序） | 0.789905 / 0.784337 / 0.720612 | 0.789905 / 0.784337 / 0.720612 |
 
 两组 AUC 完全一致，说明沉淀改变的是过程效率而非指标口径；完整对比见 `outputs/reports/ablation.md` 与 `run_ablation.{with,without}_kg.md`。
+
+**知识沉淀实测（三轮，同一份回写图谱）**
+
+| 轮次 | 失败签名 | 图谱变化 | 效果 |
+|---|---|---|---|
+| 第 1 轮 `lesson_demo_1` | `KeyError: PAY_1`、`MetricBelowThreshold` | 两个失败案例各记 1 个独立 run，不提教训 | 修复 2 轮 |
+| 第 2 轮 `lesson_demo_2` | 仅 `MetricBelowThreshold`（T1 已被经验规避） | 该签名达 2 次 → 提升 `lesson.workflow.metricbelowthreshold`（置信度 0.65），连 `DERIVED_FROM` 回到失败案例 | 修复 1 轮 |
+| 第 3 轮 `lesson_demo_3` | 仅 `MetricBelowThreshold` | 检索命中上一轮沉淀的教训，`## 系统级教训` 首条即它 | 修复 1 轮 |
+
+教训在第 2 轮末尾沉淀、第 3 轮生效——这是学习闭环的真实时间语义，不虚构「同一轮内自我改进」。复现：
+
+```bash
+for i in 1 2 3; do
+  python -m factory run --spec "预测信用卡客户下月违约概率，时间外划分，按 5:1 成本比选阈值，禁止 ID 入模。" \
+    --mock --run-id lesson_demo_$i --kg-out capabilities_lesson_demo.json
+done
+```
+
+产物：`capabilities_lesson_demo.json`（知识，13 条教训）、`capabilities_lesson_demo_runs.json`（日志）、`run_lesson_demo_{1,2,3}.md`。
 
 **性能与资源消耗**（`scripts/resource_benchmark.py`，1× = 30,000 行，10× = 300,000 行有放回抽样，均取自子进程沙箱）
 
@@ -485,6 +529,7 @@ def build_pipeline(config):
 | **接口层把用户输入直接当文件名**：`POST /run` 传 `../../x` 可写出产物目录 | 双层校验（接口 Pydantic pattern + 拒绝 `..` → 422；工作流 `_RUN_ID_PATTERN` 兜底 → 退出码 2），API 区分 400 / 500 |
 | **早期自研轻量件与「复用优先」有张力** | 逐项评估现成库后替换（LangGraph、`psutil`、`structlog`、`Typer`、`markdown-it-py`、`rank_bm25`），未采用的写入选型表，规则与过程见 `.codebuddy/rules/architecture.md` |
 | **用户输入不可控**：描述可能过短、跑题，或把另一个场景的需求提给当前任务，让七步闭环在 a.Parse 就失败并浪费一次完整运行 | 入口加规则体检（`factory/intake/`）：缺要素给追问、跑题直接拦、场景错配直接给 `--task-config`；结论写入报告第 0 节，CLI 与 API 都拿得到。三份官方示例由测试锁定，避免误判 |
+| **知识沉淀退化成了日志**：每轮回写 `run_id + 指标 + 报错`，下次既检索不到也用不上，图谱越跑越像流水账 | 新增 `Lesson` 节点承载系统级知识（现象 / 根因 / 处置 / 预防 / 适用面 / 置信度），失败案例按独立 run 数累积后提升；运行日志与知识分文件导出、且日志不参与检索；材料知识与沉淀知识合并加载，避免「有回写文件就永远读旧材料」 |
 
 ---
 
@@ -494,7 +539,8 @@ def build_pipeline(config):
 2. 用 MCTS 替代 Beam Search，比较方案搜索效率与最终指标；
 3. 增加 PSI 漂移监控与能力自动降级策略；
 4. 从真实业务仓库持续增量抽取，形成能力版本谱系与血缘追踪；
-5. 扩展多标签、时序任务的验证插件，并接入在线评分服务的部署配置（OpenAPI 已自动生成）。
+5. 扩展多标签、时序任务的验证插件，并接入在线评分服务的部署配置（OpenAPI 已自动生成）；
+6. 教训生命周期管理：失效标记（`status: deprecated`）、按场景自动降权、跨项目迁移后的有效性回归。
 
 ---
 
@@ -519,20 +565,20 @@ def build_pipeline(config):
 
 | # | 题目交付物 | 本仓库对应位置 |
 |---|---|---|
-| 1 | 完整的项目代码库 | 仓库根目录；`factory/` 六层 42 个模块，git 历史按 P0 → P6 分阶段提交（对照见 `AGENTS.md`） |
-| 2 | 示例行业数据、文档或模拟业务材料 | `assets/data/`、`assets/docs/`（6 份 + `text/` 3 份）、`assets/legacy/`、`assets/repo/scorecardpy/` |
-| 3 | 能力知识图谱 schema 设计说明 | 第 3 节：9 类节点 / 13 类关系 / 六要素映射 / 按场景拆分子图 |
-| 4 | 知识抽取结果文件（JSON / CSV / GraphML） | `outputs/kg/{capabilities,text_capabilities,repo_capabilities}.json` + `.csv` + `*.graphml` |
+| 1 | 完整的项目代码库 | 仓库根目录；`factory/` 六层 47 个模块，git 历史按 P0 → P6 分阶段提交（对照见 `AGENTS.md`） |
+| 2 | 示例行业数据、文档或模拟业务材料 | `assets/data/`、`assets/docs/`（7 份 + `text/` 3 份）、`assets/legacy/`、`assets/repo/scorecardpy/` |
+| 3 | 能力知识图谱 schema 设计说明 | 第 3 节：10 类节点 / 13 类关系 / 六要素映射 / 按场景拆分子图 |
+| 4 | 知识抽取结果文件（JSON / CSV / GraphML） | `outputs/kg/{capabilities,text_capabilities,repo_capabilities}.json` + `.csv` + `*.graphml`；回写后的知识图谱 `capabilities_after_run.json`（能力 + 失败案例 + 教训）与运行日志 `capabilities_after_run_runs.json`；教训演进示例 `capabilities_lesson_demo.json` |
 | 5 | Agent 工作流代码或流程配置 | `factory/workflow/pipeline.py`（LangGraph `StateGraph`）+ `factory/agents/roles.py`（8 角色）；流程图见第 4 节 |
 | 6 | 至少 1 个从能力描述到代码生成的完整示例 | `outputs/reports/run_demo.md`（描述 → 检索证据 → 3 候选 → 代码 → 修复 diff）+ `outputs/generated/candidate_plan.0*.py` |
-| 7 | 自动验证脚本 | `python -m factory run`；`scripts/verify_baseline.py`；CI（lint + 163 用例 + 3 条端到端） |
-| 8 | 验证报告样例 | `outputs/reports/`：`run_demo.md`、`run_text_demo.md`、`run_regression_demo.md`、`validation_sample.md`、`ablation.md`、`resources.md`、`openapi.json` |
+| 7 | 自动验证脚本 | `python -m factory run`；`scripts/verify_baseline.py`；CI（lint + 177 用例 + 3 条端到端） |
+| 8 | 验证报告样例 | `outputs/reports/`：`run_demo.md`、`run_text_demo.md`、`run_regression_demo.md`、`run_lesson_demo_{1,2,3}.md`（知识沉淀三轮）、`validation_sample.md`、`ablation.md`、`resources.md`、`openapi.json` |
 | 9 | 项目文档 README.md | 本文件（十节 + 附录 A/B/C） |
 | 10 | 环境依赖文件 | `requirements.txt`（23 个直接依赖；含传递依赖共 106 个安装包） |
 | 11 | 使用示例和测试用例 | 第 5 节命令清单 + `tests/`（15 个文件 / 148 个用例） |
 
 **进阶 8 项**：CLI/API（第 5 节，`factory/api/app.py` 与 `outputs/reports/openapi.json`）、多轮修复与多候选比较（第 4 节）、图谱可视化（`outputs/kg/kg.html`）、自动验证报告（第 8 节）、结果回写（第 4、8 节）、不同任务类型配置（三份 `verify_*.yaml`）、插件式接入（指标插件 + 算法模板装饰器注册）、入口输入引导（第 4 节，`factory/intake/`）。
-**加分 10 项**：Beam Search、8 角色多智能体、真实仓库 AST 抽取（第 3 节）、沙箱与 AST 安全检查（第 4、9 节）、失败案例复用（第 8 节）、能力版本递增、设计依据生成、跨场景迁移（第 8 节）、OpenAPI 自动生成、资源消耗分析（第 8 节）。
+**加分 10 项**：Beam Search、8 角色多智能体、真实仓库 AST 抽取（第 3 节）、沙箱与 AST 安全检查（第 4、9 节）、失败案例复用与教训沉淀（第 3、4、8 节）、能力版本递增、设计依据生成、跨场景迁移（第 8 节）、OpenAPI 自动生成、资源消耗分析（第 8 节）。
 
 ## 附录 C · 数据与引用
 

@@ -28,10 +28,12 @@ def build_knowledge_graph(settings: Settings, root: Path,
     ``prefix`` 给产物加前缀，避免第二个场景覆盖主场景的 JSON / CSV / GraphML；
     ``dataset_profile`` 由 ``verify_*.yaml`` 派生的数据集画像，抽取器据此填
     Dataset 节点，不再把标签名与敏感列写死在代码里。
+
+    共享材料（工程教训库）无论构建哪个子图都会读入：系统级知识不该按场景切分。
     """
     docs = docs_dir or settings.paths.docs
     legacy = settings.paths.legacy if legacy_dir is None else legacy_dir
-    sources = read_sources(root, docs, legacy)
+    sources = read_sources(root, docs, legacy, settings.knowledge.shared_docs)
     graph = MockExtractor(dataset_profile).extract(sources)
     store = KnowledgeGraphStore(graph)
     kg_dir = root / settings.paths.kg

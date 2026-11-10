@@ -1,50 +1,63 @@
 <?xml version='1.0' encoding='utf-8'?>
 <graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
-  <key id="d66" for="edge" attr.name="attr_rule" attr.type="string" />
-  <key id="d65" for="edge" attr.name="edge_type" attr.type="string" />
-  <key id="d64" for="node" attr.name="attr_python_version" attr.type="string" />
-  <key id="d63" for="node" attr.name="attr_lib_deps" attr.type="string" />
-  <key id="d62" for="node" attr.name="attr_description" attr.type="string" />
-  <key id="d61" for="node" attr.name="attr_lineno" attr.type="long" />
-  <key id="d60" for="node" attr.name="attr_args" attr.type="string" />
-  <key id="d59" for="node" attr.name="attr_docstring" attr.type="string" />
-  <key id="d58" for="node" attr.name="attr_最终状态" attr.type="string" />
-  <key id="d57" for="node" attr.name="attr_修复轮次" attr.type="string" />
-  <key id="d56" for="node" attr.name="attr_四层结论" attr.type="string" />
-  <key id="d55" for="node" attr.name="attr_方案" attr.type="string" />
-  <key id="d54" for="node" attr.name="attr_运行" attr.type="string" />
-  <key id="d53" for="node" attr.name="attr_判定方法" attr.type="string" />
-  <key id="d52" for="node" attr.name="attr_检查项" attr.type="string" />
-  <key id="d51" for="node" attr.name="attr_层" attr.type="string" />
-  <key id="d50" for="node" attr.name="attr_门槛" attr.type="string" />
-  <key id="d49" for="node" attr.name="attr_方向" attr.type="string" />
-  <key id="d48" for="node" attr.name="attr_指标" attr.type="string" />
-  <key id="d47" for="node" attr.name="attr_说明" attr.type="string" />
-  <key id="d46" for="node" attr.name="attr_约束" attr.type="string" />
-  <key id="d45" for="node" attr.name="attr_定向修复" attr.type="string" />
-  <key id="d44" for="node" attr.name="attr_签名" attr.type="string" />
-  <key id="d43" for="node" attr.name="attr_error_signature" attr.type="string" />
-  <key id="d42" for="node" attr.name="attr_可复用经验" attr.type="string" />
-  <key id="d41" for="node" attr.name="attr_修复策略" attr.type="string" />
-  <key id="d40" for="node" attr.name="attr_错误签名" attr.type="string" />
-  <key id="d39" for="node" attr.name="attr_根因" attr.type="string" />
-  <key id="d38" for="node" attr.name="attr_现象" attr.type="string" />
-  <key id="d37" for="node" attr.name="attr_source_section" attr.type="string" />
-  <key id="d36" for="node" attr.name="attr_fit_on_train_only" attr.type="boolean" />
-  <key id="d35" for="node" attr.name="attr_order" attr.type="long" />
-  <key id="d34" for="node" attr.name="attr_适用条件" attr.type="string" />
-  <key id="d33" for="node" attr.name="attr_派生方式" attr.type="string" />
-  <key id="d32" for="node" attr.name="attr_原因" attr.type="string" />
-  <key id="d31" for="node" attr.name="attr_来源" attr.type="string" />
-  <key id="d30" for="node" attr.name="attr_经验" attr.type="string" />
-  <key id="d29" for="node" attr.name="attr_结论" attr.type="string" />
-  <key id="d28" for="node" attr.name="attr_耗时(s)" attr.type="string" />
-  <key id="d27" for="node" attr.name="attr_成本加权损失" attr.type="string" />
-  <key id="d26" for="node" attr.name="attr_验证集 KS" attr.type="string" />
-  <key id="d25" for="node" attr.name="attr_验证集 AUC" attr.type="string" />
-  <key id="d24" for="node" attr.name="attr_采样/阈值" attr.type="string" />
-  <key id="d23" for="node" attr.name="attr_预处理" attr.type="string" />
-  <key id="d22" for="node" attr.name="attr_模型" attr.type="string" />
+  <key id="d79" for="edge" attr.name="attr_rule" attr.type="string" />
+  <key id="d78" for="edge" attr.name="edge_type" attr.type="string" />
+  <key id="d77" for="node" attr.name="attr_python_version" attr.type="string" />
+  <key id="d76" for="node" attr.name="attr_lib_deps" attr.type="string" />
+  <key id="d75" for="node" attr.name="attr_description" attr.type="string" />
+  <key id="d74" for="node" attr.name="attr_lineno" attr.type="long" />
+  <key id="d73" for="node" attr.name="attr_args" attr.type="string" />
+  <key id="d72" for="node" attr.name="attr_docstring" attr.type="string" />
+  <key id="d71" for="node" attr.name="attr_最终状态" attr.type="string" />
+  <key id="d70" for="node" attr.name="attr_修复轮次" attr.type="string" />
+  <key id="d69" for="node" attr.name="attr_四层结论" attr.type="string" />
+  <key id="d68" for="node" attr.name="attr_方案" attr.type="string" />
+  <key id="d67" for="node" attr.name="attr_运行" attr.type="string" />
+  <key id="d66" for="node" attr.name="attr_判定方法" attr.type="string" />
+  <key id="d65" for="node" attr.name="attr_检查项" attr.type="string" />
+  <key id="d64" for="node" attr.name="attr_层" attr.type="string" />
+  <key id="d63" for="node" attr.name="attr_门槛" attr.type="string" />
+  <key id="d62" for="node" attr.name="attr_方向" attr.type="string" />
+  <key id="d61" for="node" attr.name="attr_指标" attr.type="string" />
+  <key id="d60" for="node" attr.name="attr_说明" attr.type="string" />
+  <key id="d59" for="node" attr.name="attr_约束" attr.type="string" />
+  <key id="d58" for="node" attr.name="attr_定向修复" attr.type="string" />
+  <key id="d57" for="node" attr.name="attr_签名" attr.type="string" />
+  <key id="d56" for="node" attr.name="attr_error_signature" attr.type="string" />
+  <key id="d55" for="node" attr.name="attr_可复用经验" attr.type="string" />
+  <key id="d54" for="node" attr.name="attr_修复策略" attr.type="string" />
+  <key id="d53" for="node" attr.name="attr_错误签名" attr.type="string" />
+  <key id="d52" for="node" attr.name="attr_根因" attr.type="string" />
+  <key id="d51" for="node" attr.name="attr_现象" attr.type="string" />
+  <key id="d50" for="node" attr.name="attr_source_section" attr.type="string" />
+  <key id="d49" for="node" attr.name="attr_fit_on_train_only" attr.type="boolean" />
+  <key id="d48" for="node" attr.name="attr_order" attr.type="long" />
+  <key id="d47" for="node" attr.name="attr_适用条件" attr.type="string" />
+  <key id="d46" for="node" attr.name="attr_派生方式" attr.type="string" />
+  <key id="d45" for="node" attr.name="attr_原因" attr.type="string" />
+  <key id="d44" for="node" attr.name="attr_来源" attr.type="string" />
+  <key id="d43" for="node" attr.name="attr_经验" attr.type="string" />
+  <key id="d42" for="node" attr.name="attr_结论" attr.type="string" />
+  <key id="d41" for="node" attr.name="attr_耗时(s)" attr.type="string" />
+  <key id="d40" for="node" attr.name="attr_成本加权损失" attr.type="string" />
+  <key id="d39" for="node" attr.name="attr_验证集 KS" attr.type="string" />
+  <key id="d38" for="node" attr.name="attr_验证集 AUC" attr.type="string" />
+  <key id="d37" for="node" attr.name="attr_采样/阈值" attr.type="string" />
+  <key id="d36" for="node" attr.name="attr_预处理" attr.type="string" />
+  <key id="d35" for="node" attr.name="attr_模型" attr.type="string" />
+  <key id="d34" for="node" attr.name="attr_source" attr.type="string" />
+  <key id="d33" for="node" attr.name="attr_confidence" attr.type="double" />
+  <key id="d32" for="node" attr.name="attr_signatures" attr.type="string" />
+  <key id="d31" for="node" attr.name="attr_run_ids" attr.type="string" />
+  <key id="d30" for="node" attr.name="attr_occurrences" attr.type="long" />
+  <key id="d29" for="node" attr.name="attr_record_kind" attr.type="string" />
+  <key id="d28" for="node" attr.name="attr_applies_to" attr.type="string" />
+  <key id="d27" for="node" attr.name="attr_prevention" attr.type="string" />
+  <key id="d26" for="node" attr.name="attr_action" attr.type="string" />
+  <key id="d25" for="node" attr.name="attr_root_cause" attr.type="string" />
+  <key id="d24" for="node" attr.name="attr_symptom" attr.type="string" />
+  <key id="d23" for="node" attr.name="attr_scope_label" attr.type="string" />
+  <key id="d22" for="node" attr.name="attr_scope" attr.type="string" />
   <key id="d21" for="node" attr.name="attr_metrics" attr.type="string" />
   <key id="d20" for="node" attr.name="attr_处理建议" attr.type="string" />
   <key id="d19" for="node" attr.name="attr_实测证据" attr.type="string" />
@@ -190,6 +203,306 @@
       <data key="d20">必须时间外划分，随机划分会引入未来信息</data>
       <data key="d21">{"编号": 4.0}</data>
     </node>
+    <node id="evidence.engineering_lessons">
+      <data key="d0">evidence.engineering_lessons</data>
+      <data key="d1">Evidence</data>
+      <data key="d2">证据源：assets/docs/engineering_lessons.md</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d7">assets/docs/engineering_lessons.md</data>
+      <data key="d8">工程教训</data>
+      <data key="d9">53dda1833ae55b0db5fbf9e6338976ef89feb21142a2fe4a861b8a4fca584ed9</data>
+    </node>
+    <node id="lesson.engineering_lessons.LE1">
+      <data key="d0">lesson.engineering_lessons.LE1</data>
+      <data key="d1">Lesson</data>
+      <data key="d2">[LE1] 内存看门狗永不触发，占用早已超过 2GB 仍判定通过</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d15">LE1</data>
+      <data key="d22">runtime</data>
+      <data key="d23">运行环境</data>
+      <data key="d24">内存看门狗永不触发，占用早已超过 2GB 仍判定通过</data>
+      <data key="d25">Windows 虚拟环境里的 `python.exe` 是重定向器，读父进程 RSS 只有约 4MB，按单进程计量完全失真</data>
+      <data key="d26">改为 `psutil.Process.children(recursive=True)` 对整棵进程树求和，超限即终止子进程</data>
+      <data key="d27">资源基准与四层验证共用同一套内存口径，并构造超限用例验证看门狗真的会触发</data>
+      <data key="d28">跨场景通用</data>
+      <data key="d16">教训速查</data>
+      <data key="d29">knowledge</data>
+      <data key="d30">1</data>
+      <data key="d31">[]</data>
+      <data key="d32">[]</data>
+      <data key="d33">0.9</data>
+      <data key="d34">seeded</data>
+    </node>
+    <node id="lesson.engineering_lessons.LE2">
+      <data key="d0">lesson.engineering_lessons.LE2</data>
+      <data key="d1">Lesson</data>
+      <data key="d2">[LE2] 本地跑通的 CLI 断言在 CI 上随机失败</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d15">LE2</data>
+      <data key="d22">platform</data>
+      <data key="d23">平台</data>
+      <data key="d24">本地跑通的 CLI 断言在 CI 上随机失败</data>
+      <data key="d25">Typer 检测到终端后自动着色，输出里混入 ANSI 转义序列，按纯文本匹配必然失配</data>
+      <data key="d26">子进程设 `NO_COLOR=1`、`TERM=dumb`，断言前统一剥离 ANSI</data>
+      <data key="d27">所有 CLI 断言走同一个输出归一化函数，不各写一份</data>
+      <data key="d28">跨场景通用</data>
+      <data key="d16">教训速查</data>
+      <data key="d29">knowledge</data>
+      <data key="d30">1</data>
+      <data key="d31">[]</data>
+      <data key="d32">[]</data>
+      <data key="d33">0.9</data>
+      <data key="d34">seeded</data>
+    </node>
+    <node id="lesson.engineering_lessons.LE3">
+      <data key="d0">lesson.engineering_lessons.LE3</data>
+      <data key="d1">Lesson</data>
+      <data key="d2">[LE3] 证据 SHA-256 在 Windows 上校验失败，Linux 正常</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d15">LE3</data>
+      <data key="d22">platform</data>
+      <data key="d23">平台</data>
+      <data key="d24">证据 SHA-256 在 Windows 上校验失败，Linux 正常</data>
+      <data key="d25">Git 检出的换行是 CRLF，与原文 LF 不同，同一内容算出不同哈希</data>
+      <data key="d26">`read_sources` 读入后归一化换行再计算哈希</data>
+      <data key="d27">哈希只对归一化后的文本计算，测试重算时复用同一入口</data>
+      <data key="d28">跨场景通用</data>
+      <data key="d16">教训速查</data>
+      <data key="d29">knowledge</data>
+      <data key="d30">1</data>
+      <data key="d31">[]</data>
+      <data key="d32">[]</data>
+      <data key="d33">0.9</data>
+      <data key="d34">seeded</data>
+    </node>
+    <node id="lesson.engineering_lessons.LE4">
+      <data key="d0">lesson.engineering_lessons.LE4</data>
+      <data key="d1">Lesson</data>
+      <data key="d2">[LE4] 报告写着四层验证，实际只有两层在生效：确定性恒为 True，test 段从未被读取</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d15">LE4</data>
+      <data key="d22">validation</data>
+      <data key="d23">验证</data>
+      <data key="d24">报告写着四层验证，实际只有两层在生效：确定性恒为 True，test 段从未被读取</data>
+      <data key="d25">检查项只存在于报告字段里，没有代码真正读取对应输入</data>
+      <data key="d26">沙箱支持 `repeat&gt;=2` 的同进程二次 fit 与 `segment="test"`；工作流在候选比较结束后消费一次 test</data>
+      <data key="d27">每个检查项都必须配一个「不通过」的构造用例，否则不许写进报告</data>
+      <data key="d28">跨场景通用</data>
+      <data key="d16">教训速查</data>
+      <data key="d29">knowledge</data>
+      <data key="d30">1</data>
+      <data key="d31">[]</data>
+      <data key="d32">[]</data>
+      <data key="d33">0.9</data>
+      <data key="d34">seeded</data>
+    </node>
+    <node id="lesson.engineering_lessons.LE5">
+      <data key="d0">lesson.engineering_lessons.LE5</data>
+      <data key="d1">Lesson</data>
+      <data key="d2">[LE5] 边很多，但追问「这两点为什么相连」答不出来</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d15">LE5</data>
+      <data key="d22">knowledge</data>
+      <data key="d23">图谱</data>
+      <data key="d24">边很多，但追问「这两点为什么相连」答不出来</data>
+      <data key="d25">连边按 `index % len(metrics)` 轮转，与内容无关，属于凑数量</data>
+      <data key="d26">改为名称或属性文本命中才连边，宁可边少</data>
+      <data key="d27">每条边都要能回答「凭什么连」，答不出就删</data>
+      <data key="d28">跨场景通用</data>
+      <data key="d16">教训速查</data>
+      <data key="d29">knowledge</data>
+      <data key="d30">1</data>
+      <data key="d31">[]</data>
+      <data key="d32">[]</data>
+      <data key="d33">0.9</data>
+      <data key="d34">seeded</data>
+    </node>
+    <node id="lesson.engineering_lessons.LE6">
+      <data key="d0">lesson.engineering_lessons.LE6</data>
+      <data key="d1">Lesson</data>
+      <data key="d2">[LE6] 修复退化成反复重试，同一错误连修三轮仍失败</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d15">LE6</data>
+      <data key="d22">workflow</data>
+      <data key="d23">编排</data>
+      <data key="d24">修复退化成反复重试，同一错误连修三轮仍失败</data>
+      <data key="d25">没有先分类错误签名，直接整段重新生成代码</data>
+      <data key="d26">建立「签名 → 策略」表，只改必要片段，最多 3 轮</data>
+      <data key="d27">每轮修复必须记录签名与策略，重复签名立即停止该路线</data>
+      <data key="d28">跨场景通用</data>
+      <data key="d16">教训速查</data>
+      <data key="d29">knowledge</data>
+      <data key="d30">1</data>
+      <data key="d31">[]</data>
+      <data key="d32">[]</data>
+      <data key="d33">0.9</data>
+      <data key="d34">seeded</data>
+    </node>
+    <node id="lesson.engineering_lessons.LE7">
+      <data key="d0">lesson.engineering_lessons.LE7</data>
+      <data key="d1">Lesson</data>
+      <data key="d2">[LE7] 传入 `../../x` 的请求能把产物写到仓库外</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d15">LE7</data>
+      <data key="d22">platform</data>
+      <data key="d23">平台</data>
+      <data key="d24">传入 `../../x` 的请求能把产物写到仓库外</data>
+      <data key="d25">把用户输入原样拼进文件名，只做了字符串拼接</data>
+      <data key="d26">接口层做字符集 pattern 校验并拒绝 `..`，工作流侧再兜底一次</data>
+      <data key="d27">任何用户输入进入路径前先校验字符集与相对路径，双层校验</data>
+      <data key="d28">跨场景通用</data>
+      <data key="d16">教训速查</data>
+      <data key="d29">knowledge</data>
+      <data key="d30">1</data>
+      <data key="d31">[]</data>
+      <data key="d32">[]</data>
+      <data key="d33">0.9</data>
+      <data key="d34">seeded</data>
+    </node>
+    <node id="lesson.engineering_lessons.LE8">
+      <data key="d0">lesson.engineering_lessons.LE8</data>
+      <data key="d1">Lesson</data>
+      <data key="d2">[LE8] 报告里把离线回放说成实时调用，评审无法区分</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d15">LE8</data>
+      <data key="d22">llm</data>
+      <data key="d23">LLM</data>
+      <data key="d24">报告里把离线回放说成实时调用，评审无法区分</data>
+      <data key="d25">响应来源没有落到产物里，只在日志里出现</data>
+      <data key="d26">把来源写进 `RunTrace.interpreter_source`，报告逐条标注</data>
+      <data key="d27">任何「实测」结论必须能追溯来源，回放内容单独标注</data>
+      <data key="d28">跨场景通用</data>
+      <data key="d16">教训速查</data>
+      <data key="d29">knowledge</data>
+      <data key="d30">1</data>
+      <data key="d31">[]</data>
+      <data key="d32">[]</data>
+      <data key="d33">0.9</data>
+      <data key="d34">seeded</data>
+    </node>
+    <node id="lesson.engineering_lessons.LE9">
+      <data key="d0">lesson.engineering_lessons.LE9</data>
+      <data key="d1">Lesson</data>
+      <data key="d2">[LE9] Coder 明明调用了 LLM，产物却全是模板代码</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d15">LE9</data>
+      <data key="d22">llm</data>
+      <data key="d23">LLM</data>
+      <data key="d24">Coder 明明调用了 LLM，产物却全是模板代码</data>
+      <data key="d25">LLM 返回的代码没过静态检查就被丢弃，且丢弃原因没有留痕</data>
+      <data key="d26">先过 AST 白名单与契约检查，通过即采用；失败回退模板并写 `code_sources`</data>
+      <data key="d27">回退路径必须写进 trace，不能静默回退</data>
+      <data key="d28">跨场景通用</data>
+      <data key="d16">教训速查</data>
+      <data key="d29">knowledge</data>
+      <data key="d30">1</data>
+      <data key="d31">[]</data>
+      <data key="d32">[]</data>
+      <data key="d33">0.9</data>
+      <data key="d34">seeded</data>
+    </node>
+    <node id="lesson.engineering_lessons.LE10">
+      <data key="d0">lesson.engineering_lessons.LE10</data>
+      <data key="d1">Lesson</data>
+      <data key="d2">[LE10] 同一候选两次 fit 的指标不同，报告却声称确定性通过</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d15">LE10</data>
+      <data key="d22">runtime</data>
+      <data key="d23">运行环境</data>
+      <data key="d24">同一候选两次 fit 的指标不同，报告却声称确定性通过</data>
+      <data key="d25">随机种子未固定，或同一进程重复 fit 带来状态污染</data>
+      <data key="d26">显式固定 `random_state`，并在子进程内二次 fit 比较输出</data>
+      <data key="d27">确定性必须实测（最大绝对差），不能靠声明</data>
+      <data key="d28">跨场景通用</data>
+      <data key="d16">教训速查</data>
+      <data key="d29">knowledge</data>
+      <data key="d30">1</data>
+      <data key="d31">[]</data>
+      <data key="d32">[]</data>
+      <data key="d33">0.9</data>
+      <data key="d34">seeded</data>
+    </node>
+    <node id="lesson.engineering_lessons.LE11">
+      <data key="d0">lesson.engineering_lessons.LE11</data>
+      <data key="d1">Lesson</data>
+      <data key="d2">[LE11] 图谱做得很全，但生成代码看不出受过它影响</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d15">LE11</data>
+      <data key="d22">knowledge</data>
+      <data key="d23">检索</data>
+      <data key="d24">图谱做得很全，但生成代码看不出受过它影响</data>
+      <data key="d25">渲染与注入是两套逻辑，检索结果只用于展示</data>
+      <data key="d26">统一走 `RetrievalResult.as_prompt_context()`，Planner 与 Coder 强制使用</data>
+      <data key="d27">注入内容要写进 trace 留证，报告可回放</data>
+      <data key="d28">跨场景通用</data>
+      <data key="d16">教训速查</data>
+      <data key="d29">knowledge</data>
+      <data key="d30">1</data>
+      <data key="d31">[]</data>
+      <data key="d32">[]</data>
+      <data key="d33">0.9</data>
+      <data key="d34">seeded</data>
+    </node>
+    <node id="lesson.engineering_lessons.LE12">
+      <data key="d0">lesson.engineering_lessons.LE12</data>
+      <data key="d1">Lesson</data>
+      <data key="d2">[LE12] 换一个任务类型就要改核心验证器，改动风险高</data>
+      <data key="d3">v1</data>
+      <data key="d4">tabular_binary_classification</data>
+      <data key="d5">active</data>
+      <data key="d6">1</data>
+      <data key="d15">LE12</data>
+      <data key="d22">workflow</data>
+      <data key="d23">编排</data>
+      <data key="d24">换一个任务类型就要改核心验证器，改动风险高</data>
+      <data key="d25">任务假设（指标、划分、数据列）写死在代码里，而非配置里</data>
+      <data key="d26">指标与门槛下沉到 `verify_*.yaml`，新增任务只加配置与插件</data>
+      <data key="d27">新增任务类型时不许改核心模块，只允许新增配置与注册插件</data>
+      <data key="d28">跨场景通用</data>
+      <data key="d16">教训速查</data>
+      <data key="d29">knowledge</data>
+      <data key="d30">1</data>
+      <data key="d31">[]</data>
+      <data key="d32">[]</data>
+      <data key="d33">0.9</data>
+      <data key="d34">seeded</data>
+    </node>
     <node id="evidence.experiment_log">
       <data key="d0">evidence.experiment_log</data>
       <data key="d1">Evidence</data>
@@ -213,14 +526,14 @@
       <data key="d15">EXP-01</data>
       <data key="d16">记录汇总</data>
       <data key="d17">EXP-01</data>
-      <data key="d22">Dummy（分层随机）</data>
-      <data key="d23">无</data>
-      <data key="d24">0.5</data>
-      <data key="d25">0.500</data>
-      <data key="d26">0.000</data>
-      <data key="d27">0.221</data>
-      <data key="d28">0.1</data>
-      <data key="d29">基线</data>
+      <data key="d35">Dummy（分层随机）</data>
+      <data key="d36">无</data>
+      <data key="d37">0.5</data>
+      <data key="d38">0.500</data>
+      <data key="d39">0.000</data>
+      <data key="d40">0.221</data>
+      <data key="d41">0.1</data>
+      <data key="d42">基线</data>
       <data key="d21">{"成本加权损失": 0.221, "编号": -1.0, "耗时(s)": 0.1, "采样/阈值": 0.5, "验证集 AUC": 0.5, "验证集 KS": 0.0}</data>
     </node>
     <node id="run.experiment_log.EXP-02">
@@ -234,14 +547,14 @@
       <data key="d15">EXP-02</data>
       <data key="d16">记录汇总</data>
       <data key="d17">EXP-02</data>
-      <data key="d22">LogisticRegression</data>
-      <data key="d23">标准化</data>
-      <data key="d24">无 / 0.5</data>
-      <data key="d25">0.741</data>
-      <data key="d26">0.318</data>
-      <data key="d27">0.183</data>
-      <data key="d28">0.8</data>
-      <data key="d29">基线，未达 KS 门槛</data>
+      <data key="d35">LogisticRegression</data>
+      <data key="d36">标准化</data>
+      <data key="d37">无 / 0.5</data>
+      <data key="d38">0.741</data>
+      <data key="d39">0.318</data>
+      <data key="d40">0.183</data>
+      <data key="d41">0.8</data>
+      <data key="d42">基线，未达 KS 门槛</data>
       <data key="d21">{"成本加权损失": 0.183, "编号": -2.0, "耗时(s)": 0.8, "采样/阈值": 0.5, "验证集 AUC": 0.741, "验证集 KS": 0.318}</data>
     </node>
     <node id="run.experiment_log.EXP-03">
@@ -255,14 +568,14 @@
       <data key="d15">EXP-03</data>
       <data key="d16">记录汇总</data>
       <data key="d17">EXP-03</data>
-      <data key="d22">LogisticRegression</data>
-      <data key="d23">WOE 分箱</data>
-      <data key="d24">无 / 0.5</data>
-      <data key="d25">0.772</data>
-      <data key="d26">0.361</data>
-      <data key="d27">0.171</data>
-      <data key="d28">2.4</data>
-      <data key="d29">可解释性好，KS 达标</data>
+      <data key="d35">LogisticRegression</data>
+      <data key="d36">WOE 分箱</data>
+      <data key="d37">无 / 0.5</data>
+      <data key="d38">0.772</data>
+      <data key="d39">0.361</data>
+      <data key="d40">0.171</data>
+      <data key="d41">2.4</data>
+      <data key="d42">可解释性好，KS 达标</data>
       <data key="d21">{"成本加权损失": 0.171, "编号": -3.0, "耗时(s)": 2.4, "采样/阈值": 0.5, "验证集 AUC": 0.772, "验证集 KS": 0.361}</data>
     </node>
     <node id="run.experiment_log.EXP-04">
@@ -276,14 +589,14 @@
       <data key="d15">EXP-04</data>
       <data key="d16">记录汇总</data>
       <data key="d17">EXP-04</data>
-      <data key="d22">LogisticRegression</data>
-      <data key="d23">WOE 分箱</data>
-      <data key="d24">class_weight / 成本最优阈值</data>
-      <data key="d25">0.775</data>
-      <data key="d26">0.368</data>
-      <data key="d27">0.152</data>
-      <data key="d28">2.6</data>
-      <data key="d29">成本损失最低</data>
+      <data key="d35">LogisticRegression</data>
+      <data key="d36">WOE 分箱</data>
+      <data key="d37">class_weight / 成本最优阈值</data>
+      <data key="d38">0.775</data>
+      <data key="d39">0.368</data>
+      <data key="d40">0.152</data>
+      <data key="d41">2.6</data>
+      <data key="d42">成本损失最低</data>
       <data key="d21">{"成本加权损失": 0.152, "编号": -4.0, "耗时(s)": 2.6, "验证集 AUC": 0.775, "验证集 KS": 0.368}</data>
     </node>
     <node id="run.experiment_log.EXP-05">
@@ -297,14 +610,14 @@
       <data key="d15">EXP-05</data>
       <data key="d16">记录汇总</data>
       <data key="d17">EXP-05</data>
-      <data key="d22">RandomForest(200)</data>
-      <data key="d23">类别编码</data>
-      <data key="d24">class_weight / 0.5</data>
-      <data key="d25">0.779</data>
-      <data key="d26">0.372</data>
-      <data key="d27">0.168</data>
-      <data key="d28">6.1</data>
-      <data key="d29">AUC 略高但成本损失不如 EXP-04</data>
+      <data key="d35">RandomForest(200)</data>
+      <data key="d36">类别编码</data>
+      <data key="d37">class_weight / 0.5</data>
+      <data key="d38">0.779</data>
+      <data key="d39">0.372</data>
+      <data key="d40">0.168</data>
+      <data key="d41">6.1</data>
+      <data key="d42">AUC 略高但成本损失不如 EXP-04</data>
       <data key="d21">{"成本加权损失": 0.168, "模型": 200.0, "结论": -4.0, "编号": -5.0, "耗时(s)": 6.1, "采样/阈值": 0.5, "验证集 AUC": 0.779, "验证集 KS": 0.372}</data>
     </node>
     <node id="run.experiment_log.EXP-06">
@@ -318,14 +631,14 @@
       <data key="d15">EXP-06</data>
       <data key="d16">记录汇总</data>
       <data key="d17">EXP-06</data>
-      <data key="d22">HistGB(max_iter=200)</data>
-      <data key="d23">类别编码</data>
-      <data key="d24">无 / 0.5</data>
-      <data key="d25">0.783</data>
-      <data key="d26">0.381</data>
-      <data key="d27">0.165</data>
-      <data key="d28">4.3</data>
-      <data key="d29">AUC/KS 最高</data>
+      <data key="d35">HistGB(max_iter=200)</data>
+      <data key="d36">类别编码</data>
+      <data key="d37">无 / 0.5</data>
+      <data key="d38">0.783</data>
+      <data key="d39">0.381</data>
+      <data key="d40">0.165</data>
+      <data key="d41">4.3</data>
+      <data key="d42">AUC/KS 最高</data>
       <data key="d21">{"成本加权损失": 0.165, "模型": 200.0, "编号": -6.0, "耗时(s)": 4.3, "采样/阈值": 0.5, "验证集 AUC": 0.783, "验证集 KS": 0.381}</data>
     </node>
     <node id="run.experiment_log.EXP-07">
@@ -339,14 +652,14 @@
       <data key="d15">EXP-07</data>
       <data key="d16">记录汇总</data>
       <data key="d17">EXP-07</data>
-      <data key="d22">HistGB + SMOTE</data>
-      <data key="d23">类别编码</data>
-      <data key="d24">SMOTE / 0.5</data>
-      <data key="d25">0.770</data>
-      <data key="d26">0.355</data>
-      <data key="d27">0.176</data>
-      <data key="d28">7.9</data>
-      <data key="d29">过采样未带来收益，且耗时上升</data>
+      <data key="d35">HistGB + SMOTE</data>
+      <data key="d36">类别编码</data>
+      <data key="d37">SMOTE / 0.5</data>
+      <data key="d38">0.770</data>
+      <data key="d39">0.355</data>
+      <data key="d40">0.176</data>
+      <data key="d41">7.9</data>
+      <data key="d42">过采样未带来收益，且耗时上升</data>
       <data key="d21">{"成本加权损失": 0.176, "编号": -7.0, "耗时(s)": 7.9, "采样/阈值": 0.5, "验证集 AUC": 0.77, "验证集 KS": 0.355}</data>
     </node>
     <node id="run.experiment_log.EXP-08">
@@ -360,14 +673,14 @@
       <data key="d15">EXP-08</data>
       <data key="d16">记录汇总</data>
       <data key="d17">EXP-08</data>
-      <data key="d22">HistGB(全量随机划分)</data>
-      <data key="d23">类别编码</data>
-      <data key="d24">无 / 0.5</data>
-      <data key="d25">0.912</data>
-      <data key="d26">0.702</data>
-      <data key="d27">0.071</data>
-      <data key="d28">4.5</data>
-      <data key="d29">**判定无效**：随机划分引入未来信息，指标虚高，已作废</data>
+      <data key="d35">HistGB(全量随机划分)</data>
+      <data key="d36">类别编码</data>
+      <data key="d37">无 / 0.5</data>
+      <data key="d38">0.912</data>
+      <data key="d39">0.702</data>
+      <data key="d40">0.071</data>
+      <data key="d41">4.5</data>
+      <data key="d42">**判定无效**：随机划分引入未来信息，指标虚高，已作废</data>
       <data key="d21">{"成本加权损失": 0.071, "编号": -8.0, "耗时(s)": 4.5, "采样/阈值": 0.5, "验证集 AUC": 0.912, "验证集 KS": 0.702}</data>
     </node>
     <node id="cap.experiment_log.K1">
@@ -381,8 +694,8 @@
       <data key="d15">K1</data>
       <data key="d16">可复用经验</data>
       <data key="d17">K1</data>
-      <data key="d30">WOE 分箱对逻辑回归的 KS 提升明显（0.318 → 0.361）</data>
-      <data key="d31">EXP-02 / EXP-03</data>
+      <data key="d43">WOE 分箱对逻辑回归的 KS 提升明显（0.318 → 0.361）</data>
+      <data key="d44">EXP-02 / EXP-03</data>
       <data key="d21">{"编号": 1.0}</data>
     </node>
     <node id="cap.experiment_log.K2">
@@ -396,8 +709,8 @@
       <data key="d15">K2</data>
       <data key="d16">可复用经验</data>
       <data key="d17">K2</data>
-      <data key="d30">按成本比调阈值比换模型更能降低业务损失</data>
-      <data key="d31">EXP-04</data>
+      <data key="d43">按成本比调阈值比换模型更能降低业务损失</data>
+      <data key="d44">EXP-04</data>
       <data key="d21">{"来源": -4.0, "编号": 2.0}</data>
     </node>
     <node id="cap.experiment_log.K3">
@@ -411,8 +724,8 @@
       <data key="d15">K3</data>
       <data key="d16">可复用经验</data>
       <data key="d17">K3</data>
-      <data key="d30">HistGB 在 AUC/KS 上最优，但可解释性弱于评分卡</data>
-      <data key="d31">EXP-06</data>
+      <data key="d43">HistGB 在 AUC/KS 上最优，但可解释性弱于评分卡</data>
+      <data key="d44">EXP-06</data>
       <data key="d21">{"来源": -6.0, "编号": 3.0}</data>
     </node>
     <node id="cap.experiment_log.K4">
@@ -426,8 +739,8 @@
       <data key="d15">K4</data>
       <data key="d16">可复用经验</data>
       <data key="d17">K4</data>
-      <data key="d30">SMOTE 在本数据集无收益，优先 `class_weight`</data>
-      <data key="d31">EXP-07</data>
+      <data key="d43">SMOTE 在本数据集无收益，优先 `class_weight`</data>
+      <data key="d44">EXP-07</data>
       <data key="d21">{"来源": -7.0, "编号": 4.0}</data>
     </node>
     <node id="cap.experiment_log.K5">
@@ -441,8 +754,8 @@
       <data key="d15">K5</data>
       <data key="d16">可复用经验</data>
       <data key="d17">K5</data>
-      <data key="d30">随机划分会造成严重虚高，必须时间外划分</data>
-      <data key="d31">EXP-08（作废记录）</data>
+      <data key="d43">随机划分会造成严重虚高，必须时间外划分</data>
+      <data key="d44">EXP-08（作废记录）</data>
       <data key="d21">{"来源": -8.0, "编号": 5.0}</data>
     </node>
     <node id="cap.experiment_log.K6">
@@ -456,8 +769,8 @@
       <data key="d15">K6</data>
       <data key="d16">可复用经验</data>
       <data key="d17">K6</data>
-      <data key="d30">训练耗时均低于 8s，满足 60s 时限；Beam Search 可行</data>
-      <data key="d31">全部</data>
+      <data key="d43">训练耗时均低于 8s，满足 60s 时限；Beam Search 可行</data>
+      <data key="d44">全部</data>
       <data key="d21">{"经验": 860.0, "编号": 6.0}</data>
     </node>
     <node id="evidence.expert_rules">
@@ -483,8 +796,8 @@
       <data key="d15">E1</data>
       <data key="d16">1. 预处理经验</data>
       <data key="d17">E1</data>
-      <data key="d30">`EDUCATION` 的 0/5/6、`MARRIAGE` 的 0 统一归入「其他」</data>
-      <data key="d32">数据字典未定义，直接 One-Hot 会引入稀疏噪声或触发未知类别报错</data>
+      <data key="d43">`EDUCATION` 的 0/5/6、`MARRIAGE` 的 0 统一归入「其他」</data>
+      <data key="d45">数据字典未定义，直接 One-Hot 会引入稀疏噪声或触发未知类别报错</data>
       <data key="d21">{"经验": 560.0, "编号": 1.0}</data>
     </node>
     <node id="cap.expert_rules.E2">
@@ -498,8 +811,8 @@
       <data key="d15">E2</data>
       <data key="d16">1. 预处理经验</data>
       <data key="d17">E2</data>
-      <data key="d30">`PAY_*` 的 -2 保留为独立类别，不裁剪为 0</data>
-      <data key="d32">-2 表示无消费记录，与按时还款（-1）语义不同</data>
+      <data key="d43">`PAY_*` 的 -2 保留为独立类别，不裁剪为 0</data>
+      <data key="d45">-2 表示无消费记录，与按时还款（-1）语义不同</data>
       <data key="d21">{"经验": -20.0, "编号": 2.0}</data>
     </node>
     <node id="cap.expert_rules.E3">
@@ -513,8 +826,8 @@
       <data key="d15">E3</data>
       <data key="d16">1. 预处理经验</data>
       <data key="d17">E3</data>
-      <data key="d30">`BILL_AMT*` 负值保留符号</data>
-      <data key="d32">负值代表退款/多付，取绝对值会丢失信息</data>
+      <data key="d43">`BILL_AMT*` 负值保留符号</data>
+      <data key="d45">负值代表退款/多付，取绝对值会丢失信息</data>
       <data key="d21">{"编号": 3.0}</data>
     </node>
     <node id="cap.expert_rules.E4">
@@ -528,8 +841,8 @@
       <data key="d15">E4</data>
       <data key="d16">1. 预处理经验</data>
       <data key="d17">E4</data>
-      <data key="d30">所有预处理器置于 `sklearn.Pipeline` 内并仅在训练集 fit</data>
-      <data key="d32">防止均值/编码统计量泄漏到验证集</data>
+      <data key="d43">所有预处理器置于 `sklearn.Pipeline` 内并仅在训练集 fit</data>
+      <data key="d45">防止均值/编码统计量泄漏到验证集</data>
       <data key="d21">{"编号": 4.0}</data>
     </node>
     <node id="cap.expert_rules.E5">
@@ -543,8 +856,8 @@
       <data key="d15">E5</data>
       <data key="d16">2. 特征工程经验</data>
       <data key="d17">E5</data>
-      <data key="d30">连续逾期月数是最强单一信号</data>
-      <data key="d33">统计 `PAY_0`、`PAY_2`…`PAY_6` 中 &gt; 0 的期数</data>
+      <data key="d43">连续逾期月数是最强单一信号</data>
+      <data key="d46">统计 `PAY_0`、`PAY_2`…`PAY_6` 中 &gt; 0 的期数</data>
       <data key="d21">{"派生方式": 260.0, "编号": 5.0}</data>
     </node>
     <node id="cap.expert_rules.E6">
@@ -558,8 +871,8 @@
       <data key="d15">E6</data>
       <data key="d16">2. 特征工程经验</data>
       <data key="d17">E6</data>
-      <data key="d30">最大逾期等级</data>
-      <data key="d33">`max(PAY_0, PAY_2, …, PAY_6)`</data>
+      <data key="d43">最大逾期等级</data>
+      <data key="d46">`max(PAY_0, PAY_2, …, PAY_6)`</data>
       <data key="d21">{"派生方式": 26.0, "编号": 6.0}</data>
     </node>
     <node id="cap.expert_rules.E7">
@@ -573,8 +886,8 @@
       <data key="d15">E7</data>
       <data key="d16">2. 特征工程经验</data>
       <data key="d17">E7</data>
-      <data key="d30">还款率需按期次对齐</data>
-      <data key="d33">`PAY_AMT2 / BILL_AMT1`（9 月实付针对 8 月账单），分母为 0 时置 0</data>
+      <data key="d43">还款率需按期次对齐</data>
+      <data key="d46">`PAY_AMT2 / BILL_AMT1`（9 月实付针对 8 月账单），分母为 0 时置 0</data>
       <data key="d21">{"派生方式": 219800.0, "编号": 7.0}</data>
     </node>
     <node id="cap.expert_rules.E8">
@@ -588,8 +901,8 @@
       <data key="d15">E8</data>
       <data key="d16">2. 特征工程经验</data>
       <data key="d17">E8</data>
-      <data key="d30">账单趋势</data>
-      <data key="d33">`BILL_AMT1 - BILL_AMT6`、`BILL_AMT*` 均值与标准差</data>
+      <data key="d43">账单趋势</data>
+      <data key="d46">`BILL_AMT1 - BILL_AMT6`、`BILL_AMT*` 均值与标准差</data>
       <data key="d21">{"编号": 8.0}</data>
     </node>
     <node id="cap.expert_rules.E9">
@@ -603,8 +916,8 @@
       <data key="d15">E9</data>
       <data key="d16">2. 特征工程经验</data>
       <data key="d17">E9</data>
-      <data key="d30">额度使用率</data>
-      <data key="d33">`BILL_AMT1 / LIMIT_BAL`，`LIMIT_BAL = 0` 时置 0</data>
+      <data key="d43">额度使用率</data>
+      <data key="d46">`BILL_AMT1 / LIMIT_BAL`，`LIMIT_BAL = 0` 时置 0</data>
       <data key="d21">{"派生方式": 100.0, "编号": 9.0}</data>
     </node>
     <node id="cap.expert_rules.E10">
@@ -618,7 +931,7 @@
       <data key="d15">E10</data>
       <data key="d16">3. WOE 分箱与评分卡</data>
       <data key="d17">E10</data>
-      <data key="d30">对 `LIMIT_BAL`、`AGE`、`BILL_AMT1` 做监督分箱（5–10 箱），计算 WOE 与 IV，IV &lt; 0.02 的变量剔除</data>
+      <data key="d43">对 `LIMIT_BAL`、`AGE`、`BILL_AMT1` 做监督分箱（5–10 箱），计算 WOE 与 IV，IV &lt; 0.02 的变量剔除</data>
       <data key="d21">{"经验": 15100.02, "编号": 10.0}</data>
     </node>
     <node id="cap.expert_rules.E11">
@@ -632,7 +945,7 @@
       <data key="d15">E11</data>
       <data key="d16">3. WOE 分箱与评分卡</data>
       <data key="d17">E11</data>
-      <data key="d30">WOE 变换后接逻辑回归，可输出标准评分卡分数，可解释性优于树模型，适合作为 baseline 候选</data>
+      <data key="d43">WOE 变换后接逻辑回归，可输出标准评分卡分数，可解释性优于树模型，适合作为 baseline 候选</data>
       <data key="d21">{"编号": 11.0}</data>
     </node>
     <node id="cap.expert_rules.E12">
@@ -646,7 +959,7 @@
       <data key="d15">E12</data>
       <data key="d16">3. WOE 分箱与评分卡</data>
       <data key="d17">E12</data>
-      <data key="d30">分箱边界必须在训练集内学习，验证/测试集只做 apply</data>
+      <data key="d43">分箱边界必须在训练集内学习，验证/测试集只做 apply</data>
       <data key="d21">{"编号": 12.0}</data>
     </node>
     <node id="cap.expert_rules.E13">
@@ -660,8 +973,8 @@
       <data key="d15">E13</data>
       <data key="d16">4. 模型选择经验</data>
       <data key="d17">E13</data>
-      <data key="d30">逻辑回归 + WOE</data>
-      <data key="d34">需要可解释、需输出评分卡、样本量小</data>
+      <data key="d43">逻辑回归 + WOE</data>
+      <data key="d47">需要可解释、需输出评分卡、样本量小</data>
       <data key="d21">{"编号": 13.0}</data>
     </node>
     <node id="cap.expert_rules.E14">
@@ -675,8 +988,8 @@
       <data key="d15">E14</data>
       <data key="d16">4. 模型选择经验</data>
       <data key="d17">E14</data>
-      <data key="d30">随机森林</data>
-      <data key="d34">存在非线性交互，允许黑箱，需 `class_weight='balanced'`</data>
+      <data key="d43">随机森林</data>
+      <data key="d47">存在非线性交互，允许黑箱，需 `class_weight='balanced'`</data>
       <data key="d21">{"编号": 14.0}</data>
     </node>
     <node id="cap.expert_rules.E15">
@@ -690,8 +1003,8 @@
       <data key="d15">E15</data>
       <data key="d16">4. 模型选择经验</data>
       <data key="d17">E15</data>
-      <data key="d30">HistGradientBoosting</data>
-      <data key="d34">追求 AUC/KS 上限，注意限制 `max_iter` 以满足 60s 时限</data>
+      <data key="d43">HistGradientBoosting</data>
+      <data key="d47">追求 AUC/KS 上限，注意限制 `max_iter` 以满足 60s 时限</data>
       <data key="d21">{"编号": 15.0, "适用条件": 60.0}</data>
     </node>
     <node id="cap.expert_rules.E16">
@@ -705,8 +1018,8 @@
       <data key="d15">E16</data>
       <data key="d16">4. 模型选择经验</data>
       <data key="d17">E16</data>
-      <data key="d30">SMOTE</data>
-      <data key="d34">仅对训练集过采样，绝不能对全量数据采样；与 `class_weight` 二选一</data>
+      <data key="d43">SMOTE</data>
+      <data key="d47">仅对训练集过采样，绝不能对全量数据采样；与 `class_weight` 二选一</data>
       <data key="d21">{"编号": 16.0}</data>
     </node>
     <node id="cap.expert_rules.E17">
@@ -720,8 +1033,8 @@
       <data key="d15">E17</data>
       <data key="d16">4. 模型选择经验</data>
       <data key="d17">E17</data>
-      <data key="d30">阈值</data>
-      <data key="d34">按 5:1 成本比在验证集网格搜索，不在测试集调阈值</data>
+      <data key="d43">阈值</data>
+      <data key="d47">按 5:1 成本比在验证集网格搜索，不在测试集调阈值</data>
       <data key="d21">{"编号": 17.0}</data>
     </node>
     <node id="op.pipeline.01">
@@ -732,9 +1045,9 @@
       <data key="d4">tabular_binary_classification</data>
       <data key="d5">active</data>
       <data key="d6">1</data>
-      <data key="d35">1</data>
-      <data key="d36">True</data>
-      <data key="d37">依赖与顺序约束</data>
+      <data key="d48">1</data>
+      <data key="d49">True</data>
+      <data key="d50">依赖与顺序约束</data>
     </node>
     <node id="op.pipeline.02">
       <data key="d0">op.pipeline.02</data>
@@ -744,9 +1057,9 @@
       <data key="d4">tabular_binary_classification</data>
       <data key="d5">active</data>
       <data key="d6">1</data>
-      <data key="d35">2</data>
-      <data key="d36">True</data>
-      <data key="d37">依赖与顺序约束</data>
+      <data key="d48">2</data>
+      <data key="d49">True</data>
+      <data key="d50">依赖与顺序约束</data>
     </node>
     <node id="op.pipeline.03">
       <data key="d0">op.pipeline.03</data>
@@ -756,9 +1069,9 @@
       <data key="d4">tabular_binary_classification</data>
       <data key="d5">active</data>
       <data key="d6">1</data>
-      <data key="d35">3</data>
-      <data key="d36">True</data>
-      <data key="d37">依赖与顺序约束</data>
+      <data key="d48">3</data>
+      <data key="d49">True</data>
+      <data key="d50">依赖与顺序约束</data>
     </node>
     <node id="op.pipeline.04">
       <data key="d0">op.pipeline.04</data>
@@ -768,9 +1081,9 @@
       <data key="d4">tabular_binary_classification</data>
       <data key="d5">active</data>
       <data key="d6">1</data>
-      <data key="d35">4</data>
-      <data key="d36">True</data>
-      <data key="d37">依赖与顺序约束</data>
+      <data key="d48">4</data>
+      <data key="d49">True</data>
+      <data key="d50">依赖与顺序约束</data>
     </node>
     <node id="op.pipeline.05">
       <data key="d0">op.pipeline.05</data>
@@ -780,9 +1093,9 @@
       <data key="d4">tabular_binary_classification</data>
       <data key="d5">active</data>
       <data key="d6">1</data>
-      <data key="d35">5</data>
-      <data key="d36">True</data>
-      <data key="d37">依赖与顺序约束</data>
+      <data key="d48">5</data>
+      <data key="d49">True</data>
+      <data key="d50">依赖与顺序约束</data>
     </node>
     <node id="op.pipeline.06">
       <data key="d0">op.pipeline.06</data>
@@ -792,9 +1105,9 @@
       <data key="d4">tabular_binary_classification</data>
       <data key="d5">active</data>
       <data key="d6">1</data>
-      <data key="d35">6</data>
-      <data key="d36">True</data>
-      <data key="d37">依赖与顺序约束</data>
+      <data key="d48">6</data>
+      <data key="d49">True</data>
+      <data key="d50">依赖与顺序约束</data>
     </node>
     <node id="op.pipeline.07">
       <data key="d0">op.pipeline.07</data>
@@ -804,9 +1117,9 @@
       <data key="d4">tabular_binary_classification</data>
       <data key="d5">active</data>
       <data key="d6">1</data>
-      <data key="d35">7</data>
-      <data key="d36">True</data>
-      <data key="d37">依赖与顺序约束</data>
+      <data key="d48">7</data>
+      <data key="d49">True</data>
+      <data key="d50">依赖与顺序约束</data>
     </node>
     <node id="evidence.failure_review">
       <data key="d0">evidence.failure_review</data>
@@ -828,12 +1141,12 @@
       <data key="d4">tabular_binary_classification</data>
       <data key="d5">active</data>
       <data key="d6">1</data>
-      <data key="d38">`KeyError: 'PAY_1'`</data>
-      <data key="d39">工程师按 `PAY_1`…`PAY_6` 的直觉命名编写代码，实际数据集最近一期列名为 `PAY_0`，不存在 `PAY_1`</data>
-      <data key="d40">`KeyError: PAY_1`</data>
-      <data key="d41">按 `Dataset` 节点的列名映射表替换为 `PAY_0`、`PAY_2`…`PAY_6`；禁止按序号硬编码列名</data>
-      <data key="d42">使用数据字典校验列名，而非按业务直觉推断</data>
-      <data key="d43">KeyError</data>
+      <data key="d51">`KeyError: 'PAY_1'`</data>
+      <data key="d52">工程师按 `PAY_1`…`PAY_6` 的直觉命名编写代码，实际数据集最近一期列名为 `PAY_0`，不存在 `PAY_1`</data>
+      <data key="d53">`KeyError: PAY_1`</data>
+      <data key="d54">按 `Dataset` 节点的列名映射表替换为 `PAY_0`、`PAY_2`…`PAY_6`；禁止按序号硬编码列名</data>
+      <data key="d55">使用数据字典校验列名，而非按业务直觉推断</data>
+      <data key="d56">KeyError</data>
     </node>
     <node id="fail.failure_review.FR-02">
       <data key="d0">fail.failure_review.FR-02</data>
@@ -843,12 +1156,12 @@
       <data key="d4">tabular_binary_classification</data>
       <data key="d5">active</data>
       <data key="d6">1</data>
-      <data key="d38">OneHotEncoder 报未知类别 / schema 校验失败</data>
-      <data key="d39">`EDUCATION` 实测含 0/5/6（345 条），`MARRIAGE` 含 0（54 条），均不在数据字典枚举内</data>
-      <data key="d40">`SchemaError`</data>
-      <data key="d41">0/5/6 归入「其他」类别；`PAY_* = -2` 保留为独立类别；编码前做取值域校验</data>
-      <data key="d42">类别型特征的合法取值必须以数据实测为准，不能只信文档</data>
-      <data key="d43">SchemaError</data>
+      <data key="d51">OneHotEncoder 报未知类别 / schema 校验失败</data>
+      <data key="d52">`EDUCATION` 实测含 0/5/6（345 条），`MARRIAGE` 含 0（54 条），均不在数据字典枚举内</data>
+      <data key="d53">`SchemaError`</data>
+      <data key="d54">0/5/6 归入「其他」类别；`PAY_* = -2` 保留为独立类别；编码前做取值域校验</data>
+      <data key="d55">类别型特征的合法取值必须以数据实测为准，不能只信文档</data>
+      <data key="d56">SchemaError</data>
     </node>
     <node id="fail.failure_review.FR-03">
       <data key="d0">fail.failure_review.FR-03</data>
@@ -858,12 +1171,12 @@
       <data key="d4">tabular_binary_classification</data>
       <data key="d5">active</data>
       <data key="d6">1</data>
-      <data key="d38">验证 AUC 0.912，显著高于历史 0.78 量级；上线后效果骤降</data>
-      <data key="d39">① 使用随机划分而非时间外划分；② 在全量数据上 fit 标准化/编码器；③ 使用了与目标同期的付款信息</data>
-      <data key="d40">`LeakageDetected` / `MetricSuspiciouslyHigh`</data>
-      <data key="d41">改时间外划分；强制 `sklearn.Pipeline` 且所有预处理器仅 on train fit；按 `PRECEDES` 约束检查期次</data>
-      <data key="d42">指标显著高于历史记录时，优先怀疑泄漏而非庆祝提升</data>
-      <data key="d43">LeakageDetected</data>
+      <data key="d51">验证 AUC 0.912，显著高于历史 0.78 量级；上线后效果骤降</data>
+      <data key="d52">① 使用随机划分而非时间外划分；② 在全量数据上 fit 标准化/编码器；③ 使用了与目标同期的付款信息</data>
+      <data key="d53">`LeakageDetected` / `MetricSuspiciouslyHigh`</data>
+      <data key="d54">改时间外划分；强制 `sklearn.Pipeline` 且所有预处理器仅 on train fit；按 `PRECEDES` 约束检查期次</data>
+      <data key="d55">指标显著高于历史记录时，优先怀疑泄漏而非庆祝提升</data>
+      <data key="d56">LeakageDetected</data>
     </node>
     <node id="fail.failure_review.FR-04">
       <data key="d0">fail.failure_review.FR-04</data>
@@ -873,12 +1186,12 @@
       <data key="d4">tabular_binary_classification</data>
       <data key="d5">active</data>
       <data key="d6">1</data>
-      <data key="d38">AUC 达标但业务损失偏高</data>
-      <data key="d39">沿用 0.5 默认阈值，忽略 5:1 的漏报/误报成本比</data>
-      <data key="d40">`CostLossAboveBaseline`</data>
-      <data key="d41">在验证集上按成本加权损失网格搜索最优阈值，测试集不参与调阈</data>
-      <data key="d42">分类阈值是业务决策，不是超参数默认值</data>
-      <data key="d43">CostLossAboveBaseline</data>
+      <data key="d51">AUC 达标但业务损失偏高</data>
+      <data key="d52">沿用 0.5 默认阈值，忽略 5:1 的漏报/误报成本比</data>
+      <data key="d53">`CostLossAboveBaseline`</data>
+      <data key="d54">在验证集上按成本加权损失网格搜索最优阈值，测试集不参与调阈</data>
+      <data key="d55">分类阈值是业务决策，不是超参数默认值</data>
+      <data key="d56">CostLossAboveBaseline</data>
     </node>
     <node id="fail.failure_review.FR-05">
       <data key="d0">fail.failure_review.FR-05</data>
@@ -888,12 +1201,12 @@
       <data key="d4">tabular_binary_classification</data>
       <data key="d5">active</data>
       <data key="d6">1</data>
-      <data key="d38">验证指标虚高且不可复现</data>
-      <data key="d39">对全量数据先做 SMOTE 再划分，合成样本跨训练/验证集</data>
-      <data key="d40">`LeakageDetected`</data>
-      <data key="d41">采样仅在训练集内、且在 Pipeline 内执行</data>
-      <data key="d42">任何改变样本分布的操作都必须在划分之后</data>
-      <data key="d43">LeakageDetected</data>
+      <data key="d51">验证指标虚高且不可复现</data>
+      <data key="d52">对全量数据先做 SMOTE 再划分，合成样本跨训练/验证集</data>
+      <data key="d53">`LeakageDetected`</data>
+      <data key="d54">采样仅在训练集内、且在 Pipeline 内执行</data>
+      <data key="d55">任何改变样本分布的操作都必须在划分之后</data>
+      <data key="d56">LeakageDetected</data>
     </node>
     <node id="fail.failure_review.r01">
       <data key="d0">fail.failure_review.r01</data>
@@ -905,8 +1218,8 @@
       <data key="d6">1</data>
       <data key="d15">r01</data>
       <data key="d16">错误签名 → 修复策略速查</data>
-      <data key="d44">`KeyError: PAY_1`</data>
-      <data key="d45">列名映射</data>
+      <data key="d57">`KeyError: PAY_1`</data>
+      <data key="d58">列名映射</data>
     </node>
     <node id="fail.failure_review.r02">
       <data key="d0">fail.failure_review.r02</data>
@@ -918,8 +1231,8 @@
       <data key="d6">1</data>
       <data key="d15">r02</data>
       <data key="d16">错误签名 → 修复策略速查</data>
-      <data key="d44">`SchemaError`</data>
-      <data key="d45">类别归一化 + 取值域校验</data>
+      <data key="d57">`SchemaError`</data>
+      <data key="d58">类别归一化 + 取值域校验</data>
     </node>
     <node id="fail.failure_review.r03">
       <data key="d0">fail.failure_review.r03</data>
@@ -931,8 +1244,8 @@
       <data key="d6">1</data>
       <data key="d15">r03</data>
       <data key="d16">错误签名 → 修复策略速查</data>
-      <data key="d44">`LeakageDetected`</data>
-      <data key="d45">时间外划分 + Pipeline 约束</data>
+      <data key="d57">`LeakageDetected`</data>
+      <data key="d58">时间外划分 + Pipeline 约束</data>
     </node>
     <node id="fail.failure_review.r04">
       <data key="d0">fail.failure_review.r04</data>
@@ -944,8 +1257,8 @@
       <data key="d6">1</data>
       <data key="d15">r04</data>
       <data key="d16">错误签名 → 修复策略速查</data>
-      <data key="d44">`MetricBelowThreshold`</data>
-      <data key="d45">检索历史高分方案，切换模型族/采样/阈值</data>
+      <data key="d57">`MetricBelowThreshold`</data>
+      <data key="d58">检索历史高分方案，切换模型族/采样/阈值</data>
     </node>
     <node id="fail.failure_review.r05">
       <data key="d0">fail.failure_review.r05</data>
@@ -957,8 +1270,8 @@
       <data key="d6">1</data>
       <data key="d15">r05</data>
       <data key="d16">错误签名 → 修复策略速查</data>
-      <data key="d44">`Timeout`</data>
-      <data key="d45">降采样或换轻量模型</data>
+      <data key="d57">`Timeout`</data>
+      <data key="d58">降采样或换轻量模型</data>
     </node>
     <node id="fail.failure_review.r06">
       <data key="d0">fail.failure_review.r06</data>
@@ -970,8 +1283,8 @@
       <data key="d6">1</data>
       <data key="d15">r06</data>
       <data key="d16">错误签名 → 修复策略速查</data>
-      <data key="d44">`Nondeterminism`</data>
-      <data key="d45">注入 `random_state`</data>
+      <data key="d57">`Nondeterminism`</data>
+      <data key="d58">注入 `random_state`</data>
     </node>
     <node id="evidence.risk_policy">
       <data key="d0">evidence.risk_policy</data>
@@ -996,8 +1309,8 @@
       <data key="d15">C1</data>
       <data key="d16">2. 适用条件（约束）</data>
       <data key="d17">C1</data>
-      <data key="d46">客群范围</data>
-      <data key="d47">仅适用于持有 ≥6 期账单历史的存量客户；新客无 `PAY_*` / `BILL_AMT*` 序列，不在适用范围内</data>
+      <data key="d59">客群范围</data>
+      <data key="d60">仅适用于持有 ≥6 期账单历史的存量客户；新客无 `PAY_*` / `BILL_AMT*` 序列，不在适用范围内</data>
       <data key="d21">{"编号": 1.0, "说明": 6.0}</data>
     </node>
     <node id="cap.risk_policy.C2">
@@ -1011,8 +1324,8 @@
       <data key="d15">C2</data>
       <data key="d16">2. 适用条件（约束）</data>
       <data key="d17">C2</data>
-      <data key="d46">额度区间</data>
-      <data key="d47">`LIMIT_BAL` 在本样本覆盖区间内；超出区间需人工复核</data>
+      <data key="d59">额度区间</data>
+      <data key="d60">`LIMIT_BAL` 在本样本覆盖区间内；超出区间需人工复核</data>
       <data key="d21">{"编号": 2.0}</data>
     </node>
     <node id="cap.risk_policy.C3">
@@ -1026,8 +1339,8 @@
       <data key="d15">C3</data>
       <data key="d16">2. 适用条件（约束）</data>
       <data key="d17">C3</data>
-      <data key="d46">时间范围</data>
-      <data key="d47">训练样本观测期为 2005-04 至 2005-09；上线前须做 PSI 群体稳定性检查，PSI &gt; 0.25 触发重训</data>
+      <data key="d59">时间范围</data>
+      <data key="d60">训练样本观测期为 2005-04 至 2005-09；上线前须做 PSI 群体稳定性检查，PSI &gt; 0.25 触发重训</data>
       <data key="d21">{"编号": 3.0}</data>
     </node>
     <node id="cap.risk_policy.C4">
@@ -1041,8 +1354,8 @@
       <data key="d15">C4</data>
       <data key="d16">2. 适用条件（约束）</data>
       <data key="d17">C4</data>
-      <data key="d46">划分方式</data>
-      <data key="d47">必须时间外划分，禁止随机打乱；所有预处理在训练集内 fit</data>
+      <data key="d59">划分方式</data>
+      <data key="d60">必须时间外划分，禁止随机打乱；所有预处理在训练集内 fit</data>
       <data key="d21">{"编号": 4.0}</data>
     </node>
     <node id="cap.risk_policy.C5">
@@ -1056,8 +1369,8 @@
       <data key="d15">C5</data>
       <data key="d16">2. 适用条件（约束）</data>
       <data key="d17">C5</data>
-      <data key="d46">敏感字段</data>
-      <data key="d47">`SEX` / `AGE` / `EDUCATION` / `MARRIAGE` 不得进入模型特征，仅用于分组公平性审计</data>
+      <data key="d59">敏感字段</data>
+      <data key="d60">`SEX` / `AGE` / `EDUCATION` / `MARRIAGE` 不得进入模型特征，仅用于分组公平性审计</data>
       <data key="d21">{"编号": 5.0}</data>
     </node>
     <node id="cap.risk_policy.C6">
@@ -1071,8 +1384,8 @@
       <data key="d15">C6</data>
       <data key="d16">2. 适用条件（约束）</data>
       <data key="d17">C6</data>
-      <data key="d46">标识字段</data>
-      <data key="d47">`ID` 不得作为特征</data>
+      <data key="d59">标识字段</data>
+      <data key="d60">`ID` 不得作为特征</data>
       <data key="d21">{"编号": 6.0}</data>
     </node>
     <node id="cap.risk_policy.C7">
@@ -1086,8 +1399,8 @@
       <data key="d15">C7</data>
       <data key="d16">2. 适用条件（约束）</data>
       <data key="d17">C7</data>
-      <data key="d46">可复现</data>
-      <data key="d47">固定随机种子 42，单次运行 60 秒内、内存 2GB 以内</data>
+      <data key="d59">可复现</data>
+      <data key="d60">固定随机种子 42，单次运行 60 秒内、内存 2GB 以内</data>
       <data key="d21">{"编号": 7.0, "说明": 42602.0}</data>
     </node>
     <node id="metric.risk_policy.r01">
@@ -1100,9 +1413,9 @@
       <data key="d6">1</data>
       <data key="d15">r01</data>
       <data key="d16">4. 验收门槛（目标值，非实测结果）</data>
-      <data key="d48">AUC</data>
-      <data key="d49">越大越好</data>
-      <data key="d50">≥ 0.78</data>
+      <data key="d61">AUC</data>
+      <data key="d62">越大越好</data>
+      <data key="d63">≥ 0.78</data>
       <data key="d21">{"门槛": 0.78}</data>
     </node>
     <node id="metric.risk_policy.r02">
@@ -1115,9 +1428,9 @@
       <data key="d6">1</data>
       <data key="d15">r02</data>
       <data key="d16">4. 验收门槛（目标值，非实测结果）</data>
-      <data key="d48">KS</data>
-      <data key="d49">越大越好</data>
-      <data key="d50">≥ 0.35</data>
+      <data key="d61">KS</data>
+      <data key="d62">越大越好</data>
+      <data key="d63">≥ 0.35</data>
       <data key="d21">{"门槛": 0.35}</data>
     </node>
     <node id="metric.risk_policy.r03">
@@ -1130,9 +1443,9 @@
       <data key="d6">1</data>
       <data key="d15">r03</data>
       <data key="d16">4. 验收门槛（目标值，非实测结果）</data>
-      <data key="d48">PR-AUC</data>
-      <data key="d49">越大越好</data>
-      <data key="d50">≥ 0.50</data>
+      <data key="d61">PR-AUC</data>
+      <data key="d62">越大越好</data>
+      <data key="d63">≥ 0.50</data>
       <data key="d21">{"门槛": 0.5}</data>
     </node>
     <node id="metric.risk_policy.r04">
@@ -1145,9 +1458,9 @@
       <data key="d6">1</data>
       <data key="d15">r04</data>
       <data key="d16">4. 验收门槛（目标值，非实测结果）</data>
-      <data key="d48">分组 AUC 差异</data>
-      <data key="d49">越小越好</data>
-      <data key="d50">≤ 0.10</data>
+      <data key="d61">分组 AUC 差异</data>
+      <data key="d62">越小越好</data>
+      <data key="d63">≤ 0.10</data>
       <data key="d21">{"门槛": 0.1}</data>
     </node>
     <node id="evidence.test_report">
@@ -1172,9 +1485,9 @@
       <data key="d6">1</data>
       <data key="d15">r01</data>
       <data key="d16">1. 四层验证检查项</data>
-      <data key="d51">接口规范</data>
-      <data key="d52">`build_pipeline()` 签名</data>
-      <data key="d53">AST 解析函数签名</data>
+      <data key="d64">接口规范</data>
+      <data key="d65">`build_pipeline()` 签名</data>
+      <data key="d66">AST 解析函数签名</data>
     </node>
     <node id="metric.test_report.r02">
       <data key="d0">metric.test_report.r02</data>
@@ -1186,9 +1499,9 @@
       <data key="d6">1</data>
       <data key="d15">r02</data>
       <data key="d16">1. 四层验证检查项</data>
-      <data key="d51">接口规范</data>
-      <data key="d52">输出列 `pd` / `label` / `score` 及 dtype</data>
-      <data key="d53">契约比对</data>
+      <data key="d64">接口规范</data>
+      <data key="d65">输出列 `pd` / `label` / `score` 及 dtype</data>
+      <data key="d66">契约比对</data>
     </node>
     <node id="metric.test_report.r03">
       <data key="d0">metric.test_report.r03</data>
@@ -1200,9 +1513,9 @@
       <data key="d6">1</data>
       <data key="d15">r03</data>
       <data key="d16">1. 四层验证检查项</data>
-      <data key="d51">接口规范</data>
-      <data key="d52">`pd` ∈ [0,1]</data>
-      <data key="d53">逐行断言</data>
+      <data key="d64">接口规范</data>
+      <data key="d65">`pd` ∈ [0,1]</data>
+      <data key="d66">逐行断言</data>
       <data key="d21">{"检查项": 1.0}</data>
     </node>
     <node id="metric.test_report.r04">
@@ -1215,9 +1528,9 @@
       <data key="d6">1</data>
       <data key="d15">r04</data>
       <data key="d16">1. 四层验证检查项</data>
-      <data key="d51">接口规范</data>
-      <data key="d52">禁 `ID` 入模、禁读标签路径</data>
-      <data key="d53">AST 名称检查</data>
+      <data key="d64">接口规范</data>
+      <data key="d65">禁 `ID` 入模、禁读标签路径</data>
+      <data key="d66">AST 名称检查</data>
     </node>
     <node id="metric.test_report.r05">
       <data key="d0">metric.test_report.r05</data>
@@ -1229,9 +1542,9 @@
       <data key="d6">1</data>
       <data key="d15">r05</data>
       <data key="d16">1. 四层验证检查项</data>
-      <data key="d51">接口规范</data>
-      <data key="d52">import 白名单</data>
-      <data key="d53">AST 检查，禁止 os.system / subprocess / socket</data>
+      <data key="d64">接口规范</data>
+      <data key="d65">import 白名单</data>
+      <data key="d66">AST 检查，禁止 os.system / subprocess / socket</data>
     </node>
     <node id="metric.test_report.r06">
       <data key="d0">metric.test_report.r06</data>
@@ -1243,9 +1556,9 @@
       <data key="d6">1</data>
       <data key="d15">r06</data>
       <data key="d16">1. 四层验证检查项</data>
-      <data key="d51">功能正确性</data>
-      <data key="d52">小样本 smoke、无 NaN</data>
-      <data key="d53">沙箱执行</data>
+      <data key="d64">功能正确性</data>
+      <data key="d65">小样本 smoke、无 NaN</data>
+      <data key="d66">沙箱执行</data>
     </node>
     <node id="metric.test_report.r07">
       <data key="d0">metric.test_report.r07</data>
@@ -1257,9 +1570,9 @@
       <data key="d6">1</data>
       <data key="d15">r07</data>
       <data key="d16">1. 四层验证检查项</data>
-      <data key="d51">功能正确性</data>
-      <data key="d52">fit/predict 幂等、固定种子两次输出一致</data>
-      <data key="d53">重复运行比对</data>
+      <data key="d64">功能正确性</data>
+      <data key="d65">fit/predict 幂等、固定种子两次输出一致</data>
+      <data key="d66">重复运行比对</data>
     </node>
     <node id="metric.test_report.r08">
       <data key="d0">metric.test_report.r08</data>
@@ -1271,9 +1584,9 @@
       <data key="d6">1</data>
       <data key="d15">r08</data>
       <data key="d16">1. 四层验证检查项</data>
-      <data key="d51">功能正确性</data>
-      <data key="d52">单类别、全缺失列边界输入</data>
-      <data key="d53">合成边界样本</data>
+      <data key="d64">功能正确性</data>
+      <data key="d65">单类别、全缺失列边界输入</data>
+      <data key="d66">合成边界样本</data>
     </node>
     <node id="metric.test_report.r09">
       <data key="d0">metric.test_report.r09</data>
@@ -1285,9 +1598,9 @@
       <data key="d6">1</data>
       <data key="d15">r09</data>
       <data key="d16">1. 四层验证检查项</data>
-      <data key="d51">指标表现</data>
-      <data key="d52">AUC / KS / PR-AUC / F1 / 成本损失 / PSI / 分组 AUC 差异</data>
-      <data key="d53">时间外划分 + baseline 对照</data>
+      <data key="d64">指标表现</data>
+      <data key="d65">AUC / KS / PR-AUC / F1 / 成本损失 / PSI / 分组 AUC 差异</data>
+      <data key="d66">时间外划分 + baseline 对照</data>
       <data key="d21">{"检查项": -1.0}</data>
     </node>
     <node id="metric.test_report.r10">
@@ -1300,9 +1613,9 @@
       <data key="d6">1</data>
       <data key="d15">r10</data>
       <data key="d16">1. 四层验证检查项</data>
-      <data key="d51">指标表现</data>
-      <data key="d52">test 集仅终评一次</data>
-      <data key="d53">运行日志审计</data>
+      <data key="d64">指标表现</data>
+      <data key="d65">test 集仅终评一次</data>
+      <data key="d66">运行日志审计</data>
     </node>
     <node id="metric.test_report.r11">
       <data key="d0">metric.test_report.r11</data>
@@ -1314,9 +1627,9 @@
       <data key="d6">1</data>
       <data key="d15">r11</data>
       <data key="d16">1. 四层验证检查项</data>
-      <data key="d51">运行稳定性</data>
-      <data key="d52">单次 ≤ 60s、内存 ≤ 2GB</data>
-      <data key="d53">子进程资源限制</data>
+      <data key="d64">运行稳定性</data>
+      <data key="d65">单次 ≤ 60s、内存 ≤ 2GB</data>
+      <data key="d66">子进程资源限制</data>
       <data key="d21">{"检查项": 602.0}</data>
     </node>
     <node id="metric.test_report.r12">
@@ -1329,9 +1642,9 @@
       <data key="d6">1</data>
       <data key="d15">r12</data>
       <data key="d16">1. 四层验证检查项</data>
-      <data key="d51">运行稳定性</data>
-      <data key="d52">重复运行方差、依赖版本校验</data>
-      <data key="d53">多次运行比对</data>
+      <data key="d64">运行稳定性</data>
+      <data key="d65">重复运行方差、依赖版本校验</data>
+      <data key="d66">多次运行比对</data>
     </node>
     <node id="run.test_report.RUN-legacy-01">
       <data key="d0">run.test_report.RUN-legacy-01</data>
@@ -1343,11 +1656,11 @@
       <data key="d6">1</data>
       <data key="d15">RUN-legacy-01</data>
       <data key="d16">3. 历史样例结论（构造数据）</data>
-      <data key="d54">RUN-legacy-01</data>
-      <data key="d55">历史评分卡脚本</data>
-      <data key="d56">接口 FAIL、功能 FAIL、指标 FAIL、稳定性 PASS</data>
-      <data key="d57">3</data>
-      <data key="d58">通过（修复后）</data>
+      <data key="d67">RUN-legacy-01</data>
+      <data key="d68">历史评分卡脚本</data>
+      <data key="d69">接口 FAIL、功能 FAIL、指标 FAIL、稳定性 PASS</data>
+      <data key="d70">3</data>
+      <data key="d71">通过（修复后）</data>
       <data key="d21">{"修复轮次": 3.0}</data>
     </node>
     <node id="run.test_report.RUN-legacy-02">
@@ -1360,11 +1673,11 @@
       <data key="d6">1</data>
       <data key="d15">RUN-legacy-02</data>
       <data key="d16">3. 历史样例结论（构造数据）</data>
-      <data key="d54">RUN-legacy-02</data>
-      <data key="d55">WOE + LR</data>
-      <data key="d56">四层 PASS</data>
-      <data key="d57">0</data>
-      <data key="d58">通过</data>
+      <data key="d67">RUN-legacy-02</data>
+      <data key="d68">WOE + LR</data>
+      <data key="d69">四层 PASS</data>
+      <data key="d70">0</data>
+      <data key="d71">通过</data>
       <data key="d21">{"修复轮次": 0.0}</data>
     </node>
     <node id="run.test_report.RUN-legacy-03">
@@ -1377,11 +1690,11 @@
       <data key="d6">1</data>
       <data key="d15">RUN-legacy-03</data>
       <data key="d16">3. 历史样例结论（构造数据）</data>
-      <data key="d54">RUN-legacy-03</data>
-      <data key="d55">HistGB + SMOTE</data>
-      <data key="d56">接口 PASS、功能 PASS、指标 FAIL、稳定性 FAIL</data>
-      <data key="d57">2</data>
-      <data key="d58">通过</data>
+      <data key="d67">RUN-legacy-03</data>
+      <data key="d68">HistGB + SMOTE</data>
+      <data key="d69">接口 PASS、功能 PASS、指标 FAIL、稳定性 FAIL</data>
+      <data key="d70">2</data>
+      <data key="d71">通过</data>
       <data key="d21">{"修复轮次": 2.0}</data>
     </node>
     <node id="evidence.legacy_default_model">
@@ -1404,9 +1717,9 @@
       <data key="d4">tabular_binary_classification</data>
       <data key="d5">active</data>
       <data key="d6">1</data>
-      <data key="d59">读取原始客户账单数据。</data>
-      <data key="d60">["path"]</data>
-      <data key="d61">26</data>
+      <data key="d72">读取原始客户账单数据。</data>
+      <data key="d73">["path"]</data>
+      <data key="d74">26</data>
     </node>
     <node id="algo.legacy_default_model.build_features">
       <data key="d0">algo.legacy_default_model.build_features</data>
@@ -1416,12 +1729,12 @@
       <data key="d4">tabular_binary_classification</data>
       <data key="d5">active</data>
       <data key="d6">1</data>
-      <data key="d59">构造历史评分卡特征。
+      <data key="d72">构造历史评分卡特征。
 
 缺陷 2：未剔除 ID 标识列。
 缺陷 3：未处理 EDUCATION / MARRIAGE 的未文档化类别。</data>
-      <data key="d60">["df"]</data>
-      <data key="d61">31</data>
+      <data key="d73">["df"]</data>
+      <data key="d74">31</data>
     </node>
     <node id="algo.legacy_default_model.train_default_model">
       <data key="d0">algo.legacy_default_model.train_default_model</data>
@@ -1431,13 +1744,13 @@
       <data key="d4">tabular_binary_classification</data>
       <data key="d5">active</data>
       <data key="d6">1</data>
-      <data key="d59">训练历史逻辑回归评分卡，返回结果字典。
+      <data key="d72">训练历史逻辑回归评分卡，返回结果字典。
 
 缺陷 4：在全量数据上 fit 标准化器，统计量泄漏到验证集。
 缺陷 5：使用随机划分，对「下月违约」标签引入未来信息。
 缺陷 6：以 accuracy 作为验收指标，正例仅 22.12% 时结论失真。</data>
-      <data key="d60">["df"]</data>
-      <data key="d61">42</data>
+      <data key="d73">["df"]</data>
+      <data key="d74">42</data>
     </node>
     <node id="algo.legacy_default_model.score_to_rating">
       <data key="d0">algo.legacy_default_model.score_to_rating</data>
@@ -1447,9 +1760,9 @@
       <data key="d4">tabular_binary_classification</data>
       <data key="d5">active</data>
       <data key="d6">1</data>
-      <data key="d59">把违约概率映射为内部评级（历史规则）。</data>
-      <data key="d60">["probability"]</data>
-      <data key="d61">61</data>
+      <data key="d72">把违约概率映射为内部评级（历史规则）。</data>
+      <data key="d73">["probability"]</data>
+      <data key="d74">61</data>
     </node>
     <node id="fail.legacy_default_model.defect022">
       <data key="d0">fail.legacy_default_model.defect022</data>
@@ -1459,9 +1772,9 @@
       <data key="d4">tabular_binary_classification</data>
       <data key="d5">active</data>
       <data key="d6">1</data>
-      <data key="d62">数据集中最近一期的列名是 PAY_0，并不存在 PAY_1</data>
-      <data key="d61">22</data>
-      <data key="d43" />
+      <data key="d75">数据集中最近一期的列名是 PAY_0，并不存在 PAY_1</data>
+      <data key="d74">22</data>
+      <data key="d56" />
     </node>
     <node id="env.legacy_default_model">
       <data key="d0">env.legacy_default_model</data>
@@ -1471,578 +1784,614 @@
       <data key="d4">tabular_binary_classification</data>
       <data key="d5">active</data>
       <data key="d6">1</data>
-      <data key="d63">["__future__", "pandas", "sklearn.linear_model", "sklearn.metrics", "sklearn.model_selection", "sklearn.preprocessing"]</data>
-      <data key="d64">3.11+</data>
+      <data key="d76">["__future__", "pandas", "sklearn.linear_model", "sklearn.metrics", "sklearn.model_selection", "sklearn.preprocessing"]</data>
+      <data key="d77">3.11+</data>
     </node>
     <edge source="dataset.data_dictionary" target="evidence.data_dictionary" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.data_dictionary.T1" target="evidence.data_dictionary" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.data_dictionary.T1" target="op.pipeline.01" id="0">
-      <data key="d65">USES</data>
+      <data key="d78">USES</data>
     </edge>
     <edge source="cap.data_dictionary.T1" target="op.pipeline.04" id="0">
-      <data key="d65">USES</data>
+      <data key="d78">USES</data>
     </edge>
     <edge source="cap.data_dictionary.T1" target="cap.data_dictionary.T2" id="0">
-      <data key="d65">SIMILAR_TO</data>
+      <data key="d78">SIMILAR_TO</data>
     </edge>
     <edge source="cap.data_dictionary.T1" target="cap.expert_rules.E4" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.data_dictionary.T2" target="evidence.data_dictionary" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.data_dictionary.T2" target="op.pipeline.04" id="0">
-      <data key="d65">USES</data>
+      <data key="d78">USES</data>
     </edge>
     <edge source="cap.data_dictionary.T2" target="dataset.data_dictionary" id="0">
-      <data key="d65">REQUIRES</data>
+      <data key="d78">REQUIRES</data>
     </edge>
     <edge source="cap.data_dictionary.T2" target="cap.expert_rules.E1" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.data_dictionary.T2" target="cap.expert_rules.E4" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.data_dictionary.T2" target="cap.risk_policy.C5" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.data_dictionary.T2b" target="evidence.data_dictionary" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.data_dictionary.T3" target="evidence.data_dictionary" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.data_dictionary.T3b" target="evidence.data_dictionary" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.data_dictionary.T4" target="evidence.data_dictionary" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
+    </edge>
+    <edge source="lesson.engineering_lessons.LE1" target="evidence.engineering_lessons" id="0">
+      <data key="d78">EVIDENCED_BY</data>
+    </edge>
+    <edge source="lesson.engineering_lessons.LE2" target="evidence.engineering_lessons" id="0">
+      <data key="d78">EVIDENCED_BY</data>
+    </edge>
+    <edge source="lesson.engineering_lessons.LE3" target="evidence.engineering_lessons" id="0">
+      <data key="d78">EVIDENCED_BY</data>
+    </edge>
+    <edge source="lesson.engineering_lessons.LE4" target="evidence.engineering_lessons" id="0">
+      <data key="d78">EVIDENCED_BY</data>
+    </edge>
+    <edge source="lesson.engineering_lessons.LE5" target="evidence.engineering_lessons" id="0">
+      <data key="d78">EVIDENCED_BY</data>
+    </edge>
+    <edge source="lesson.engineering_lessons.LE6" target="evidence.engineering_lessons" id="0">
+      <data key="d78">EVIDENCED_BY</data>
+    </edge>
+    <edge source="lesson.engineering_lessons.LE7" target="evidence.engineering_lessons" id="0">
+      <data key="d78">EVIDENCED_BY</data>
+    </edge>
+    <edge source="lesson.engineering_lessons.LE8" target="evidence.engineering_lessons" id="0">
+      <data key="d78">EVIDENCED_BY</data>
+    </edge>
+    <edge source="lesson.engineering_lessons.LE9" target="evidence.engineering_lessons" id="0">
+      <data key="d78">EVIDENCED_BY</data>
+    </edge>
+    <edge source="lesson.engineering_lessons.LE10" target="evidence.engineering_lessons" id="0">
+      <data key="d78">EVIDENCED_BY</data>
+    </edge>
+    <edge source="lesson.engineering_lessons.LE11" target="evidence.engineering_lessons" id="0">
+      <data key="d78">EVIDENCED_BY</data>
+    </edge>
+    <edge source="lesson.engineering_lessons.LE12" target="evidence.engineering_lessons" id="0">
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="run.experiment_log.EXP-01" target="evidence.experiment_log" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="run.experiment_log.EXP-02" target="evidence.experiment_log" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="run.experiment_log.EXP-03" target="evidence.experiment_log" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="run.experiment_log.EXP-04" target="evidence.experiment_log" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="run.experiment_log.EXP-05" target="evidence.experiment_log" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="run.experiment_log.EXP-06" target="evidence.experiment_log" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="run.experiment_log.EXP-07" target="evidence.experiment_log" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="run.experiment_log.EXP-08" target="evidence.experiment_log" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.experiment_log.K1" target="evidence.experiment_log" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.experiment_log.K1" target="metric.risk_policy.r02" id="0">
-      <data key="d65">EVALUATED_BY</data>
+      <data key="d78">EVALUATED_BY</data>
     </edge>
     <edge source="cap.experiment_log.K1" target="metric.test_report.r09" id="0">
-      <data key="d65">EVALUATED_BY</data>
+      <data key="d78">EVALUATED_BY</data>
     </edge>
     <edge source="cap.experiment_log.K1" target="op.pipeline.04" id="0">
-      <data key="d65">USES</data>
+      <data key="d78">USES</data>
     </edge>
     <edge source="cap.experiment_log.K1" target="cap.experiment_log.K3" id="0">
-      <data key="d65">SIMILAR_TO</data>
+      <data key="d78">SIMILAR_TO</data>
     </edge>
     <edge source="cap.experiment_log.K1" target="cap.expert_rules.E10" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.experiment_log.K1" target="cap.expert_rules.E11" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.experiment_log.K1" target="cap.expert_rules.E12" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.experiment_log.K1" target="cap.expert_rules.E13" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.experiment_log.K1" target="cap.expert_rules.E15" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.experiment_log.K2" target="evidence.experiment_log" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.experiment_log.K2" target="op.pipeline.06" id="0">
-      <data key="d65">USES</data>
+      <data key="d78">USES</data>
     </edge>
     <edge source="cap.experiment_log.K2" target="op.pipeline.07" id="0">
-      <data key="d65">USES</data>
+      <data key="d78">USES</data>
     </edge>
     <edge source="cap.experiment_log.K2" target="cap.expert_rules.E11" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.experiment_log.K2" target="cap.expert_rules.E13" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.experiment_log.K2" target="cap.expert_rules.E14" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.experiment_log.K2" target="cap.expert_rules.E15" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.experiment_log.K2" target="cap.expert_rules.E16" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.experiment_log.K2" target="cap.expert_rules.E17" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.experiment_log.K2" target="cap.risk_policy.C5" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.experiment_log.K3" target="evidence.experiment_log" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.experiment_log.K3" target="metric.risk_policy.r01" id="0">
-      <data key="d65">EVALUATED_BY</data>
+      <data key="d78">EVALUATED_BY</data>
     </edge>
     <edge source="cap.experiment_log.K3" target="metric.risk_policy.r02" id="0">
-      <data key="d65">EVALUATED_BY</data>
+      <data key="d78">EVALUATED_BY</data>
     </edge>
     <edge source="cap.experiment_log.K3" target="metric.test_report.r09" id="0">
-      <data key="d65">EVALUATED_BY</data>
+      <data key="d78">EVALUATED_BY</data>
     </edge>
     <edge source="cap.experiment_log.K3" target="cap.expert_rules.E15" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.experiment_log.K4" target="evidence.experiment_log" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.experiment_log.K5" target="evidence.experiment_log" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.experiment_log.K6" target="evidence.experiment_log" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.expert_rules.E1" target="evidence.expert_rules" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.expert_rules.E1" target="dataset.data_dictionary" id="0">
-      <data key="d65">REQUIRES</data>
+      <data key="d78">REQUIRES</data>
     </edge>
     <edge source="cap.expert_rules.E1" target="cap.risk_policy.C5" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.expert_rules.E2" target="evidence.expert_rules" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.expert_rules.E3" target="evidence.expert_rules" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.expert_rules.E4" target="evidence.expert_rules" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.expert_rules.E4" target="metric.test_report.r07" id="0">
-      <data key="d65">EVALUATED_BY</data>
+      <data key="d78">EVALUATED_BY</data>
     </edge>
     <edge source="cap.expert_rules.E4" target="op.pipeline.04" id="0">
-      <data key="d65">USES</data>
+      <data key="d78">USES</data>
     </edge>
     <edge source="cap.expert_rules.E4" target="env.legacy_default_model" id="0">
-      <data key="d65">DEPENDS_ON</data>
+      <data key="d78">DEPENDS_ON</data>
     </edge>
     <edge source="cap.expert_rules.E4" target="cap.risk_policy.C4" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.expert_rules.E5" target="evidence.expert_rules" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.expert_rules.E6" target="evidence.expert_rules" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.expert_rules.E7" target="evidence.expert_rules" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.expert_rules.E8" target="evidence.expert_rules" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.expert_rules.E9" target="evidence.expert_rules" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.expert_rules.E10" target="evidence.expert_rules" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.expert_rules.E10" target="op.pipeline.04" id="0">
-      <data key="d65">USES</data>
+      <data key="d78">USES</data>
     </edge>
     <edge source="cap.expert_rules.E10" target="dataset.data_dictionary" id="0">
-      <data key="d65">REQUIRES</data>
+      <data key="d78">REQUIRES</data>
     </edge>
     <edge source="cap.expert_rules.E10" target="cap.expert_rules.E11" id="0">
-      <data key="d65">SIMILAR_TO</data>
+      <data key="d78">SIMILAR_TO</data>
     </edge>
     <edge source="cap.expert_rules.E10" target="cap.expert_rules.E12" id="0">
-      <data key="d65">SIMILAR_TO</data>
+      <data key="d78">SIMILAR_TO</data>
     </edge>
     <edge source="cap.expert_rules.E10" target="cap.expert_rules.E13" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.expert_rules.E10" target="cap.risk_policy.C5" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.expert_rules.E11" target="evidence.expert_rules" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.expert_rules.E11" target="op.pipeline.04" id="0">
-      <data key="d65">USES</data>
+      <data key="d78">USES</data>
     </edge>
     <edge source="cap.expert_rules.E11" target="op.pipeline.06" id="0">
-      <data key="d65">USES</data>
+      <data key="d78">USES</data>
     </edge>
     <edge source="cap.expert_rules.E11" target="cap.expert_rules.E12" id="0">
-      <data key="d65">SIMILAR_TO</data>
+      <data key="d78">SIMILAR_TO</data>
     </edge>
     <edge source="cap.expert_rules.E11" target="cap.expert_rules.E13" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.expert_rules.E11" target="cap.expert_rules.E14" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.expert_rules.E11" target="cap.expert_rules.E15" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.expert_rules.E11" target="cap.expert_rules.E16" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.expert_rules.E11" target="cap.expert_rules.E17" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.expert_rules.E11" target="cap.risk_policy.C5" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.expert_rules.E12" target="evidence.expert_rules" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.expert_rules.E12" target="op.pipeline.04" id="0">
-      <data key="d65">USES</data>
+      <data key="d78">USES</data>
     </edge>
     <edge source="cap.expert_rules.E12" target="cap.expert_rules.E13" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.expert_rules.E13" target="evidence.expert_rules" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.expert_rules.E13" target="op.pipeline.04" id="0">
-      <data key="d65">USES</data>
+      <data key="d78">USES</data>
     </edge>
     <edge source="cap.expert_rules.E13" target="op.pipeline.06" id="0">
-      <data key="d65">USES</data>
+      <data key="d78">USES</data>
     </edge>
     <edge source="cap.expert_rules.E13" target="cap.expert_rules.E14" id="0">
-      <data key="d65">SIMILAR_TO</data>
+      <data key="d78">SIMILAR_TO</data>
     </edge>
     <edge source="cap.expert_rules.E13" target="cap.expert_rules.E15" id="0">
-      <data key="d65">SIMILAR_TO</data>
+      <data key="d78">SIMILAR_TO</data>
     </edge>
     <edge source="cap.expert_rules.E13" target="cap.expert_rules.E16" id="0">
-      <data key="d65">SIMILAR_TO</data>
+      <data key="d78">SIMILAR_TO</data>
     </edge>
     <edge source="cap.expert_rules.E13" target="cap.expert_rules.E17" id="0">
-      <data key="d65">SIMILAR_TO</data>
+      <data key="d78">SIMILAR_TO</data>
     </edge>
     <edge source="cap.expert_rules.E13" target="cap.risk_policy.C5" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.expert_rules.E14" target="evidence.expert_rules" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.expert_rules.E14" target="op.pipeline.06" id="0">
-      <data key="d65">USES</data>
+      <data key="d78">USES</data>
     </edge>
     <edge source="cap.expert_rules.E14" target="cap.expert_rules.E15" id="0">
-      <data key="d65">SIMILAR_TO</data>
+      <data key="d78">SIMILAR_TO</data>
     </edge>
     <edge source="cap.expert_rules.E14" target="cap.expert_rules.E16" id="0">
-      <data key="d65">SIMILAR_TO</data>
+      <data key="d78">SIMILAR_TO</data>
     </edge>
     <edge source="cap.expert_rules.E14" target="cap.expert_rules.E17" id="0">
-      <data key="d65">SIMILAR_TO</data>
+      <data key="d78">SIMILAR_TO</data>
     </edge>
     <edge source="cap.expert_rules.E14" target="cap.risk_policy.C5" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.expert_rules.E15" target="evidence.expert_rules" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.expert_rules.E15" target="metric.risk_policy.r01" id="0">
-      <data key="d65">EVALUATED_BY</data>
+      <data key="d78">EVALUATED_BY</data>
     </edge>
     <edge source="cap.expert_rules.E15" target="metric.risk_policy.r02" id="0">
-      <data key="d65">EVALUATED_BY</data>
+      <data key="d78">EVALUATED_BY</data>
     </edge>
     <edge source="cap.expert_rules.E15" target="metric.test_report.r09" id="0">
-      <data key="d65">EVALUATED_BY</data>
+      <data key="d78">EVALUATED_BY</data>
     </edge>
     <edge source="cap.expert_rules.E15" target="op.pipeline.06" id="0">
-      <data key="d65">USES</data>
+      <data key="d78">USES</data>
     </edge>
     <edge source="cap.expert_rules.E15" target="cap.expert_rules.E16" id="0">
-      <data key="d65">SIMILAR_TO</data>
+      <data key="d78">SIMILAR_TO</data>
     </edge>
     <edge source="cap.expert_rules.E15" target="cap.expert_rules.E17" id="0">
-      <data key="d65">SIMILAR_TO</data>
+      <data key="d78">SIMILAR_TO</data>
     </edge>
     <edge source="cap.expert_rules.E15" target="cap.risk_policy.C5" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.expert_rules.E16" target="evidence.expert_rules" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.expert_rules.E16" target="op.pipeline.05" id="0">
-      <data key="d65">USES</data>
+      <data key="d78">USES</data>
     </edge>
     <edge source="cap.expert_rules.E16" target="op.pipeline.06" id="0">
-      <data key="d65">USES</data>
+      <data key="d78">USES</data>
     </edge>
     <edge source="cap.expert_rules.E16" target="cap.expert_rules.E17" id="0">
-      <data key="d65">SIMILAR_TO</data>
+      <data key="d78">SIMILAR_TO</data>
     </edge>
     <edge source="cap.expert_rules.E16" target="cap.risk_policy.C5" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="cap.expert_rules.E17" target="evidence.expert_rules" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.expert_rules.E17" target="op.pipeline.06" id="0">
-      <data key="d65">USES</data>
+      <data key="d78">USES</data>
     </edge>
     <edge source="cap.expert_rules.E17" target="op.pipeline.07" id="0">
-      <data key="d65">USES</data>
+      <data key="d78">USES</data>
     </edge>
     <edge source="cap.expert_rules.E17" target="cap.risk_policy.C5" id="0">
-      <data key="d65">TRANSFERABLE_TO</data>
+      <data key="d78">TRANSFERABLE_TO</data>
     </edge>
     <edge source="op.pipeline.01" target="evidence.expert_rules" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="op.pipeline.01" target="op.pipeline.02" id="0">
-      <data key="d65">PRECEDES</data>
-      <data key="d66">fit 仅作用于训练集</data>
+      <data key="d78">PRECEDES</data>
+      <data key="d79">fit 仅作用于训练集</data>
     </edge>
     <edge source="op.pipeline.02" target="evidence.expert_rules" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="op.pipeline.02" target="op.pipeline.03" id="0">
-      <data key="d65">PRECEDES</data>
-      <data key="d66">fit 仅作用于训练集</data>
+      <data key="d78">PRECEDES</data>
+      <data key="d79">fit 仅作用于训练集</data>
     </edge>
     <edge source="op.pipeline.03" target="evidence.expert_rules" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="op.pipeline.03" target="op.pipeline.04" id="0">
-      <data key="d65">PRECEDES</data>
-      <data key="d66">fit 仅作用于训练集</data>
+      <data key="d78">PRECEDES</data>
+      <data key="d79">fit 仅作用于训练集</data>
     </edge>
     <edge source="op.pipeline.04" target="evidence.expert_rules" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="op.pipeline.04" target="op.pipeline.05" id="0">
-      <data key="d65">PRECEDES</data>
-      <data key="d66">fit 仅作用于训练集</data>
+      <data key="d78">PRECEDES</data>
+      <data key="d79">fit 仅作用于训练集</data>
     </edge>
     <edge source="op.pipeline.05" target="evidence.expert_rules" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="op.pipeline.05" target="op.pipeline.06" id="0">
-      <data key="d65">PRECEDES</data>
-      <data key="d66">fit 仅作用于训练集</data>
+      <data key="d78">PRECEDES</data>
+      <data key="d79">fit 仅作用于训练集</data>
     </edge>
     <edge source="op.pipeline.06" target="evidence.expert_rules" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="op.pipeline.06" target="op.pipeline.07" id="0">
-      <data key="d65">PRECEDES</data>
-      <data key="d66">fit 仅作用于训练集</data>
+      <data key="d78">PRECEDES</data>
+      <data key="d79">fit 仅作用于训练集</data>
     </edge>
     <edge source="op.pipeline.07" target="evidence.expert_rules" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="fail.failure_review.FR-01" target="evidence.failure_review" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="fail.failure_review.FR-02" target="evidence.failure_review" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="fail.failure_review.FR-03" target="evidence.failure_review" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="fail.failure_review.FR-04" target="evidence.failure_review" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="fail.failure_review.FR-05" target="evidence.failure_review" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="fail.failure_review.r01" target="evidence.failure_review" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="fail.failure_review.r01" target="cap.data_dictionary.T1" id="0">
-      <data key="d65">FIXED_BY</data>
+      <data key="d78">FIXED_BY</data>
     </edge>
     <edge source="fail.failure_review.r02" target="evidence.failure_review" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="fail.failure_review.r03" target="evidence.failure_review" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="fail.failure_review.r04" target="evidence.failure_review" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="fail.failure_review.r04" target="cap.experiment_log.K2" id="0">
-      <data key="d65">FIXED_BY</data>
+      <data key="d78">FIXED_BY</data>
     </edge>
     <edge source="fail.failure_review.r05" target="evidence.failure_review" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="fail.failure_review.r06" target="evidence.failure_review" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.risk_policy.C1" target="evidence.risk_policy" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.risk_policy.C1" target="dataset.data_dictionary" id="0">
-      <data key="d65">APPLIES_TO</data>
+      <data key="d78">APPLIES_TO</data>
     </edge>
     <edge source="cap.risk_policy.C2" target="evidence.risk_policy" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.risk_policy.C2" target="dataset.data_dictionary" id="0">
-      <data key="d65">APPLIES_TO</data>
+      <data key="d78">APPLIES_TO</data>
     </edge>
     <edge source="cap.risk_policy.C3" target="evidence.risk_policy" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.risk_policy.C3" target="metric.test_report.r09" id="0">
-      <data key="d65">EVALUATED_BY</data>
+      <data key="d78">EVALUATED_BY</data>
     </edge>
     <edge source="cap.risk_policy.C3" target="dataset.data_dictionary" id="0">
-      <data key="d65">APPLIES_TO</data>
+      <data key="d78">APPLIES_TO</data>
     </edge>
     <edge source="cap.risk_policy.C4" target="evidence.risk_policy" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.risk_policy.C4" target="metric.test_report.r07" id="0">
-      <data key="d65">EVALUATED_BY</data>
+      <data key="d78">EVALUATED_BY</data>
     </edge>
     <edge source="cap.risk_policy.C4" target="dataset.data_dictionary" id="0">
-      <data key="d65">APPLIES_TO</data>
+      <data key="d78">APPLIES_TO</data>
     </edge>
     <edge source="cap.risk_policy.C5" target="evidence.risk_policy" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.risk_policy.C5" target="op.pipeline.06" id="0">
-      <data key="d65">USES</data>
+      <data key="d78">USES</data>
     </edge>
     <edge source="cap.risk_policy.C5" target="dataset.data_dictionary" id="0">
-      <data key="d65">APPLIES_TO</data>
+      <data key="d78">APPLIES_TO</data>
     </edge>
     <edge source="cap.risk_policy.C5" target="dataset.data_dictionary" id="1">
-      <data key="d65">REQUIRES</data>
+      <data key="d78">REQUIRES</data>
     </edge>
     <edge source="cap.risk_policy.C6" target="evidence.risk_policy" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.risk_policy.C6" target="dataset.data_dictionary" id="0">
-      <data key="d65">APPLIES_TO</data>
+      <data key="d78">APPLIES_TO</data>
     </edge>
     <edge source="cap.risk_policy.C6" target="dataset.data_dictionary" id="1">
-      <data key="d65">REQUIRES</data>
+      <data key="d78">REQUIRES</data>
     </edge>
     <edge source="cap.risk_policy.C7" target="evidence.risk_policy" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="cap.risk_policy.C7" target="dataset.data_dictionary" id="0">
-      <data key="d65">APPLIES_TO</data>
+      <data key="d78">APPLIES_TO</data>
     </edge>
     <edge source="metric.risk_policy.r01" target="evidence.risk_policy" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="metric.risk_policy.r02" target="evidence.risk_policy" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="metric.risk_policy.r03" target="evidence.risk_policy" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="metric.risk_policy.r04" target="evidence.risk_policy" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="metric.test_report.r01" target="evidence.test_report" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="metric.test_report.r02" target="evidence.test_report" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="metric.test_report.r03" target="evidence.test_report" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="metric.test_report.r04" target="evidence.test_report" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="metric.test_report.r05" target="evidence.test_report" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="metric.test_report.r06" target="evidence.test_report" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="metric.test_report.r07" target="evidence.test_report" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="metric.test_report.r08" target="evidence.test_report" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="metric.test_report.r09" target="evidence.test_report" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="metric.test_report.r10" target="evidence.test_report" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="metric.test_report.r11" target="evidence.test_report" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="metric.test_report.r12" target="evidence.test_report" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="run.test_report.RUN-legacy-01" target="evidence.test_report" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="run.test_report.RUN-legacy-02" target="evidence.test_report" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="run.test_report.RUN-legacy-03" target="evidence.test_report" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="algo.legacy_default_model.load_raw" target="evidence.legacy_default_model" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="algo.legacy_default_model.build_features" target="evidence.legacy_default_model" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="algo.legacy_default_model.train_default_model" target="evidence.legacy_default_model" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="algo.legacy_default_model.score_to_rating" target="evidence.legacy_default_model" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="fail.legacy_default_model.defect022" target="evidence.legacy_default_model" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
     <edge source="env.legacy_default_model" target="evidence.legacy_default_model" id="0">
-      <data key="d65">EVIDENCED_BY</data>
+      <data key="d78">EVIDENCED_BY</data>
     </edge>
   </graph>
 </graphml>

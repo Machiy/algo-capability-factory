@@ -21,7 +21,13 @@ class _StrictModel(BaseModel):
 
 
 class NodeType(str, Enum):
-    """题目六要素 + 历史验证结果 / 失败案例 / 证据，共 9 类节点。"""
+    """题目六要素 + 运行记录 / 失败案例 / 教训 / 证据，共 10 类节点。
+
+    ``VALIDATION_RUN`` 与 ``LESSON`` 的区别是本项目的核心口径：
+    前者是「某次运行发生了什么」（日志，可丢弃、可重跑覆盖），后者是
+    「跨运行依然成立的系统级判断」（知识，带根因、处置、预防与置信度）。
+    沉淀的价值在后者，前者只用于追溯。
+    """
 
     CAPABILITY = "Capability"
     OPERATOR = "Operator"
@@ -31,7 +37,25 @@ class NodeType(str, Enum):
     ENVIRONMENT = "Environment"
     VALIDATION_RUN = "ValidationRun"
     FAILURE_CASE = "FailureCase"
+    LESSON = "Lesson"
     EVIDENCE = "Evidence"
+
+
+class LessonScope(str, Enum):
+    """教训的适用范围，按「系统层面」而非业务层面划分。
+
+    分类口径决定教训能否迁移：``platform`` / ``runtime`` / ``llm`` 的教训
+    与数据集无关，换场景仍然成立；``data`` 的教训只在该数据分布内成立。
+    """
+
+    RUNTIME = "runtime"        # 沙箱、超时、内存、确定性
+    DATA = "data"              # schema、类别枚举、标签口径、时间泄漏
+    LLM = "llm"                # 解析、回放、prompt 输出契约
+    VALIDATION = "validation"  # 四层验证自身的语义缺陷
+    KNOWLEDGE = "knowledge"    # 抽取、图谱、检索
+    PLATFORM = "platform"      # 跨平台、编码、路径与文件名
+    WORKFLOW = "workflow"      # 编排、重试、候选比较、报告口径
+
 
 
 class EdgeType(str, Enum):
@@ -84,6 +108,51 @@ class KGNode(_StrictModel):
     status: str = "active"
     attributes: dict[str, Any] = Field(default_factory=dict)
     evidence: list[Evidence] = Field(default_factory=list)
+
+
+class LessonRecord(_StrictModel):
+    """一条系统级教训：可复用、可检索、可判失效的知识单元。
+
+    与 ``ValidationRun`` 的区别是「下次还能用」：日志只说明某次跑了什么，
+    教训必须能回答「在什么条件下、会遇到什么现象、为什么、怎么处置、怎么预防」。
+    缺了 ``root_cause`` 或 ``action`` 的条目只是记录，不应该进图谱。
+    """
+
+    lesson_id: str
+    scope: LessonScope
+    symptom: str = Field(description="可观测现象：错误签名、报错文本或异常指标")
+    root_cause: str = Field(description="系统层根因，不是这一次的输入数据")
+    action: str = Field(description="处置动作：改什么、怎么改")
+    prevention: str = Field(default="", description="下次怎么提前避免")
+    signatures: list[str] = Field(default_factory=list, description="可自动匹配的错误签名")
+    applies_to: str = Field(default="", description="适用范围：跨场景通用或限定本任务")
+    occurrences: int = Field(default=1, ge=1, description="独立运行中出现次数")
+    run_ids: list[str] = Field(default_factory=list)
+    confidence: float = Field(default=0.5, ge=0.0, le=1.0)
+    source: str = Field(default="measured", description="来源：measured / seeded")
+
+    def to_attributes(self) -> dict[str, Any]:
+        """转为图谱节点属性；键名与检索、报告的读取口径保持一致。"""
+        return {
+            "scope": self.scope.value,
+            "symptom": self.symptom,
+            "root_cause": self.root_cause,
+            "action": self.action,
+            "prevention": self.prevention,
+            "signatures": list(self.signatures),
+            "applies_to": self.applies_to,
+            "occurrences": self.occurrences,
+            "run_ids": list(self.run_ids),
+            "confidence": self.confidence,
+            "source": self.source,
+            "record_kind": "knowledge",
+        }
+
+    def one_line(self) -> str:
+        """注入 prompt 与报告的单行摘要：现象 → 根因 → 处置。"""
+        return (f"[{self.scope.value}] {self.symptom} → 根因：{self.root_cause}"
+                f" → 处置：{self.action}（出现 {self.occurrences} 次，"
+                f"置信度 {self.confidence:.2f}）")
 
 
 class KGEdge(_StrictModel):
@@ -148,6 +217,8 @@ class RetrievalResult(_StrictModel):
     hits: list[RetrievalHit] = Field(default_factory=list)
     constraints: list[str] = Field(default_factory=list)
     failure_warnings: list[str] = Field(default_factory=list)
+    # 系统级教训：与「某次失败的处置」不同，这里是跨运行稳定成立的知识
+    lessons: list[str] = Field(default_factory=list)
 
     def as_prompt_context(self) -> str:
         """渲染为可直接注入 prompt 的证据文本。"""
@@ -156,6 +227,9 @@ class RetrievalResult(_StrictModel):
         if self.constraints:
             lines.append("## 适用条件")
             lines.extend(f"- {item}" for item in self.constraints)
+        if self.lessons:
+            lines.append("## 系统级教训（跨运行成立，生成代码必须遵守）")
+            lines.extend(f"- {item}" for item in self.lessons)
         if self.failure_warnings:
             lines.append("## 历史失败规避项")
             lines.extend(f"- {item}" for item in self.failure_warnings)
@@ -168,6 +242,8 @@ __all__ = [
     "KGEdge",
     "KGNode",
     "KnowledgeGraph",
+    "LessonRecord",
+    "LessonScope",
     "NodeType",
     "RetrievalHit",
     "RetrievalResult",

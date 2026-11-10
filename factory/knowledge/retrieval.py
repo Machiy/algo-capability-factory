@@ -22,6 +22,7 @@ from factory.contracts.knowledge import (
     RetrievalHit,
     RetrievalResult,
 )
+from factory.knowledge.lessons import rank_lessons
 
 logger = logging.getLogger(__name__)
 
@@ -71,20 +72,35 @@ def _failure_flag(node: KGNode) -> float:
     return 1.0 if node.attributes.get("error_signature") else 0.0
 
 
+def _is_runtime_log(node: KGNode) -> bool:
+    """判断是否「本轮运行日志」。
+
+    材料里的历史实验记录同样带 ``metrics``，但那是有价值的证据型知识（历史
+    实测指标），必须继续参与检索；回写的运行节点带 ``run_id``，只是日志。
+    """
+    return (node.node_type is NodeType.VALIDATION_RUN
+            and bool(node.attributes.get("run_id")))
+
+
 class HybridRetriever:
     """检索能力子图，输出可直接注入 Planner / Coder prompt 的契约。"""
 
     def __init__(self, graph: KnowledgeGraph, top_k: int = 5,
-                 weights: dict[str, float] | None = None) -> None:
+                 weights: dict[str, float] | None = None,
+                 lesson_limit: int = 5) -> None:
         self.graph = graph
         self.top_k = top_k
         self.weights = {**DEFAULT_WEIGHTS, **(weights or {})}
+        self.lesson_limit = lesson_limit
 
     def retrieve(self, query: str, top_k: int | None = None) -> RetrievalResult:
         limit = top_k if top_k is not None else self.top_k
         tokens = _tokens(query)
+        # 证据原文只是节点的支撑材料；本轮运行日志只说明这次跑了什么，
+        # 两者都不是知识，不占用 prompt 名额
         nodes = [node for node in self.graph.nodes
-                 if node.node_type is not NodeType.EVIDENCE]
+                 if node.node_type is not NodeType.EVIDENCE
+                 and not _is_runtime_log(node)]
         relevance = _bm25_scores(tokens, [_searchable_text(node) for node in nodes])
         hits: list[RetrievalHit] = []
         for node, constraint in zip(nodes, relevance):
@@ -120,6 +136,7 @@ class HybridRetriever:
             hits=hits[:limit],
             constraints=self._constraints(limit),
             failure_warnings=self._failure_warnings(limit),
+            lessons=self._lessons(self.lesson_limit),
         )
         logger.info("检索 query=%r 命中 %d 项", query, len(result.hits))
         return result
@@ -175,6 +192,17 @@ class HybridRetriever:
             if detail:
                 items.append(f"{node.name}：{detail}")
         return items[:limit]
+
+    def _lessons(self, limit: int) -> list[str]:
+        """系统级教训：跨运行成立的知识，全部注入 prompt 供生成代码遵守。
+
+        与 ``failure_warnings`` 的区别：后者是「某次怎么失败的」，前者是
+        「这类失败为什么发生、以后怎么不犯」，因此排序只按可信度与出现次数，
+        不做 query 相关性过滤——通用教训不因这次提问没提到就不适用。
+        """
+        if limit <= 0:
+            return []
+        return [record.one_line() for record in rank_lessons(self.graph, limit=limit)]
 
     def _failure_warnings(self, limit: int) -> list[str]:
         """汇总历史失败规避项，本项目实测回写的经验优先于材料里的种子案例。"""

@@ -26,6 +26,7 @@ from factory.contracts.knowledge import (
     NodeType,
     SourceDocument,
 )
+from factory.knowledge.lessons import seed_lesson_attributes
 from factory.knowledge.parsing import (
     Table,
     TableRow,
@@ -43,6 +44,8 @@ DOC_TYPE_BY_FILENAME: dict[str, str] = {
     "experiment_log.md": "实验记录",
     "test_report.md": "测试报告",
     "failure_review.md": "失败复盘",
+    # 工程教训库：系统层面的坑点与经验，跨场景成立，与数据陷阱 T1–T4 分开
+    "engineering_lessons.md": "工程教训",
     # 文本场景材料（assets/docs/text/）：结构与主场景一致，复用同一解析路径
     "sms_data_dictionary.md": "业务文档",
     "sms_policy.md": "风控策略",
@@ -65,6 +68,7 @@ _PREFIX_BY_TYPE: dict[NodeType, str] = {
     NodeType.ENVIRONMENT: "env",
     NodeType.VALIDATION_RUN: "run",
     NodeType.FAILURE_CASE: "fail",
+    NodeType.LESSON: "lesson",
     NodeType.EVIDENCE: "evidence",
 }
 
@@ -122,6 +126,8 @@ def _row_node_type(doc_type: str, section_title: str) -> NodeType | None:
         return None
     if doc_type == "失败复盘" and "速查" in section_title:
         return NodeType.FAILURE_CASE
+    if doc_type == "工程教训" and "教训速查" in section_title:
+        return NodeType.LESSON
     return None
 
 
@@ -147,11 +153,15 @@ def _name_from_row(cells: tuple[str, ...], item_id: str) -> str:
     return f"[{item_id}] {candidate[:80]}" if candidate else item_id
 
 
-def read_sources(root: Path, docs_dir: str, legacy_dir: str) -> list[SourceDocument]:
+def read_sources(root: Path, docs_dir: str, legacy_dir: str,
+                 shared_docs: list[str] | None = None) -> list[SourceDocument]:
     """读取业务材料与历史代码，返回带整文件哈希的契约对象。
 
     ``legacy_dir`` 传空字符串表示该场景没有历史代码（如纯文本任务），
     不会被误判为「材料缺失」。
+
+    ``shared_docs`` 是跨场景共享的材料（如工程教训库）：系统级知识不该因为
+    换了任务就消失，否则每个新场景都要重新踩一遍同样的坑。
     """
     sources: list[SourceDocument] = []
     docs = root / docs_dir
@@ -177,6 +187,23 @@ def read_sources(root: Path, docs_dir: str, legacy_dir: str) -> list[SourceDocum
         sources.append(SourceDocument(
             path=path.relative_to(root).as_posix(),
             doc_type=LEGACY_DOC_TYPE,
+            content=content,
+            sha256=sha256_text(content),
+        ))
+    # 共享材料：工程教训库等跨场景材料；场景自己的 docs 目录已含同一份时跳过
+    seen = {doc.path for doc in sources}
+    for configured in shared_docs or []:
+        path = root / configured
+        if not path.is_file():
+            logger.warning("共享材料缺失，已跳过：%s", configured)
+            continue
+        relative = path.relative_to(root).as_posix()
+        if relative in seen:
+            continue
+        content = _read(path)
+        sources.append(SourceDocument(
+            path=relative,
+            doc_type=DOC_TYPE_BY_FILENAME.get(path.name, "业务文档"),
             content=content,
             sha256=sha256_text(content),
         ))
@@ -303,11 +330,20 @@ class _GraphBuilder:
             return
         item_id = cells[0] if _ID_RE.match(cells[0]) else f"r{index:02d}"
         node_id = f"{_PREFIX_BY_TYPE[node_type]}.{_slug(stem)}.{_slug(item_id)}"
+        # 教训材料的表头是中文，先规范化成标准键，检索与报告才能共用一套读取逻辑
+        if node_type is NodeType.LESSON:
+            attributes = seed_lesson_attributes(table.headers, cells, section)
+            attributes.setdefault("source_id", item_id)
+            symptom = str(attributes.get("symptom", ""))
+            name = f"[{item_id}] {symptom[:60]}" if symptom else _name_from_row(cells, item_id)
+        else:
+            attributes = _row_attributes(table.headers, cells, section, item_id)
+            name = _name_from_row(cells, item_id)
         self.add_node(KGNode(
             node_id=node_id,
             node_type=node_type,
-            name=_name_from_row(cells, item_id),
-            attributes=_row_attributes(table.headers, cells, section, item_id),
+            name=name,
+            attributes=attributes,
             evidence=[Evidence(path=doc.path, excerpt=raw,
                                sha256=sha256_text(raw), doc_type=doc.doc_type)],
         ))

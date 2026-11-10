@@ -3,6 +3,33 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循
 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本对应一个 annotated tag 与 GitHub Release。
 
+## [1.3.0] - 2026-11-10
+
+知识沉淀分层：图谱里存的不再是「某次跑出了什么」，而是「系统在什么条件下会怎么坏、为什么、怎么处置」。导师反馈的原话是「你的知识沉淀看起来就是个日志」，这一版把日志与知识在 schema、检索与产物三个层面拆开。
+
+### 新增
+
+- **`Lesson` 节点（第 10 类）与 `LessonRecord` 契约**：`scope`（runtime / data / llm / validation / knowledge / platform / workflow）、`symptom`、`root_cause`、`action`、`prevention`、`applies_to`、`occurrences`、`confidence`。缺根因或缺处置的条目不允许作为教训。
+- **工程教训库 `assets/docs/engineering_lessons.md`**：LE1–LE12 条真实系统级坑点（进程树内存口径、CLI ANSI 断言、CRLF 哈希、四层验证只有两层生效、图谱边语义随机、修复退化、路径穿越、回放冒充实测、LLM 代码未采用、确定性靠声明、检索不进 prompt、任务假设写死）。由抽取器折成 `Lesson` 节点，带可重算的证据哈希。
+- **`factory/knowledge/lessons.py`**：错误签名 → 系统级教训的确定性映射；失败案例在**独立 run** 中出现 ≥ `knowledge.lesson_promote_threshold`（默认 2）次后提升为教训，置信度随次数递增；教训按 `signatures` 去重、跨运行刷新次数。
+- **`factory/knowledge/merge.py`**：图谱加载改为「本次材料抽取 + 上次回写的运行沉淀」合并。材料是唯一事实来源（改了材料立即生效），沉淀只继承失败案例、教训与能力版本。
+- **检索注入**：`RetrievalResult.lessons` 新增 `## 系统级教训（跨运行成立，生成代码必须遵守）` 段，进入 Planner 与 Coder 的 prompt；排序为「本任务实测优先 → 出现次数 → 置信度 → 编号自然序」。运行日志（`ValidationRun`）被排除在检索候选之外，不再占用 prompt 名额。
+- **产物分离**：`capabilities_after_run.json` 只含知识，运行日志另存 `capabilities_after_run_runs.json`；报告第 6 节改为「图谱沉淀（知识 vs 运行记录）」并给出日志路径。
+
+### 修复
+
+- **回写图谱会老化**：此前一旦存在回写文件就整份加载，新增材料与新增规则永远不生效；现在每次运行都与材料抽取合并。主图谱因此从 95 节点（缺教训）恢复为 108 节点 / 12 条教训。
+- **失败案例「经验只活一轮」**：`occurrences` 此前恒为 1，无法区分偶发与系统性问题；现在按独立 `run_ids` 计数，同一 run 重跑不重复计数。
+
+### 测试
+
+- 新增 `tests/test_lessons.py` 14 个用例：种子教训字段完整性、证据可回溯、共享教训跨场景生效、教训注入 prompt、运行日志不进检索、单次失败不提升、独立 run 累积后提升、同 run 重跑幂等、教训去重、报告口径。
+- 更新 `tests/test_knowledge.py`（10 类节点 / 8 份材料）与 `tests/test_workflow.py`（知识图与日志文件分离、双文件幂等）。全量 177 个用例通过，`ruff check` 全绿。
+
+### 实测
+
+同一份回写图谱连跑三轮：第 1 轮 2 次修复（`KeyError: PAY_1` + `MetricBelowThreshold`）→ 第 2 轮该签名达 2 次、提升为教训、修复降至 1 轮 → 第 3 轮检索首条即这条教训。报告见 `outputs/reports/run_lesson_demo_{1,2,3}.md`。
+
 ## [1.2.0] - 2026-11-10
 
 入口输入引导：用户提交的自然语言描述不再直接灌进七步闭环。导师反馈「用户可能会瞎说」，因此把「引导」做成一层可测试的规则引擎，而不是靠文档提醒。
