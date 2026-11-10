@@ -77,7 +77,9 @@ def main() -> int:
 
     _git("tag", "-a", tag, "-m", message, target)
     _git("push", "origin", tag)
-    print(f"[tag] 已创建并推送 {tag} -> {_git('rev-parse', '--short', tag)}")
+    # annotated tag 是独立对象，解引用到提交后打印才有意义
+    commit = _git("rev-parse", "--short", f"{tag}^{{}}")
+    print(f"[tag] 已创建并推送 {tag} -> {commit}")
     return 0
 
 

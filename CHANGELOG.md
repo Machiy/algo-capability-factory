@@ -17,7 +17,7 @@
 
 - 新增 `scripts/tag_release.py`：读取 `factory.__version__`，校验工作区干净、`HEAD` 已在 `origin/main`、同名 tag 不存在，然后创建 annotated tag `v<version>` 并推送；支持 `--dry-run`、`--version` / `--target` 补历史标签，重复执行幂等，绝不 force 覆盖。
 - `.codebuddy/rules/git-commit.md` 新增「版本标签（发布动作，必须执行）」一节：每次 `git push origin main` 成功后立即执行该脚本，push 后未打 tag 视为发布流程未完成；`AGENTS.md` 的 Git 规范同步。
-- 补齐 `v1.2.0` / `v1.3.0` / `v1.4.0` / `v1.4.1` / `v1.4.2` 历史标签（均指向对应版本的提交，已核对 `factory/__init__.py`），本次提交推送后由脚本创建 `v1.4.3`。
+- 仓库已有 `v1.0.0`–`v1.1.1` 标签序列；本次补齐 `v1.2.0` / `v1.3.0` / `v1.4.0` / `v1.4.1` / `v1.4.2`（均指向对应版本提交，已核对 `factory/__init__.py`），并由脚本创建 `v1.4.3`。
 
 `ruff` 全绿、187 个用例通过。
 

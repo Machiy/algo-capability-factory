@@ -25,7 +25,7 @@ enabled: true
 
 题目只要求「Git 版本控制 + 清晰提交信息」，但本项目把「版本可定位」作为交付证据：CHANGELOG 里的每个版本都要能在 Git 上定位到一个不可变提交。
 
-- **触发动作**：每次 `git push origin main` 成功后，**立即执行** `python scripts/tag_release.py`；脚本读取 `factory.__version__`，创建 annotated tag `v<version>` 并推送到 origin。这一步不能省略，也不靠人工记忆。
+- **触发动作**：每次 `git push origin main` 成功后，**立即执行** `python scripts/tag_release.py`；脚本读取 `factory.__version__`，创建 annotated tag `v<version>` 并推送到 origin。沿用仓库已有的 `v1.x.x` 标签序列（`v1.0.0` 起），不能中断。这一步不能省略，也不靠人工记忆。
 - **脚本会校验**：工作区干净、`HEAD` 已在 `origin/main`、本地 / 远端同名 tag 不存在；同一版本多次提交时幂等跳过，不重复打 tag。
 - **补历史标签**：`python scripts/tag_release.py --version 1.2.0 --target <sha>`，只用于补齐既有版本，不得改写已推送标签。
 - **红线**：禁止 force 更新已推送 tag、禁止改写已推送提交、禁止给未推送的提交打 tag；`push` 后未打 tag 视为发布流程未完成。
