@@ -103,6 +103,66 @@ class RepairTests(unittest.TestCase):
         self.assertEqual(fixed, source)
         self.assertEqual(record.outcome, "no_change")
 
+    def test_forbidden_feature_is_repaired(self) -> None:
+        """ForbiddenFeature：从 FEATURE_COLUMNS 剔除 ID 与敏感字段。"""
+        source = (
+            "from sklearn.linear_model import LogisticRegression\n"
+            "from sklearn.pipeline import Pipeline\n\n"
+            'FEATURE_COLUMNS = ["LIMIT_BAL", "ID", "SEX", "PAY_0"]\n\n'
+            "def build_pipeline(config):\n"
+            "    return Pipeline([(\"model\", LogisticRegression(random_state=42))])\n"
+        )
+        fixed, record = Repairer(MockLLM(), ["ID", "SEX"]).repair(
+            source, "ForbiddenFeature", 1
+        )
+        self.assertNotIn('"ID"', fixed)
+        self.assertNotIn('"SEX"', fixed)
+        self.assertIn('"LIMIT_BAL"', fixed)
+        self.assertIn('"PAY_0"', fixed)
+        self.assertEqual(record.outcome, "repaired")
+
+    def test_leakage_detected_shares_forbidden_patch(self) -> None:
+        """LeakageDetected 复用同一套剔除禁入模字段的补丁。"""
+        source = (
+            "from sklearn.linear_model import LogisticRegression\n"
+            "from sklearn.pipeline import Pipeline\n\n"
+            'FEATURE_COLUMNS = ["LIMIT_BAL", "default.payment.next.month"]\n\n'
+            "def build_pipeline(config):\n"
+            "    return Pipeline([(\"model\", LogisticRegression(random_state=42))])\n"
+        )
+        fixed, record = Repairer(MockLLM(), ["default.payment.next.month"]).repair(
+            source, "LeakageDetected", 1
+        )
+        self.assertNotIn("default.payment.next.month", fixed)
+        self.assertEqual(record.outcome, "repaired")
+
+    def test_nondeterminism_injects_random_state(self) -> None:
+        """Nondeterminism：给缺 random_state 的随机森林注入 random_state=42。"""
+        source = (
+            "from sklearn.ensemble import RandomForestClassifier\n"
+            "from sklearn.pipeline import Pipeline\n\n"
+            'FEATURE_COLUMNS = ["LIMIT_BAL", "PAY_0"]\n\n'
+            "def build_pipeline(config):\n"
+            "    return Pipeline([(\"model\", RandomForestClassifier(\n"
+            "        n_estimators=5, max_depth=3, n_jobs=1))])\n"
+        )
+        fixed, record = Repairer(MockLLM()).repair(source, "Nondeterminism", 1)
+        self.assertIn("random_state=42", fixed)
+        self.assertEqual(record.outcome, "repaired")
+
+    def test_nondeterminism_keeps_existing_random_state(self) -> None:
+        """已有 random_state 的调用不重复注入，保证幂等。"""
+        source = (
+            "from sklearn.ensemble import RandomForestClassifier\n"
+            "from sklearn.pipeline import Pipeline\n\n"
+            'FEATURE_COLUMNS = ["LIMIT_BAL", "PAY_0"]\n\n'
+            "def build_pipeline(config):\n"
+            "    return Pipeline([(\"model\", RandomForestClassifier(random_state=7))])\n"
+        )
+        fixed, record = Repairer(MockLLM()).repair(source, "Nondeterminism", 1)
+        self.assertEqual(fixed, source)
+        self.assertEqual(record.outcome, "no_change")
+
     def test_reviewer_rejects_dangerous_import(self) -> None:
         settings = load_settings(CONFIG)
         task = load_task_settings(TASK_CONFIG)
@@ -268,6 +328,22 @@ class DatasetSandboxTests(unittest.TestCase):
         result = self.sandbox.run(source, repeat=2)
         self.assertTrue(result.sandbox.passed, result.sandbox.stderr)
         self.assertGreater(result.context["repeat_variance"], 0.0)
+
+    def test_nondeterminism_repair_restores_determinism(self) -> None:
+        """修复闭环：注入 random_state 后，二次 fit 的输出差归零。"""
+        source = (
+            "from sklearn.ensemble import RandomForestClassifier\n"
+            "from sklearn.pipeline import Pipeline\n\n"
+            f"FEATURE_COLUMNS = {COLUMNS!r}\n\n"
+            "def build_pipeline(config):\n"
+            "    return Pipeline([(\"model\", RandomForestClassifier(\n"
+            "        n_estimators=5, max_depth=3, n_jobs=1))])\n"
+        )
+        fixed, record = Repairer(MockLLM()).repair(source, "Nondeterminism", 1)
+        self.assertEqual(record.outcome, "repaired")
+        result = self.sandbox.run(fixed, repeat=2)
+        self.assertTrue(result.sandbox.passed, result.sandbox.stderr)
+        self.assertLess(result.context["repeat_variance"], 1e-9)
 
     def test_test_segment_is_held_out(self) -> None:
         """P0-2：test 段与 valid 段互不重叠，长度为末段样本数。"""

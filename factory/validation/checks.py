@@ -74,7 +74,11 @@ class FourLayerValidator:
         passed = (not failed and not sandbox.timed_out and not sandbox.memory_exceeded)
         signature = None
         if not passed:
+            # 确定性失败独立成签名：repeat_variance 由沙箱二次 fit 实测，
+            # 达到阈值即归为 Nondeterminism，让 Repairer 走 random_state 补丁。
+            nondeterministic = repeat_variance is not None and repeat_variance >= 1e-6
             signature = (static.error_signature or sandbox.error_signature
+                         or ("Nondeterminism" if nondeterministic else None)
                          or ("MetricBelowThreshold" if any(
                              name in threshold_checks for name in failed
                          ) else "ValidationFailed"))

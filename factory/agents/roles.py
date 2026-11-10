@@ -11,6 +11,7 @@ Coder 有两条路径：真实 LLM（``source != "mock"``）返回的代码先�
 
 from __future__ import annotations
 
+import ast
 import json
 import logging
 import re
@@ -65,6 +66,121 @@ REPAIR_STRATEGIES = {
     "Nondeterminism": "注入 random_state",
     "LeakageDetected": "强制 sklearn.Pipeline 并改时间外划分",
 }
+
+# 接受 random_state 的 sklearn 随机估计器：确定性修复据此判断该给哪个类注入。
+# 这是算法库的已知事实（哪些估计器有随机性），不是业务列名或指标阈值。
+_RANDOM_STATE_ESTIMATORS = frozenset({
+    "LogisticRegression",
+    "LinearSVC",
+    "RandomForestClassifier",
+    "RandomForestRegressor",
+    "ExtraTreesClassifier",
+    "ExtraTreesRegressor",
+    "HistGradientBoostingClassifier",
+    "HistGradientBoostingRegressor",
+    "GradientBoostingClassifier",
+    "GradientBoostingRegressor",
+    "Ridge",
+    "SGDClassifier",
+    "SGDRegressor",
+    "MLPClassifier",
+    "MLPRegressor",
+})
+
+
+def _replace_range(source: str, start_line: int, start_col: int,
+                   end_line: int, end_col: int, new_text: str) -> str:
+    """按 AST 节点位置（1-based 行列）用新文本替换源码片段。"""
+    lines = source.splitlines()
+    first = start_line - 1
+    last = end_line - 1
+    if first == last:
+        line = lines[first]
+        lines[first] = line[:start_col] + new_text + line[end_col:]
+    else:
+        prefix = lines[first][:start_col]
+        suffix = lines[last][end_col:]
+        lines[first] = prefix + new_text
+        lines[first + 1:last + 1] = [suffix] if suffix else []
+    return "\n".join(lines)
+
+
+def _render_column_list(elts: list[ast.expr]) -> str:
+    """把列名列表元素渲染回源码字面量；非字符串元素退回 ast.unparse。"""
+    parts = []
+    for el in elts:
+        if isinstance(el, ast.Constant) and isinstance(el.value, str):
+            parts.append(json.dumps(el.value, ensure_ascii=False))
+        else:
+            parts.append(ast.unparse(el))
+    return "[" + ", ".join(parts) + "]"
+
+
+def _repair_forbidden_feature(source: str, forbidden: set[str]) -> str:
+    """从 FEATURE_COLUMNS 剔除禁入模字段（ID / 标签 / 敏感字段）。
+
+    定向修复而非重写全量：只改 FEATURE_COLUMNS 赋值里的列表字面量，
+    其余代码原样保留。``forbidden`` 由任务配置派生，不在修复逻辑里写死列名。
+    """
+    if not forbidden:
+        return source
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return source
+    edits: list[tuple[int, int, int, int, str]] = []
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Assign)
+                and isinstance(node.value, (ast.List, ast.Tuple))):
+            continue
+        if not any(isinstance(t, ast.Name) and t.id == "FEATURE_COLUMNS"
+                   for t in node.targets):
+            continue
+        kept = [el for el in node.value.elts
+                if not (isinstance(el, ast.Constant) and el.value in forbidden)]
+        if len(kept) == len(node.value.elts):
+            continue
+        edits.append((node.value.lineno, node.value.col_offset,
+                      node.value.end_lineno, node.value.end_col_offset,
+                      _render_column_list(kept)))
+    for start_line, start_col, end_line, end_col, text in reversed(edits):
+        source = _replace_range(source, start_line, start_col,
+                                end_line, end_col, text)
+    return source
+
+
+def _repair_nondeterminism(source: str) -> str:
+    """给缺 random_state 的随机估计器实例化注入 random_state=42。
+
+    消除同一子进程内二次 fit 的输出差异；已有 random_state 的调用不动，
+    不重复注入。
+    """
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return source
+    edits: list[tuple[int, int, int, int, str]] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        name = node.func.id if isinstance(node.func, ast.Name) else (
+            node.func.attr if isinstance(node.func, ast.Attribute) else "")
+        if name not in _RANDOM_STATE_ESTIMATORS:
+            continue
+        if any(kw.arg == "random_state" for kw in node.keywords):
+            continue
+        new_call = ast.Call(
+            func=node.func,
+            args=list(node.args),
+            keywords=[*node.keywords,
+                      ast.keyword(arg="random_state", value=ast.Constant(value=42))],
+        )
+        edits.append((node.lineno, node.col_offset, node.end_lineno,
+                      node.end_col_offset, ast.unparse(new_call)))
+    for start_line, start_col, end_line, end_col, text in reversed(edits):
+        source = _replace_range(source, start_line, start_col,
+                                end_line, end_col, text)
+    return source
 
 # 各族候选的默认超参；新增模板时在此登记，避免超参散落在单点。
 HYPERPARAM_PRESETS: dict[str, list[dict[str, float]]] = {
@@ -409,10 +525,16 @@ class Verifier:
 
 
 class Repairer:
-    """f. 按错误签名定向修复，按策略表只改必要片段。"""
+    """f. 按错误签名定向修复，按策略表只改必要片段。
 
-    def __init__(self, llm: BaseLLM) -> None:
+    补丁是确定性的源码变换（不调用 LLM）：列名映射、剔除禁入模字段、
+    注入 random_state。``forbidden`` 来自任务配置派生，避免把字段名写死在
+    修复逻辑里；未提供时退化为不剔除（防御性，不误删）。
+    """
+
+    def __init__(self, llm: BaseLLM, forbidden: list[str] | None = None) -> None:
         self.llm = llm
+        self.forbidden = set(forbidden or [])
 
     def repair(self, source: str, signature: str | None,
                round_index: int) -> tuple[str, RepairRecord]:
@@ -421,6 +543,10 @@ class Repairer:
         fixed = source
         if key == "KeyError: PAY_1":
             fixed = source.replace('"PAY_1"', '"PAY_0"')
+        elif key in ("ForbiddenFeature", "LeakageDetected"):
+            fixed = _repair_forbidden_feature(source, self.forbidden)
+        elif key == "Nondeterminism":
+            fixed = _repair_nondeterminism(source)
         request = LLMRequest(role="Repairer", system=SYSTEM_PROMPTS["Repairer"],
                              user=f"错误签名：{key}\n策略：{strategy}")
         self.llm.complete(request)

@@ -3,6 +3,35 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循
 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本对应一个 annotated tag 与 GitHub Release。
 
+## [1.4.6] - 2026-11-10
+
+修复「一键复现」与「定向修复覆盖面」两处真实缺口。
+
+### 修复
+
+- **`pyproject.toml` 去除 UTF-8 BOM**：文件首字节为 `EF BB BF`，导致 Python 3.11+ 标准库
+  `tomllib` 解析失败，`pytest` 直接报 `Invalid statement (at line 1, column 1)` 退出。此前
+  CI 用 `python -m unittest` 跑测试因此未暴露，但文档声称的「pytest 全绿」实际无法复现。
+  去 BOM 后 `pytest` 可正常启动，`unittest` / `pytest` 两条路径均可用。
+- **`Nondeterminism` 从「死签名」变为可触发**：`FourLayerValidator` 此前把确定性失败归入
+  `ValidationFailed`，策略表里的 `Nondeterminism` 永远不会命中。现按沙箱实测的
+  `repeat_variance >= 1e-6` 独立成签名，`Repairer` 据此注入 `random_state`。
+- **`ForbiddenFeature` / `LeakageDetected` 增加确定性源码补丁**：`Repairer` 从任务配置派生的
+  禁入模字段集合，按 AST 定位 `FEATURE_COLUMNS` 列表并剔除 ID / 标签 / 敏感字段，不再一律
+  `no_change`；`Nondeterminism` 按 AST 给缺 `random_state` 的随机估计器实例化补
+  `random_state=42`（已有则幂等跳过）。补丁不调用 LLM，失败字段不写死在修复逻辑里。
+
+### 测试
+
+- 新增 6 个用例：禁入模字段剔除、`LeakageDetected` 复用同一补丁、`random_state` 注入、
+  幂等跳过、修复后确定性恢复（沙箱实测 `repeat_variance` 归零）、`Nondeterminism` 签名。
+  全量 209 个用例通过，`ruff` 全绿。
+
+### 文档
+
+- README 第 4 节与附录 B 同步「确定性源码补丁」的真实覆盖面，不再写「仅 `KeyError: PAY_1`
+  有真实补丁」。
+
 ## [1.4.5] - 2026-11-10
 
 按「加分 10 项」逐项核查：10 项全部涉及，其中 2 项只做到「写进图谱 / 模板话术」，本轮补齐读侧与解释质量。

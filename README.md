@@ -381,9 +381,10 @@ Parse → Retrieve → Plan → Generate → StaticCheck → Execute → Validat
                                                        └─ Fail → Diagnose → Repair → Execute (≤3 轮)
 ```
 
-修复轮次达到上限或候选全部处理完才进入 Sink；`Generate` 只在切换下一个候选时调用。目前
-**只有 `KeyError: PAY_1` 会真正改写生成的源码**，其余签名由 `Repairer` 给出策略并回到沙箱复验
-（`no_change`），如实记录到报告，不伪造补丁。
+修复轮次达到上限或候选全部处理完才进入 Sink；`Generate` 只在切换下一个候选时调用。定向修复
+按错误签名做**确定性源码补丁**：`KeyError: PAY_1` 映射列名、`ForbiddenFeature` / `LeakageDetected`
+剔除禁入模字段、`Nondeterminism` 注入 `random_state`；其余签名（如 `MetricBelowThreshold`）由
+`Repairer` 给出策略并回到沙箱复验（`no_change`），如实记录到报告，不伪造补丁。
 
 **统一验证机制（对应题目四层）**
 
@@ -782,7 +783,7 @@ done
 | 进阶要求 | 落地位置 | 自检方式 |
 |---|---|---|
 | Web 界面 / CLI / API | CLI `python -m factory`（`run` / `guide` / `api`）；FastAPI 5 端点 + `shared_openapi.json`；Web UI 按「或」语义未做 | `python -m factory api --export-openapi`、`/health`、`/templates` |
-| 多轮代码修复 | `max_repair_rounds: 3` + LangGraph 条件边 `Repair → Execute` + 错误签名策略表 | `credit_run_live.md` 第 4 节两轮修复轨迹；注意目前仅 `KeyError: PAY_1` 有真实源码补丁，其余策略为 `no_change` 并如实记录 |
+| 多轮代码修复 | `max_repair_rounds: 3` + LangGraph 条件边 `Repair → Execute` + 错误签名策略表 | `credit_run_live.md` 第 4 节两轮修复轨迹；确定性源码补丁覆盖 `KeyError` / `ForbiddenFeature` / `LeakageDetected` / `Nondeterminism`，其余策略为 `no_change` 并如实记录 |
 | 多候选自动比较 | `beam_width: 3`、按主指标（`maximize` / `minimize`）统一打分排序 | 报告第 2 节；`regression_run_demo.md` 的 RMSE 升序 |
 | 知识图谱可视化 | `outputs/kg/{credit,text,repo}_kg.html`（PyVis 内联，断网可开）+ `.graphml` | 浏览器打开；`tests/test_knowledge.py` 校验 graphml 可回读 |
 | 自动生成验证报告 | `render_run_report()`（0–7 节）、`scripts/verify_baseline.py` | `outputs/reports/` 样例清单、`shared_validation_sample.md` |
@@ -799,7 +800,7 @@ done
 | 多智能体协作 | 完整 | 8 角色各有独立 system prompt 与输入输出契约（`roles.py`）；LangGraph 8 节点 + 3 组条件边；检索证据显式进 Planner / Coder prompt | 默认 mock 路径下多数角色由规则驱动 |
 | 真实仓库抽取函数 / 依赖 / 能力 | 完整 | `RepoExtractor` 用 `ast` 抽签名、module 级依赖、docstring、行号证据；MIT 快照 `assets/repo/scorecardpy` → `repo_kg.*` 五类产物 | — |
 | 代码安全检查 + 沙箱执行 | 完整 | `StaticChecker` 5 项（AST import 白名单、禁入模列等）；`DatasetSandbox` 独立子进程 + 60s / 2GB + 进程树内存看门狗 | `pandas.read_csv` 任意路径未拦；Windows 无 `RLIMIT_AS`，靠轮询杀进程 |
-| 失败案例 → 可复用经验 | 完整 | FailureCase 按独立 run 累积，达阈值提升 `Lesson`（根因 / 处置 / 预防），下一轮注入 prompt；`credit_run_lesson_{1,2,3}.md` 实证 | 除 `KeyError: PAY_1` 外多数修复策略为 `no_change`，报告如实记录 |
+| 失败案例 → 可复用经验 | 完整 | FailureCase 按独立 run 累积，达阈值提升 `Lesson`（根因 / 处置 / 预防），下一轮注入 prompt；`credit_run_lesson_{1,2,3}.md` 实证 | 修复补丁覆盖 `KeyError` / 禁入模字段 / 非确定性；`MetricBelowThreshold` 等仍为 `no_change`，报告如实记录 |
 | 算法能力版本管理 | 完整 | v1→v2 增量节点 + `DERIVED_FROM` 版本链（图谱里有实物）；`scripts/capability_versions.py --list / --show / --diff` 可查询与对比 | 回滚（切换检索证据源）未做 |
 | 设计依据自然语言解释 | 完整 | `Curator.explain()` 按「判据 → 证据节点 id → 候选实测 → 排除原因 → 修复轨迹」生成，见任一报告的「设计依据」节 | 确定性拼接，不调用 LLM |
 | 跨场景迁移 | 完整 | 三份 `verify_*.yaml` + 三场景报告 + CI 三条端到端；核心验证器、沙箱、工作流不改 | — |

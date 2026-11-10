@@ -166,6 +166,14 @@ class FourLayerTests(unittest.TestCase):
         self.assertFalse(report.passed)
         self.assertEqual(report.error_signature, "Timeout")
 
+    def test_nondeterminism_signature(self) -> None:
+        """确定性失败（repeat_variance 达阈值）应独立归为 Nondeterminism。"""
+        report = self.validator.validate(run_id="r5", plan_id="p1",
+                                         static=_static(), sandbox=_sandbox(),
+                                         metrics=[], repeat_variance=0.5)
+        self.assertFalse(report.passed)
+        self.assertEqual(report.error_signature, "Nondeterminism")
+
     def test_metric_spec_passes(self) -> None:
         self.assertTrue(MetricSpec(name="auc", threshold=0.78).passes(0.8))
         self.assertFalse(MetricSpec(name="auc", threshold=0.78).passes(0.7))
