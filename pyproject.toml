@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "algocap-factory"
-version = "1.7.0"
+version = "1.8.0"
 description = "基于 AI Agent 的算法能力工厂原型：信用卡违约预测"
 readme = "README.md"
 requires-python = ">=3.11"

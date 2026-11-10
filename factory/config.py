@@ -121,6 +121,11 @@ class CassetteSettings(_ConfigModel):
     record: bool = False
     on_miss: str = "error"
     key_fields: list[str] = Field(default_factory=list)
+    # 按角色定制的命中键字段：认知角色（Planner / Coder / Repairer / Curator）的
+    # user prompt 含动态检索证据 / 方案 / 错误签名，每次 run 都不同，照搬全局
+    # key_fields（含 user）必然 miss。为它们配置不含 user 的字段，让键退化为
+    # 「角色 + system 模板」，录制一次后同一角色的调用稳定命中（B1 键策略）。
+    role_key_fields: dict[str, list[str]] = Field(default_factory=dict)
     strip: list[str] = Field(default_factory=list)
 
 

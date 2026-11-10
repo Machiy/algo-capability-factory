@@ -1,7 +1,7 @@
 ﻿# 全局默认配置；任务级配置见 verify_*.yaml
 project:
   name: algocap-factory
-  version: 1.7.0
+  version: 1.8.0
   seed: 42
   log_level: INFO
 
@@ -23,10 +23,17 @@ llm:
     Interpreter: {reasoning_effort: low}   # 结构化抽取不需深度思考，省时省额度
     Coder: {reasoning_effort: high}        # 代码生成保留高强度推理
   # 按角色指定后端：未列出的角色走上面的 provider。
-  # Interpreter 走 cassette，让「能力理解」由真实 LLM 录制响应驱动；
-  # 其余角色保持规则模板，保证确定性与零外部依赖。
+  # 默认只有 Interpreter 走 cassette（能力理解由真实 LLM 录制响应驱动），其余角色
+  # 保持规则模板，保证「离线可复现基线」的确定性。B1 已就位「5 个认知角色走 cassette」
+  # 的键策略（见下方 role_key_fields）与 4 个认知角色的录制条目——需要演示时，取消
+  # 下面四行注释即可让 Planner / Coder / Repairer / Curator 也走 cassette（代价是
+  # 回放录制时的示例代码，端到端指标取决于那次录制，见 README 第 5 节）。
   role_providers:
     Interpreter: cassette
+    # Planner: cassette
+    # Coder: cassette
+    # Repairer: cassette
+    # Curator: cassette
   # 凭据只从环境变量读取（.env 的 LLM_API_KEY），不写入配置文件或 cassette
   api_key_env: LLM_API_KEY
 
@@ -40,6 +47,18 @@ llm:
     on_miss: fallback_mock
     # 命中键必须包含所有影响输出的参数，否则不同思考强度下会错配回放
     key_fields: [role, system, user, model, temperature, max_tokens, reasoning_effort, thinking]
+    # 认知角色的 user prompt 含动态检索证据 / 方案 / 错误签名，每次 run 都不同；
+    # 为它们只保留静态字段，让键退化为「角色 + system 模板」，录制一次后稳定命中。
+    # 只保留 role/system/scene 是因为运行时认知角色构造 LLMRequest 时不传
+    # model/temperature 等（用默认值），含它们会导致录制键与回放键不一致。
+    # Planner / Coder 的响应依赖场景（回归/文本会生成不同代码），故加 scene 区分；
+    # Repairer / Curator 的响应被确定性逻辑忽略（仅留证），不需按场景区分。
+    # 代价是回放时不随输入变化——这是 cassette 静态快照的固有边界，报告如实标注。
+    role_key_fields:
+      Planner: [role, system, scene]
+      Coder: [role, system, scene]
+      Repairer: [role, system]
+      Curator: [role, system]
     strip: [authorization, api_key, base_url, cookies, set-cookie]
     # 落盘：request 正文、response 原始文本与解析结果、usage、model、时间戳
     # 禁止落盘：任何 header、完整 endpoint、key/token（仅保留 provider 名）

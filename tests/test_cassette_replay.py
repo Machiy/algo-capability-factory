@@ -106,6 +106,26 @@ class RoleRequestTests(unittest.TestCase):
                 self.assertIn(role, SYSTEM_PROMPTS)
                 self.assertTrue(SYSTEM_PROMPTS[role].strip())
 
+    def test_role_key_fields_stabilize_cognitive_roles(self) -> None:
+        """认知角色键含静态字段，不同 user 命中同一条目；Planner/Coder 按 scene 区分。"""
+        from factory.contracts.llm import LLMRequest
+        from factory.llm.cassette import compute_key
+
+        settings = load_settings(CONFIG)
+        fields = settings.llm.cassette.role_key_fields.get("Planner")
+        self.assertEqual(fields, ["role", "system", "scene"])  # Planner/Coder 含 scene
+        self.assertNotIn("user", fields)
+        # Repairer/Curator 的响应被确定性逻辑忽略，不需按 scene 区分
+        self.assertEqual(settings.llm.cassette.role_key_fields.get("Repairer"),
+                         ["role", "system"])
+        request_a = LLMRequest(role="Planner", system="SYS", user="动态A")
+        request_b = LLMRequest(role="Planner", system="SYS", user="动态B")
+        self.assertEqual(compute_key(request_a, fields), compute_key(request_b, fields))
+        # 不同 scene 的 Planner 键不同（跨场景不串扰）
+        request_c = LLMRequest(role="Planner", system="SYS", user="x",
+                               scene="text_classification")
+        self.assertNotEqual(compute_key(request_a, fields), compute_key(request_c, fields))
+
 
 if __name__ == "__main__":
     unittest.main()

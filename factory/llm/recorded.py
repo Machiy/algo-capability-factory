@@ -28,7 +28,10 @@ class RecordedLLM(BaseLLM):
         self.fallback = fallback
 
     def complete(self, request: LLMRequest) -> LLMResponse:
-        key = compute_key(request, self.settings.cassette.key_fields)
+        # 认知角色按角色级 key_fields 算键（去掉动态 user），其余角色沿用全局字段
+        key_fields = (self.settings.cassette.role_key_fields.get(request.role)
+                      or self.settings.cassette.key_fields)
+        key = compute_key(request, key_fields)
         entry = self.cassette.find(key)
         if entry is not None:
             response = entry.response

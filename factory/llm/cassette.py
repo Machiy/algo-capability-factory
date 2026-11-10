@@ -79,7 +79,12 @@ def save_cassette(path: Path, cassette: Cassette, settings: CassetteSettings,
 def make_entry(request: LLMRequest, response: LLMResponse,
                settings: CassetteSettings, api_key: str | None = None,
                recorded_at: str | None = None) -> CassetteEntry:
-    """把一次调用转为脱敏后的 cassette 条目，并记录该条的录制时刻。"""
+    """把一次调用转为脱敏后的 cassette 条目，并记录该条的录制时刻。
+
+    键字段与 ``RecordedLLM`` 保持一致：认知角色用 ``role_key_fields``（去掉动态
+    user），否则用全局 ``key_fields``——否则录制键与回放键不一致，永远 miss。
+    """
+    key_fields = settings.role_key_fields.get(request.role) or settings.key_fields
     prompt = f"{request.system}\n{request.user}".encode()
     request_payload = sanitize(request.model_dump(), settings.strip, api_key)
     response_payload = sanitize({
@@ -88,7 +93,7 @@ def make_entry(request: LLMRequest, response: LLMResponse,
         "usage": response.usage.model_dump(),
     }, settings.strip, api_key)
     return CassetteEntry(
-        key=compute_key(request, settings.key_fields),
+        key=compute_key(request, key_fields),
         role=request.role,
         prompt_sha256=hashlib.sha256(prompt).hexdigest(),
         request=request_payload,

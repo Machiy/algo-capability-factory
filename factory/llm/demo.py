@@ -16,16 +16,18 @@ RECHECK_USER_PROMPT = ("复测：确认替换现成库后的实时 LLM 链路可
 
 
 def build_role_request(settings: LLMSettings, role: str, system: str,
-                       user: str) -> LLMRequest:
+                       user: str, scene: str = "") -> LLMRequest:
     """按角色构造录制 / 回放请求，字段口径与 ``build_demo_request`` 完全一致。
 
     Interpreter 之外的认知角色（Planner / Coder / Repairer / Curator）由
     ``scripts/record_llm.py --role`` 调用，为 B1 的多角色 cassette 录制铺路。
+    ``scene`` 用于让 Planner / Coder 的 cassette 键区分任务类型，避免跨场景错配。
     """
     return LLMRequest(
         role=role,
         system=system,
         user=user,
+        scene=scene,
         model=settings.model,
         temperature=settings.temperature,
         max_tokens=settings.max_tokens,

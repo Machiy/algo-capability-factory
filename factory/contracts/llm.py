@@ -16,11 +16,17 @@ class _StrictModel(BaseModel):
 
 
 class LLMRequest(_StrictModel):
-    """一次角色调用；所有影响输出的参数都参与 cassette 命中键。"""
+    """一次角色调用；所有影响输出的参数都参与 cassette 命中键。
+
+    ``scene`` 承载任务类型（tabular_binary_classification / tabular_regression /
+    text_classification），用于让认知角色的 cassette 键区分场景——Coder / Planner
+    的响应依赖场景，跨场景错配会产生错误代码。
+    """
 
     role: str
     system: str
     user: str
+    scene: str = ""
     model: str = ""
     temperature: float = 0.0
     max_tokens: int = 8192

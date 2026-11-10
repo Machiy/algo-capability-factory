@@ -59,13 +59,18 @@ _KNOWN_ROLES = ["interpreter", "planner", "coder", "repairer", "curator"]
 
 
 def _build_request(role: str, llm_settings, recheck: bool) -> LLMRequest:
-    """按角色构造请求；interpreter 走既有 demo 请求，其余角色走 build_role_request。"""
+    """按角色构造请求；interpreter 走既有 demo 请求，其余角色走 build_role_request。
+
+    Planner / Coder 的响应依赖场景，示例 prompt 是信用卡，故 scene 固定为表格二分类，
+    与运行时 credit 场景的 scene 一致，保证录制键 == 回放键。
+    """
     if role == "interpreter":
         user_prompt = RECHECK_USER_PROMPT if recheck else USER_PROMPT
         return build_demo_request(llm_settings, user_prompt)
     title = role.title()  # planner -> Planner
+    scene = "tabular_binary_classification" if title in ("Planner", "Coder") else ""
     return build_role_request(llm_settings, title, SYSTEM_PROMPTS[title],
-                              _ROLE_USER_PROMPTS[title])
+                              _ROLE_USER_PROMPTS[title], scene=scene)
 
 
 def main() -> int:

@@ -359,7 +359,8 @@ class Planner:
         缺省时退回默认值，保证旧调用（仅传 families）行为不变。
         """
         user = f"能力描述：{spec.description}\n{retrieval.as_prompt_context()}"
-        request = LLMRequest(role="Planner", system=SYSTEM_PROMPTS["Planner"], user=user)
+        request = LLMRequest(role="Planner", system=SYSTEM_PROMPTS["Planner"],
+                             user=user, scene=task_type)
         parsed = self.llm.complete(request).parsed
         raw_plans = parsed.get("candidates", [])
         sampler_cycle = list(samplers or ["none"])
@@ -479,7 +480,8 @@ class Coder:
         user = (f"方案：{plan.model_dump_json()}\n"
                 f"{prompt_inputs}\n"
                 f"{retrieval.as_prompt_context()}")
-        request = LLMRequest(role="Coder", system=SYSTEM_PROMPTS["Coder"], user=user)
+        request = LLMRequest(role="Coder", system=SYSTEM_PROMPTS["Coder"],
+                             user=user, scene=task_type)
         response = self.llm.complete(request)
         hyperparams = dict(plan.hyperparams)
         if text_column:

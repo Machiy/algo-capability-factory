@@ -3,6 +3,39 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循
 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本对应一个 annotated tag 与 GitHub Release。
 
+## [1.8.0] - 2026-11-10
+
+方案 B1 落地：认知角色接入 cassette 的键策略与真实录制。
+
+### 新增
+
+- **认知角色键策略**（B1）：`CassetteSettings` 新增 `role_key_fields`，为认知角色
+  定制命中键字段——Planner / Coder 用 `[role, system, scene]`（scene 承载 task_type，
+  避免跨场景错配），Repairer / Curator 用 `[role, system]`（响应被确定性逻辑忽略）。
+  `LLMRequest` 新增 `scene` 字段，Planner / Coder 构造请求时传入 task_type；录制侧
+  `make_entry` 与回放侧 `RecordedLLM` 用同一套角色级 key_fields，保证录制键 == 回放键。
+- **认知角色录制**：用真实 DeepSeek 录制 Planner / Coder / Repairer / Curator 四条
+  响应（脱敏入库），`provider=cassette` 下可断网回放。`role_providers` 默认仍只有
+  Interpreter 走 cassette（保持确定性基线），四个认知角色的 cassette 路由以注释形式
+  保留，需要演示时取消注释即可启用。
+
+### 修复
+
+- **跨场景错配**：认知角色键若只含 `[role, system]`，credit 录制的 Coder 代码会被
+  回归 / 文本场景命中，生成错误代码（KeyError / IndexError）。加 `scene` 后跨场景自然
+  miss 并回退 mock，回归 / 文本端到端恢复通过。
+
+### 测试
+
+- 新增键策略用例（认知角色键稳定 + scene 区分 + Repairer/Curator 不含 scene）。
+  全量 224 用例通过、ruff 全绿。
+
+### 边界
+
+- 回放不随输入变化（cassette 静态快照）：Coder 回放的是录制时的示例代码，端到端指标
+  取决于那次录制。故 `role_providers` 默认只让 Interpreter 走 cassette，认知角色
+  cassette 作可选演示能力，报告如实标注「离线回放」。
+
 ## [1.7.0] - 2026-11-10
 
 方案 A2 核心落地：sampler 维度真正渲染生效，让 Successive Halving 搜索从「只按
