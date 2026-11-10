@@ -17,7 +17,16 @@ import networkx as nx
 from pydantic import ValidationError
 
 from factory.config import load_settings, load_task_settings
-from factory.contracts.knowledge import EdgeType, KGEdge, KGNode, KnowledgeGraph, NodeType
+from factory.contracts.knowledge import (
+    EdgeType,
+    ExtractionProfile,
+    KGEdge,
+    KGNode,
+    KnowledgeGraph,
+    NodeType,
+    SectionRule,
+    SourceDocument,
+)
 from factory.knowledge import (
     HybridRetriever,
     KnowledgeGraphStore,
@@ -25,11 +34,63 @@ from factory.knowledge import (
     build_knowledge_graph,
     read_sources,
 )
-from factory.knowledge.extractor import sha256_text
+from factory.knowledge.extractor import DEFAULT_EXTRACTION, sha256_text
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "configs/default.yaml"
 QUERY = "预测信用卡客户下月违约概率，时间外划分，成本敏感阈值，禁止数据泄漏"
+
+
+class ExtractionProfileTests(unittest.TestCase):
+    """抽取画像：材料类型与章节映射必须来自配置，加材料不再改抽取器代码。"""
+
+    def test_yaml_profile_matches_builtin_default(self) -> None:
+        """yaml 与内置兜底必须一致，否则两条路径抽出不同的图谱。"""
+        settings = load_settings(CONFIG_PATH)
+        self.assertIsNotNone(settings.knowledge.extraction,
+                             "default.yaml 缺 knowledge.extraction 段")
+        self.assertEqual(settings.knowledge.extraction, DEFAULT_EXTRACTION)
+
+    def test_new_material_type_needs_no_code_change(self) -> None:
+        """登记一份新材料的映射后，抽取器直接能抽出节点。"""
+        profile = ExtractionProfile(
+            default_doc_type="业务文档",
+            doc_types={"collection_log": "催收记录"},
+            section_nodes=[
+                SectionRule(doc_type="催收记录", contains="催收话术",
+                            node_type=NodeType.CAPABILITY),
+            ],
+        )
+        content = (
+            "# 催收记录\n\n"
+            "## 催收话术\n\n"
+            "| 编号 | 话术 | 场景 |\n|---|---|---|\n"
+            "| K1 | 首次提醒 | 逾期 3 天 |\n"
+        )
+        doc = SourceDocument(
+            path="assets/docs/collection_log.md",
+            doc_type=profile.doc_type_of("collection_log.md"),
+            content=content,
+            sha256=sha256_text(content),
+        )
+        graph = MockExtractor(extraction=profile).extract([doc])
+        node_ids = {node.node_id for node in graph.by_type(NodeType.CAPABILITY)}
+        self.assertIn("cap.collection_log.K1", node_ids)
+
+    def test_unregistered_section_yields_no_row_node(self) -> None:
+        """未登记映射的章节不逐行造节点，避免乱抽。"""
+        content = "## 其他说明\n\n| 编号 | 内容 |\n|---|---|\n| X1 | 随便写 |\n"
+        doc = SourceDocument(
+            path="assets/docs/data_dictionary.md", doc_type="业务文档",
+            content=content, sha256=sha256_text(content),
+        )
+        graph = MockExtractor().extract([doc])
+        self.assertEqual(graph.by_type(NodeType.CAPABILITY), [])
+
+    def test_filename_with_extension_is_accepted(self) -> None:
+        profile = ExtractionProfile(doc_types={"collection_log": "催收记录"})
+        self.assertEqual(profile.doc_type_of("collection_log.md"), "催收记录")
+        self.assertEqual(profile.doc_type_of("unknown.md"), "业务文档")
 
 
 class KnowledgeLayerTests(unittest.TestCase):

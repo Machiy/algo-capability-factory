@@ -353,15 +353,17 @@ class Workflow:
         legacy_dir = (task.knowledge.legacy if task.knowledge.docs
                       else settings.paths.legacy)
         shared = task.knowledge.shared or settings.knowledge.shared_docs
+        # 抽取画像来自 default.yaml：加一种材料只需登记映射，不改抽取器代码
+        extraction = settings.knowledge.extraction
         if loaded is None:
-            sources = read_sources(root, docs_dir, legacy_dir, shared)
-            graph = MockExtractor(task.dataset_profile).extract(sources)
+            sources = read_sources(root, docs_dir, legacy_dir, shared, extraction)
+            graph = MockExtractor(task.dataset_profile, extraction).extract(sources)
             self.graph_source = "sources"
         else:
             # 材料知识以最新抽取为准，运行沉淀（失败案例 / 教训 / 能力版本）叠加其上。
             # 直接整份沿用旧图谱会让新增材料与新增教训规则永远不生效。
-            fresh = MockExtractor(task.dataset_profile).extract(
-                read_sources(root, docs_dir, legacy_dir, shared))
+            fresh = MockExtractor(task.dataset_profile, extraction).extract(
+                read_sources(root, docs_dir, legacy_dir, shared, extraction))
             graph = merge_graphs(fresh, loaded)
             self.graph_source = "sources+after_run"
             logger.info("加载上一轮回写图谱：%s（%d 节点），与材料抽取合并",

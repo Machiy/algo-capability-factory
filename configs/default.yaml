@@ -1,7 +1,7 @@
 ﻿# 全局默认配置；任务级配置见 verify_*.yaml
 project:
   name: algocap-factory
-  version: 1.11.0
+  version: 1.12.0
   seed: 42
   log_level: INFO
 
@@ -80,6 +80,37 @@ knowledge:
   # ValidationRun 属于运行日志（可丢弃），Lesson 才是跨运行可复用的知识。
   lesson_promote_threshold: 2
   lesson_prompt_limit: 5
+  # 抽取画像：把「文件名 → 材料类型」「章节 → 节点类型」从代码搬到配置。
+  # 新增一种材料（例如新增一份「催收记录.md」）只需在下面登记两行，
+  # 抽取器、验证器与工作流代码一行都不用改。
+  extraction:
+    default_doc_type: 业务文档
+    doc_types:
+      data_dictionary: 业务文档
+      risk_policy: 风控策略
+      expert_rules: 专家经验
+      experiment_log: 实验记录
+      test_report: 测试报告
+      failure_review: 失败复盘
+      engineering_lessons: 工程教训
+      sms_data_dictionary: 业务文档
+      sms_policy: 风控策略
+      sms_failure_review: 失败复盘
+    # 章节 → 节点类型：按顺序匹配，先命中先用；contains 省略表示整篇都按该类型抽
+    section_nodes:
+      - {doc_type: 业务文档, contains: 已知数据问题, node_type: Capability}
+      - {doc_type: 风控策略, contains: 适用条件, node_type: Capability}
+      - {doc_type: 风控策略, contains: 验收门槛, node_type: Metric}
+      - {doc_type: 专家经验, node_type: Capability}
+      - {doc_type: 实验记录, contains: 记录汇总, node_type: ValidationRun}
+      - {doc_type: 实验记录, contains: 可复用经验, node_type: Capability}
+      - {doc_type: 测试报告, contains: 四层验证检查项, node_type: Metric}
+      - {doc_type: 测试报告, contains: 历史样例结论, node_type: ValidationRun}
+      - {doc_type: 失败复盘, contains: 速查, node_type: FailureCase}
+      - {doc_type: 工程教训, contains: 教训速查, node_type: Lesson}
+    dataset_section: {doc_type: 业务文档, contains: 数据集概况, node_type: Dataset}
+    pipeline_doc_type: 专家经验
+    legacy_doc_type: 历史代码
 
 workflow:
   beam_width: 3

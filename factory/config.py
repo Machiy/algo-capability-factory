@@ -15,6 +15,7 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
+from factory.contracts.knowledge import ExtractionProfile
 from factory.contracts.validation import MetricSpec, SplitSpec
 
 logger = logging.getLogger(__name__)
@@ -82,6 +83,9 @@ class KnowledgeSettings(_ConfigModel):
     lesson_promote_threshold: int = Field(default=2, ge=1)
     # 注入 prompt 的教训条数上限：教训要生效，不能把上下文挤爆
     lesson_prompt_limit: int = Field(default=5, ge=0)
+    # 抽取画像：文件名 → 材料类型、章节 → 节点类型。新增材料类型只改 yaml，
+    # 不改 extractor；缺段时由 extractor.DEFAULT_EXTRACTION 兜底
+    extraction: ExtractionProfile | None = None
 
     @property
     def top_k(self) -> int:

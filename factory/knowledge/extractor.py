@@ -20,10 +20,12 @@ from typing import Any
 from factory.contracts.knowledge import (
     EdgeType,
     Evidence,
+    ExtractionProfile,
     KGEdge,
     KGNode,
     KnowledgeGraph,
     NodeType,
+    SectionRule,
     SourceDocument,
 )
 from factory.knowledge.lessons import seed_lesson_attributes
@@ -37,21 +39,52 @@ from factory.knowledge.parsing import (
 
 logger = logging.getLogger(__name__)
 
-DOC_TYPE_BY_FILENAME: dict[str, str] = {
-    "data_dictionary.md": "业务文档",
-    "risk_policy.md": "风控策略",
-    "expert_rules.md": "专家经验",
-    "experiment_log.md": "实验记录",
-    "test_report.md": "测试报告",
-    "failure_review.md": "失败复盘",
-    # 工程教训库：系统层面的坑点与经验，跨场景成立，与数据陷阱 T1–T4 分开
-    "engineering_lessons.md": "工程教训",
-    # 文本场景材料（assets/docs/text/）：结构与主场景一致，复用同一解析路径
-    "sms_data_dictionary.md": "业务文档",
-    "sms_policy.md": "风控策略",
-    "sms_failure_review.md": "失败复盘",
-}
-LEGACY_DOC_TYPE = "历史代码"
+# 默认抽取画像：内容与 ``configs/default.yaml`` 的 ``knowledge.extraction`` 一致，
+# 由 ``tests/test_knowledge.py`` 锁定，避免两处漂移。主流程以 yaml 为准，
+# 这里只是「配置缺段时仍能跑」的兜底，不要在此新增材料类型。
+DEFAULT_EXTRACTION = ExtractionProfile(
+    default_doc_type="业务文档",
+    doc_types={
+        "data_dictionary": "业务文档",
+        "risk_policy": "风控策略",
+        "expert_rules": "专家经验",
+        "experiment_log": "实验记录",
+        "test_report": "测试报告",
+        "failure_review": "失败复盘",
+        # 工程教训库：系统层面的坑点与经验，跨场景成立，与数据陷阱 T1–T4 分开
+        "engineering_lessons": "工程教训",
+        # 文本场景材料（assets/docs/text/）：结构与主场景一致，复用同一解析路径
+        "sms_data_dictionary": "业务文档",
+        "sms_policy": "风控策略",
+        "sms_failure_review": "失败复盘",
+    },
+    section_nodes=[
+        SectionRule(doc_type="业务文档", contains="已知数据问题",
+                    node_type=NodeType.CAPABILITY),
+        SectionRule(doc_type="风控策略", contains="适用条件",
+                    node_type=NodeType.CAPABILITY),
+        SectionRule(doc_type="风控策略", contains="验收门槛",
+                    node_type=NodeType.METRIC),
+        SectionRule(doc_type="专家经验", node_type=NodeType.CAPABILITY),
+        SectionRule(doc_type="实验记录", contains="记录汇总",
+                    node_type=NodeType.VALIDATION_RUN),
+        SectionRule(doc_type="实验记录", contains="可复用经验",
+                    node_type=NodeType.CAPABILITY),
+        SectionRule(doc_type="测试报告", contains="四层验证检查项",
+                    node_type=NodeType.METRIC),
+        SectionRule(doc_type="测试报告", contains="历史样例结论",
+                    node_type=NodeType.VALIDATION_RUN),
+        SectionRule(doc_type="失败复盘", contains="速查",
+                    node_type=NodeType.FAILURE_CASE),
+        SectionRule(doc_type="工程教训", contains="教训速查",
+                    node_type=NodeType.LESSON),
+    ],
+    dataset_section=SectionRule(doc_type="业务文档", contains="数据集概况",
+                                node_type=NodeType.DATASET),
+    pipeline_doc_type="专家经验",
+    legacy_doc_type="历史代码",
+)
+LEGACY_DOC_TYPE = DEFAULT_EXTRACTION.legacy_doc_type
 
 _ID_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_-]*\d+[a-z]?$")
 _DEFECT_RE = re.compile(r"#\s*缺陷\s*\d+[：:]\s*(.+)")
@@ -100,37 +133,6 @@ def _to_float(value: str) -> float | None:
         return None
 
 
-def _row_node_type(doc_type: str, section_title: str) -> NodeType | None:
-    """决定某章节的表格行应映射为哪类节点；``None`` 表示不逐行生成。"""
-    if doc_type == "业务文档":
-        return NodeType.CAPABILITY if "已知数据问题" in section_title else None
-    if doc_type == "风控策略":
-        if "适用条件" in section_title:
-            return NodeType.CAPABILITY
-        if "验收门槛" in section_title:
-            return NodeType.METRIC
-        return None
-    if doc_type == "专家经验":
-        return NodeType.CAPABILITY
-    if doc_type == "实验记录":
-        if "记录汇总" in section_title:
-            return NodeType.VALIDATION_RUN
-        if "可复用经验" in section_title:
-            return NodeType.CAPABILITY
-        return None
-    if doc_type == "测试报告":
-        if "四层验证检查项" in section_title:
-            return NodeType.METRIC
-        if "历史样例结论" in section_title:
-            return NodeType.VALIDATION_RUN
-        return None
-    if doc_type == "失败复盘" and "速查" in section_title:
-        return NodeType.FAILURE_CASE
-    if doc_type == "工程教训" and "教训速查" in section_title:
-        return NodeType.LESSON
-    return None
-
-
 def _row_attributes(headers: tuple[str, ...], cells: tuple[str, ...], section: str,
                     item_id: str) -> dict[str, Any]:
     """把表格行转成节点属性，数值列额外汇总为 ``metrics``。"""
@@ -154,7 +156,8 @@ def _name_from_row(cells: tuple[str, ...], item_id: str) -> str:
 
 
 def read_sources(root: Path, docs_dir: str, legacy_dir: str,
-                 shared_docs: list[str] | None = None) -> list[SourceDocument]:
+                 shared_docs: list[str] | None = None,
+                 profile: ExtractionProfile | None = None) -> list[SourceDocument]:
     """读取业务材料与历史代码，返回带整文件哈希的契约对象。
 
     ``legacy_dir`` 传空字符串表示该场景没有历史代码（如纯文本任务），
@@ -162,7 +165,11 @@ def read_sources(root: Path, docs_dir: str, legacy_dir: str,
 
     ``shared_docs`` 是跨场景共享的材料（如工程教训库）：系统级知识不该因为
     换了任务就消失，否则每个新场景都要重新踩一遍同样的坑。
+
+    ``profile`` 决定「文件名 → 材料类型」的映射：新增一种材料只需在
+    ``verify_*.yaml`` / ``default.yaml`` 里登记，不必改本函数。
     """
+    profile = profile or DEFAULT_EXTRACTION
     sources: list[SourceDocument] = []
     docs = root / docs_dir
     if not docs.is_dir():
@@ -177,7 +184,7 @@ def read_sources(root: Path, docs_dir: str, legacy_dir: str,
         content = _read(path)
         sources.append(SourceDocument(
             path=path.relative_to(root).as_posix(),
-            doc_type=DOC_TYPE_BY_FILENAME.get(path.name, "业务文档"),
+            doc_type=profile.doc_type_of(path.name),
             content=content,
             sha256=sha256_text(content),
         ))
@@ -186,7 +193,7 @@ def read_sources(root: Path, docs_dir: str, legacy_dir: str,
         content = _read(path)
         sources.append(SourceDocument(
             path=path.relative_to(root).as_posix(),
-            doc_type=LEGACY_DOC_TYPE,
+            doc_type=profile.legacy_doc_type,
             content=content,
             sha256=sha256_text(content),
         ))
@@ -203,7 +210,7 @@ def read_sources(root: Path, docs_dir: str, legacy_dir: str,
         content = _read(path)
         sources.append(SourceDocument(
             path=relative,
-            doc_type=DOC_TYPE_BY_FILENAME.get(path.name, "业务文档"),
+            doc_type=profile.doc_type_of(path.name),
             content=content,
             sha256=sha256_text(content),
         ))
@@ -276,12 +283,14 @@ class _GraphBuilder:
     某个数据集的标签名与敏感字段写死在抽取器里。
     """
 
-    def __init__(self, dataset_profile: dict[str, Any] | None = None) -> None:
+    def __init__(self, dataset_profile: dict[str, Any] | None = None,
+                 extraction: ExtractionProfile | None = None) -> None:
         self._nodes: dict[str, KGNode] = {}
         self._edges: list[KGEdge] = []
         self._edge_keys: set[tuple[str, str, EdgeType]] = set()
         self._dataset_profile = {**DEFAULT_DATASET_PROFILE,
                                  **(dataset_profile or {})}
+        self._extraction = extraction or DEFAULT_EXTRACTION
 
     def add_node(self, node: KGNode) -> KGNode:
         existing = self._nodes.get(node.node_id)
@@ -351,19 +360,20 @@ class _GraphBuilder:
 
     def consume_markdown(self, doc: SourceDocument, anchor: str, stem: str) -> None:
         """按章节解析 Markdown 材料，特殊章节单独汇总。"""
+        profile = self._extraction
         for section in parse_sections(doc.content):
             if section.title.startswith("FR-"):
                 self._consume_failure_case(doc, stem, section, anchor)
-            node_type = _row_node_type(doc.doc_type, section.title)
+            node_type = profile.row_node_type(doc.doc_type, section.title)
             for table in parse_tables(section.body):
                 if node_type is None:
                     continue
                 for index, row in enumerate(table.rows, start=1):
                     self.row_node(doc, stem, section.title, table, row,
                                   index, node_type, anchor)
-            if doc.doc_type == "业务文档" and "数据集概况" in section.title:
+            if profile.is_dataset_section(doc.doc_type, section.title):
                 self._consume_dataset(doc, stem, section, anchor)
-        if doc.doc_type == "专家经验":
+        if profile.is_pipeline_doc(doc.doc_type):
             self._consume_pipeline(doc, stem, anchor)
 
     def _consume_dataset(self, doc: SourceDocument, stem: str, section: object,
@@ -646,17 +656,19 @@ class MockExtractor(BaseExtractor):
     抽取器不再内嵌某个数据集的标签名与敏感字段。
     """
 
-    def __init__(self, dataset_profile: dict[str, Any] | None = None) -> None:
+    def __init__(self, dataset_profile: dict[str, Any] | None = None,
+                 extraction: ExtractionProfile | None = None) -> None:
         self.dataset_profile = dataset_profile or {}
+        self.extraction = extraction or DEFAULT_EXTRACTION
 
     def extract(self, sources: list[SourceDocument]) -> KnowledgeGraph:
         if not sources:
             raise ExtractionError("源材料列表为空")
-        builder = _GraphBuilder(self.dataset_profile)
+        builder = _GraphBuilder(self.dataset_profile, self.extraction)
         for doc in sources:
             anchor = builder.evidence_node(doc)
             stem = Path(doc.path).stem
-            if doc.doc_type == LEGACY_DOC_TYPE:
+            if doc.doc_type == self.extraction.legacy_doc_type:
                 builder.consume_legacy(doc, anchor, stem)
             else:
                 builder.consume_markdown(doc, anchor, stem)
@@ -668,4 +680,11 @@ class MockExtractor(BaseExtractor):
         return graph
 
 
-__all__ = ["BaseExtractor", "ExtractionError", "MockExtractor", "read_sources", "sha256_text"]
+__all__ = [
+    "DEFAULT_EXTRACTION",
+    "BaseExtractor",
+    "ExtractionError",
+    "MockExtractor",
+    "read_sources",
+    "sha256_text",
+]

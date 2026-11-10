@@ -97,6 +97,65 @@ class SourceDocument(_StrictModel):
     sha256: str = Field(description="整份文件的 SHA-256")
 
 
+class SectionRule(_StrictModel):
+    """「某类材料的某个章节 → 某类节点」的声明式规则。
+
+    ``contains`` 为空表示该材料类型的**所有**章节都按 ``node_type`` 抽取
+    （例如专家经验整篇都是能力条目）；非空则按章节标题子串命中。
+    """
+
+    doc_type: str
+    node_type: NodeType
+    contains: str = ""
+
+    def matches(self, doc_type: str, section_title: str) -> bool:
+        if self.doc_type != doc_type:
+            return False
+        return not self.contains or self.contains in section_title
+
+
+class ExtractionProfile(_StrictModel):
+    """材料 → 节点的抽取画像：新增材料类型只改 yaml，不改抽取器代码。
+
+    此前「文件名 → 材料类型」与「章节标题 → 节点类型」两张表硬编码在
+    ``extractor.py`` 里，加一份材料就要改代码，与「换任务只改 yaml」的
+    宣称不符。改成数据描述后，抽取器只负责按规则执行，判断依据全部可配置。
+    """
+
+    # 未登记的文件名按这个类型处理
+    default_doc_type: str = "业务文档"
+    # 文件名（不含扩展名）→ 材料语义类型
+    doc_types: dict[str, str] = Field(default_factory=dict)
+    # 章节 → 节点类型，按声明顺序匹配，先命中先用
+    section_nodes: list[SectionRule] = Field(default_factory=list)
+    # 「数据集概况」这类整节汇总成一个节点的章节
+    dataset_section: SectionRule | None = None
+    # 该类型材料额外抽取依赖与顺序约束（PRECEDES 边）
+    pipeline_doc_type: str = "专家经验"
+    # 历史代码目录的材料类型：走缺陷注释 + AST 路径，不按 Markdown 章节解析
+    legacy_doc_type: str = "历史代码"
+
+    def doc_type_of(self, filename: str) -> str:
+        """文件名（可含扩展名）→ 材料语义类型；未登记走默认类型。"""
+        stem = filename.rsplit(".", 1)[0]
+        return (self.doc_types.get(filename) or self.doc_types.get(stem)
+                or self.default_doc_type)
+
+    def row_node_type(self, doc_type: str, section_title: str) -> NodeType | None:
+        """章节应抽成哪类节点；``None`` 表示该章节不逐行生成。"""
+        for rule in self.section_nodes:
+            if rule.matches(doc_type, section_title):
+                return rule.node_type
+        return None
+
+    def is_dataset_section(self, doc_type: str, section_title: str) -> bool:
+        rule = self.dataset_section
+        return bool(rule and rule.matches(doc_type, section_title))
+
+    def is_pipeline_doc(self, doc_type: str) -> bool:
+        return doc_type == self.pipeline_doc_type
+
+
 class KGNode(_StrictModel):
     """属性图节点；``attributes`` 承载 9 类节点各自的专有属性。"""
 
