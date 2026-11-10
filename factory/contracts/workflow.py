@@ -6,6 +6,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from factory.contracts.intake import IntakeGuidance
 from factory.contracts.validation import SandboxResult
 
 
@@ -61,6 +62,8 @@ class RunTrace(_StrictModel):
     spec: str
     steps: list[str] = Field(default_factory=list)
     retrieval_prompt: str = ""
+    # 入口引导结论：证明「用户输入被体检过」，CLARIFY 也可继续运行
+    intake: IntakeGuidance | None = None
     candidates: list[CandidateEvaluation] = Field(default_factory=list)
     repairs: list[RepairRecord] = Field(default_factory=list)
     kg_diff: dict[str, int] = Field(default_factory=dict)

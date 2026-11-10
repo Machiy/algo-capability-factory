@@ -9,14 +9,20 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
+from factory.contracts.intake import IntakeGuidance
+
 logger = logging.getLogger(__name__)
 
 ROOT = Path(__file__).resolve().parents[2]
+
+# 任务配置只允许引用 configs 下已存在的 verify_*.yaml，避免路径穿越读任意文件
+_TASK_CONFIG_PATTERN = re.compile(r"^configs/verify_[a-z0-9_]+\.yaml$")
 
 
 class RunRequest(BaseModel):
@@ -24,6 +30,10 @@ class RunRequest(BaseModel):
 
     spec: str = Field(description="自然语言能力描述")
     mock: bool = Field(default=False, description="强制规则模板路径")
+    force: bool = Field(
+        default=False,
+        description="跳过入口引导拦截；描述被判不可执行时仍强制跑完七步",
+    )
     # run_id 会拼进报告 / 轨迹文件名，必须限制字符集，避免路径穿越
     run_id: str = Field(
         default="api",
@@ -68,6 +78,40 @@ class RunResponse(BaseModel):
     # 终评结果（test 段一次性评估）；未启用终评时为空
     test_metrics: dict[str, float | None] = Field(default_factory=dict)
     report_path: str
+    # 入口体检结论：调用方据此提示用户「哪一项没写清楚」
+    intake: IntakeGuidance | None = None
+
+
+class IntakeReviewRequest(BaseModel):
+    """``POST /intake/review`` 请求体：只体检描述，不触发运行。"""
+
+    spec: str = Field(description="待体检的自然语言能力描述")
+    task_config: str = Field(
+        default="configs/verify_credit.yaml",
+        description="按该任务的要素与示例体检，如 configs/verify_text.yaml",
+    )
+
+    @field_validator("task_config")
+    @classmethod
+    def _check_task_config(cls, value: str) -> str:
+        if not _TASK_CONFIG_PATTERN.match(value):
+            raise ValueError("task_config 只能是 configs/verify_*.yaml")
+        return value
+
+
+def _build_guide(base: Path, task_config: str) -> Any:
+    """构造入口引导器：规则来自 default.yaml 与任务 yaml 的 intake 段。"""
+    from factory.config import load_settings, load_task_settings
+    from factory.intake import IntakeGuide
+
+    settings = load_settings(base / "configs/default.yaml")
+    task = load_task_settings(base / task_config)
+    return IntakeGuide(
+        settings.intake, task.intake,
+        configs_dir=base / "configs",
+        task_config=task_config,
+        graph_path=base / settings.paths.kg / "capabilities_after_run.json",
+    )
 
 
 def create_app(root: Path | None = None) -> Any:
@@ -95,9 +139,26 @@ def create_app(root: Path | None = None) -> Any:
         from factory.agents import list_templates
         return {"templates": list_templates()}
 
+    @app.get("/intake/guide", summary="能力描述引导菜单")
+    def intake_guide(task_config: str = "configs/verify_credit.yaml") -> dict[str, Any]:
+        """要素清单、可复制示例、可用场景与已沉淀能力，供前端做输入引导。"""
+        if not _TASK_CONFIG_PATTERN.match(task_config) or not (base / task_config).is_file():
+            raise HTTPException(status_code=400,
+                                detail="task_config 只能是已存在的 configs/verify_*.yaml")
+        return _build_guide(base, task_config).describe()
+
+    @app.post("/intake/review", response_model=IntakeGuidance,
+              summary="体检一条能力描述（不触发运行）")
+    def intake_review(payload: IntakeReviewRequest) -> IntakeGuidance:
+        if not (base / payload.task_config).is_file():
+            raise HTTPException(status_code=400,
+                                detail=f"任务配置不存在：{payload.task_config}")
+        return _build_guide(base, payload.task_config).review(payload.spec)
+
     @app.post("/run", response_model=RunResponse, summary="跑通 a–g 七步闭环")
     def run(payload: RunRequest) -> RunResponse:
         from factory.config import load_settings, load_task_settings
+        from factory.intake import SpecRejected
         from factory.workflow import Workflow
 
         settings = load_settings(base / "configs/default.yaml",
@@ -109,7 +170,15 @@ def create_app(root: Path | None = None) -> Any:
             )
         try:
             workflow = Workflow(settings, task, base)
-            trace = workflow.run(payload.spec, payload.run_id)
+            trace = workflow.run(payload.spec, payload.run_id, force=payload.force)
+        except SpecRejected as exc:
+            # 描述不可执行：422 返回结构化引导，调用方据此提示用户改写
+            logger.warning("输入被入口引导拦下：%s",
+                           [item.code for item in exc.guidance.issues])
+            raise HTTPException(status_code=422, detail={
+                "message": "能力描述不可执行，请按引导改写后重试",
+                "guidance": exc.guidance.model_dump(mode="json"),
+            }) from exc
         except (FileNotFoundError, ValueError) as exc:
             # 配置 / 数据 / 标识非法属于调用方问题，回 400 并给出可读原因
             logger.warning("运行请求被拒绝：%s", exc)
@@ -142,6 +211,7 @@ def create_app(root: Path | None = None) -> Any:
             candidates=candidates,
             test_metrics=dict(test_eval.metrics) if test_eval is not None else {},
             report_path=trace.report_path,
+            intake=getattr(trace, "intake", None),
         )
 
     return app
@@ -161,6 +231,7 @@ def write_openapi(path: Path, root: Path | None = None) -> Path:
 
 __all__ = [
     "CandidateSummary",
+    "IntakeReviewRequest",
     "RunRequest",
     "RunResponse",
     "create_app",

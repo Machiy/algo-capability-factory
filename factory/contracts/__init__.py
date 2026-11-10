@@ -1,5 +1,6 @@
 """全系统唯一数据协议：能力描述、候选方案、验证报告、知识图谱、执行结论与 LLM。"""
 
+from factory.contracts.intake import IntakeGuidance, IntakeIssue, IntakeVerdict
 from factory.contracts.knowledge import (
     EdgeType,
     Evidence,
@@ -35,6 +36,9 @@ __all__ = [
     "CassetteEntry",
     "EdgeType",
     "Evidence",
+    "IntakeGuidance",
+    "IntakeIssue",
+    "IntakeVerdict",
     "KGEdge",
     "KGNode",
     "KnowledgeGraph",

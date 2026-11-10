@@ -1,11 +1,14 @@
 """AlgoCap Factory CLI 入口（Typer）。
 
 ``--version`` / ``--check`` 保持零第三方依赖；重依赖只在 ``run`` 分支延迟导入。
+``guide`` 与 ``run`` 缺省参数时都走入口引导：先给要素与示例，再收描述。
 """
 
 from __future__ import annotations
 
 import importlib.util
+import json
+import sys
 from pathlib import Path
 
 import typer
@@ -49,7 +52,10 @@ def main(
 
 @app.command()
 def run(
-    spec: str = typer.Option(..., "--spec", help="自然语言能力描述"),
+    spec: str = typer.Option(
+        "", "--spec",
+        help="自然语言能力描述；留空则进入交互引导（非交互环境必须显式传入）",
+    ),
     mock: bool = typer.Option(False, "--mock", help="强制使用离线 MockLLM"),
     task_config: str = typer.Option(
         "configs/verify_credit.yaml", "--task-config",
@@ -64,11 +70,90 @@ def run(
         "", "--gen-dir",
         help="生成代码子目录；不同场景分开存放，避免互相覆盖",
     ),
+    force: bool = typer.Option(
+        False, "--force",
+        help="跳过入口引导的拦截；描述被判不可执行时仍强制跑完七步",
+    ),
 ) -> None:
     """跑通 a–g 七步闭环。"""
     from factory.workflow import run_from_cli
+
+    if not spec.strip():
+        spec = _prompt_for_spec(task_config)
+        if not spec.strip():
+            raise typer.Exit(2)
     raise typer.Exit(run_from_cli(spec, mock, ROOT, task_config, run_id,
-                                  kg_filename, gen_dir))
+                                  kg_filename, gen_dir, force))
+
+
+@app.command()
+def guide(
+    spec: str = typer.Option(
+        "", "--spec", help="只体检这一条描述，不跑七步闭环",
+    ),
+    task_config: str = typer.Option(
+        "configs/verify_credit.yaml", "--task-config",
+        help="按该任务场景的要素与示例做体检",
+    ),
+    as_json: bool = typer.Option(False, "--json", help="输出 JSON，便于前端或脚本消费"),
+) -> None:
+    """打印能力描述引导菜单，或体检一条描述（不消耗运行资源）。"""
+    from factory.intake import render_guidance, render_menu
+
+    reviewer = _build_guide(task_config)
+    if spec.strip():
+        guidance = reviewer.review(spec)
+        if as_json:
+            print(json.dumps(guidance.model_dump(mode="json"), ensure_ascii=False, indent=2))
+        else:
+            print(render_guidance(guidance))
+        raise typer.Exit(0 if guidance.accepted else 1)
+    if as_json:
+        print(json.dumps(reviewer.describe(), ensure_ascii=False, indent=2))
+    else:
+        print(render_menu(reviewer))
+    raise typer.Exit()
+
+
+def _build_guide(task_config: str):
+    """构造入口引导器：规则来自 default.yaml 与任务 yaml 的 intake 段。"""
+    from factory.config import load_settings, load_task_settings
+    from factory.intake import IntakeGuide
+
+    settings = load_settings(ROOT / "configs/default.yaml")
+    task = load_task_settings(ROOT / task_config)
+    return IntakeGuide(
+        settings.intake, task.intake,
+        configs_dir=ROOT / "configs",
+        task_config=task_config,
+        graph_path=ROOT / settings.paths.kg / "capabilities_after_run.json",
+    )
+
+
+def _prompt_for_spec(task_config: str) -> str:
+    """交互式引导：先亮菜单与示例，再收一条描述。
+
+    非交互环境（CI / 管道）不进 prompt，直接打印菜单并要求 ``--spec``，
+    避免子进程等 stdin 卡住。
+    """
+    from factory.intake import render_guidance, render_menu
+
+    reviewer = _build_guide(task_config)
+    print(render_menu(reviewer))
+    if not sys.stdin.isatty():
+        print("\n[factory] 非交互环境请用 --spec 传入能力描述", file=sys.stderr)
+        return ""
+    examples = reviewer.examples()
+    default = examples[0] if examples else ""
+    prompt = "请粘贴能力描述（直接回车使用示例）："
+    try:
+        answer = input(prompt).strip()
+    except EOFError:
+        return ""
+    spec = answer or default
+    if spec:
+        print(render_guidance(reviewer.review(spec)))
+    return spec
 
 
 @app.command()

@@ -5,6 +5,13 @@ status: active
 task_type: tabular_regression
 capability_id: cap.regression.demand.v1
 
+intake:
+  scenario: 需求量回归预测
+  dataset_hint: assets/data/synthetic_demand.csv（合成数据 3,000 条）
+  keywords: [需求, 销量, 回归, 连续值, 数值, rmse, 日需求]
+  examples:
+    - 根据多期特征预测日需求量，最小化 RMSE，输出 RMSE/MAE/R2。
+
 dataset:
   path: assets/data/synthetic_demand.csv
   # 合成数据，非真实业务数据，仅用于验证回归任务的四层链路

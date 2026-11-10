@@ -16,6 +16,13 @@
 > 说明：四层全通过为 FAIL 时，通常是「指标表现」层未达 `verify_credit.yaml`
 > 的业务门槛；接口 / 功能 / 稳定性结论见第 3 节，失败记录已回写 FailureCase。
 
+## 0. 输入引导（入口体检）
+
+- 结论：**OK（要素齐全）**，要素完备度 0.83
+- 已表达要素：goal、data、constraint
+- 缺失要素：metric
+- 引导建议：描述要素齐全，可直接进入七步闭环
+
 ## 1. 检索证据（进入 Planner / Coder prompt）
 
 ```text

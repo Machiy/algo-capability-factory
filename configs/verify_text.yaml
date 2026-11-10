@@ -5,6 +5,13 @@ status: active
 task_type: text_classification
 capability_id: cap.text.spam.v1
 
+intake:
+  scenario: 垃圾短信识别
+  dataset_hint: assets/data/sms_spam.csv（UCI SMS Spam Collection 5,574 条）
+  keywords: [短信, 垃圾短信, 文本, 语料, 分词, 正常短信, spam]
+  examples:
+    - 把短信分类为垃圾短信或正常短信，输出准确率与宏平均 F1。
+
 dataset:
   path: assets/data/sms_spam.csv
   source: UCI SMS Spam Collection (dataset 228, CC BY 4.0)

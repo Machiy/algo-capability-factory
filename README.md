@@ -4,8 +4,8 @@
 
 > 面向「信用卡客户下月违约预测」，实现从自然语言能力描述到可运行算法代码的端到端半自主生成，跑通 **能力抽取 → 能力复刻 → 能力验证 → 能力沉淀** 完整闭环。对应题目：《基于 AI Agent 的算法能力系统开发》。
 
-- **当前版本** `1.1.1`，变更记录见 [`CHANGELOG.md`](CHANGELOG.md)，开发阶段与提交对照见 [`AGENTS.md`](AGENTS.md)。
-- **落地范围** P0–P6 全部完成：a–g 七步闭环、六层结构、三种 LLM 后端（Mock / DeepSeek / cassette 回放）。`ruff` 全绿、148 个用例通过，CI 覆盖 Python 3.11 / 3.12 与三条端到端。
+- **当前版本** `1.2.0`，变更记录见 [`CHANGELOG.md`](CHANGELOG.md)，开发阶段与提交对照见 [`AGENTS.md`](AGENTS.md)。
+- **落地范围** P0–P6 全部完成：a–g 七步闭环、六层结构、入口输入引导、三种 LLM 后端（Mock / DeepSeek / cassette 回放）。`ruff` 全绿、163 个用例通过，CI 覆盖 Python 3.11 / 3.12 与三条端到端。
 - **最新实测** 3 候选（LR / RF / HGB），最佳候选 `random_forest` 四层全 PASS：valid AUC 0.7899，test AUC 0.7883。
 
 ---
@@ -18,10 +18,11 @@
 |---|---|---|
 | 0 | `python -m venv .venv` → 激活（Windows `.venv\Scripts\activate`，Linux/macOS `source .venv/bin/activate`）→ `pip install -r requirements.txt` | 一次性安装完成，无需清单外依赖 |
 | 1 | `python -m ruff check .` | `All checks passed!` |
-| 2 | `python -m unittest discover -s tests` | `Ran 148 tests ... OK` |
-| 3 | `python -m factory run --spec "预测信用卡客户下月违约概率，时间外划分，按 5:1 成本比选阈值，禁止 ID 入模。"` | `四层全通过=True 理解来源=cassette 候选=3`；最佳候选 random_forest AUC 0.7899。修复轮次取决于是否已有回写图谱：仓库自带 `capabilities_after_run.json` 时为 **1**（T1 经验命中，首轮即避开），删掉该文件再跑为 **2**（现场复现 `KeyError: PAY_1` → 定向修复，再处理指标层） |
-| 4 | `python -m factory run --spec "把短信分类为垃圾短信或正常短信，输出准确率与宏平均F1" --mock --task-config configs/verify_text.yaml --run-id text_demo --kg-out capabilities_text_after_run.json --gen-dir text` | `四层全通过=True`；linear_svc accuracy 0.9803 |
-| 5 | `python -m factory run --spec "根据多期特征预测日需求量，最小化RMSE，输出RMSE/MAE/R2" --mock --task-config configs/verify_regression.yaml --run-id regression_demo --kg-out capabilities_regression_after_run.json --gen-dir regression` | `四层全通过=True`；ridge RMSE 19.31、R² 0.978 |
+| 2 | `python -m unittest discover -s tests` | `Ran 163 tests ... OK` |
+| 3 | `python -m factory guide` | 打印输入引导菜单：4 项要素、可复制的合格示例、3 个可用场景、图谱已沉淀能力分组；`--spec "随便写点什么"` 只体检不跑闭环 |
+| 4 | `python -m factory run --spec "预测信用卡客户下月违约概率，时间外划分，按 5:1 成本比选阈值，禁止 ID 入模。"` | `四层全通过=True 理解来源=cassette 候选=3`；最佳候选 random_forest AUC 0.7899。修复轮次取决于是否已有回写图谱：仓库自带 `capabilities_after_run.json` 时为 **1**（T1 经验命中，首轮即避开），删掉该文件再跑为 **2**（现场复现 `KeyError: PAY_1` → 定向修复，再处理指标层） |
+| 5 | `python -m factory run --spec "把短信分类为垃圾短信或正常短信，输出准确率与宏平均F1" --mock --task-config configs/verify_text.yaml --run-id text_demo --kg-out capabilities_text_after_run.json --gen-dir text` | `四层全通过=True`；linear_svc accuracy 0.9803 |
+| 6 | `python -m factory run --spec "根据多期特征预测日需求量，最小化RMSE，输出RMSE/MAE/R2" --mock --task-config configs/verify_regression.yaml --run-id regression_demo --kg-out capabilities_regression_after_run.json --gen-dir regression` | `四层全通过=True`；ridge RMSE 19.31、R² 0.978 |
 
 **只看一个文件**：`outputs/reports/run_demo.md` —— 七步轨迹、检索证据、候选排名、四层结论、修复轨迹、图谱 diff 全在里面。
 **只看一处修复**：删掉 `outputs/kg/capabilities_after_run.json` 后重跑，报告第 4 节会出现 `KeyError: PAY_1 → 按 Dataset 列名映射把 PAY_1 改为 PAY_0`。`PAY_1` 是首轮按 LLM 直觉命名习惯生成的列名，报错由子进程在真实数据集上抛出（数据字典里最近一期实为 `PAY_0`，即 T1），再由 `Repairer` 定向修复——注入的是命名习惯，错误本身不是伪造的。
@@ -33,6 +34,7 @@
 
 ```
 自然语言能力描述
+   ↓ 0 引导                 IntakeGuide → OK / CLARIFY / REJECT（缺什么要素、是否换场景）
    ↓ a 理解                 Interpreter → CapabilitySpec
    ↓ b 检索                 Retriever  → 能力子图 / 约束 / 历史失败经验
    ↓ c 规划                 Planner    → Beam Top-3 候选方案
@@ -44,7 +46,7 @@
                      验证报告 + 候选排名 + 设计依据 + 图谱 diff
 ```
 
-最短路径：`pip install -r requirements.txt` → 上方验收路径第 3 行即可跑通全链路。`--mock` 使用内置规则模板 LLM，全程离线；去掉该参数并配置 `.env` 即切换真实 LLM，细节见第 5 节。
+最短路径：`pip install -r requirements.txt` → 上方验收路径第 4 行即可跑通全链路。`--mock` 使用内置规则模板 LLM，全程离线；去掉该参数并配置 `.env` 即切换真实 LLM，细节见第 5 节。
 
 ---
 
@@ -73,7 +75,7 @@
 | L2 支撑 | `llm/` | `BaseLLM` 抽象与三实现：`MockLLM`（默认）、`OpenAICompatLLM`（DeepSeek）、`RecordedLLM`（cassette 回放） |
 | L3 执行 | `runtime/` | 子进程沙箱、AST 静态检查、超时 / 内存限制、错误分类器 |
 | L4 验证 | `validation/` | 四层检查器、指标插件注册、报告生成 |
-| L5 接入 | `cli/`（`__main__.py`）、`api/` | Typer CLI、FastAPI；Web UI 按裁剪顺序未做，题目「或」已由 CLI + API 满足 |
+| L5 接入 | `cli/`（`__main__.py`）、`api/`、`intake/` | Typer CLI、FastAPI；`intake/` 在入口做输入体检与引导（要素追问、跑题拦截、换场景提示）；Web UI 按裁剪顺序未做，题目「或」已由 CLI + API 满足 |
 | L6 资产 | `assets/` | 数据、业务材料、模板、示例、报告样例与 LLM cassette |
 
 **设计原则**：契约先行（模块间只依赖 Pydantic 数据类）、LLM 可替换、验证与场景解耦（换 yaml 即换任务）、执行与验证隔离（生成代码只在子进程沙箱内运行）。
@@ -94,7 +96,8 @@
 | cassette 回放 | `RecordedLLM`（按角色 + prompt 命中） | 无 key、断网原样回放；未命中显式报错，不静默造假 | `vcrpy` 拦截 HTTP 层，而 `provider=cassette` 根本不构造 `openai` client |
 | 四层验证 | 自研组合器 + `pytest` + 子进程沙箱 | 题目要的是「统一验证机制」这一组合，无单一库覆盖；指标用 `sklearn.metrics`、报告用 `Jinja2` | 无对应单一库，组合编排属项目职责 |
 | 项目业务规则 | 时间外划分、禁 `ID` / 敏感字段、T1–T4 列名映射、成本比阈值、证据 SHA-256、`verify_*.yaml` 门槛 | 场景合规约束，通用库不会内置 | 无对应现成库 |
-| 接入 | Typer CLI + FastAPI | 现成框架，CLI 有 `--version` / `--check` / `run` / `api`，API 三端点并自动导出 OpenAPI | `argparse` 已替换；Streamlit 权衡后未做——题目为「或」，只增依赖不增评分点 |
+| 接入 | Typer CLI + FastAPI | 现成框架，CLI 有 `--version` / `--check` / `guide` / `run` / `api`，API 五端点并自动导出 OpenAPI | `argparse` 已替换；Streamlit 权衡后未做——题目为「或」，只增依赖不增评分点 |
+| 输入引导 | 自研规则引擎 `factory/intake/` | 判据是项目特定语义（目标 / 数据 / 指标 / 约束是否表达、描述更像哪个场景），结论要同时进终端、API 与报告 | Guardrails / NeMo Guardrails 面向 LLM 输出安全与对话流程，需额外模型与配置；Pydantic 只校验字段类型与字符集，覆盖不到「要素完备度」与「场景错配」 |
 | 算法栈 | pandas + scikit-learn + imbalanced-learn | 全 CPU、秒级、确定性强，`Pipeline` 天然防泄漏 | 算法模板用标准库 `str.format`，不为单文件模板引入 Jinja2（Jinja2 仅用于报告） |
 
 **仓库结构**
@@ -103,11 +106,11 @@
 algo-capability-factory/
 ├── README.md  CHANGELOG.md  AGENTS.md  requirements.txt  .env.example  pyproject.toml  .gitignore
 ├── configs/     default.yaml + verify_{credit,text,regression}.yaml
-├── factory/     42 个模块：contracts / knowledge / agents / llm / runtime / validation / workflow / api
+├── factory/     45 个模块：contracts / knowledge / agents / llm / runtime / validation / workflow / intake / api
 ├── scripts/     数据准备、图谱构建、消融、资源基准、仓库抽取、cassette 录制（11 个）
 ├── assets/      data/、docs/(+text/)、legacy/、repo/scorecardpy/、llm_cassettes/
 ├── outputs/     generated/、reports/、kg/（runs/ 为临时轨迹，不入库）
-└── tests/       15 个测试文件 / 148 个用例
+└── tests/       16 个测试文件 / 163 个用例
 ```
 
 内部规划文档（`PLAN.md`）、原始数据包与 `_archive/` 不纳入版本控制。
@@ -179,6 +182,18 @@ algo-capability-factory/
 
 ## 4. Agent 工作流设计
 
+**入口引导（`factory/intake/`，1.2.0）**
+
+自然语言入口最容易失效：用户可能只写「做个预测」，也可能把短信分类的需求提给信用卡任务。因此在 a.Parse 之前加一层规则体检，结论固定为三档：
+
+| 结论 | 触发条件 | 行为 |
+|---|---|---|
+| `OK` | 必填要素（任务目标 + 输入数据）齐全 | 直接进入七步闭环 |
+| `CLARIFY` | 缺必填要素，或描述更像另一个场景 | 照常运行，但打印 / 回传追问与应使用的 `--task-config`，结论写入 `RunTrace.intake` 与报告第 0 节 |
+| `REJECT` | 空白、过短、命中闲聊 / 创作模式且完全不沾场景 | 拦在闭环之前，给出可复制的合格示例；CLI 退出码 3、API 返回 422，`--force` 可强制放行 |
+
+可选要素（评价指标、业务约束）缺失只提示不拦；描述里直接引用 `cap.*` 能力 id 时视为复刻已有能力，缺字段由图谱补齐。要素关键词、跑题模式与追问话术在 `configs/default.yaml` 的 `intake` 段，场景名、场景关键词与示例在各自 `verify_*.yaml`——**换场景只改 yaml，判定是纯字符串匹配，不调用 LLM，断网可复现**。三份官方示例由测试锁定，防止引导误伤正常输入。
+
 **八个角色**（不是单次 prompt 生成代码，每个角色有独立 system prompt、输入输出 schema，可独立测试）
 
 | 角色 | 输入 → 输出 |
@@ -195,6 +210,8 @@ algo-capability-factory/
 **状态机**
 
 ```
+IntakeGuide（OK / CLARIFY 放行；REJECT 直接返回引导，不进状态机）
+  ↓
 Parse → Retrieve → Plan → Generate → StaticCheck → Execute → Validate
                                                        ├─ Pass → Compare → Explain → Sink
                                                        └─ Fail → Diagnose → Repair → Generate (≤3 轮)
@@ -250,8 +267,10 @@ python scripts/extract_repo.py           # 真实开源仓库函数 / 依赖 / �
 python scripts/record_llm.py             # 录制真实 DeepSeek 调用（需 key）
 
 # 5) 接入层与自检
+python -m factory guide                  # 输入引导：要素、示例、可用场景、已沉淀能力
+python -m factory guide --spec "随便写点什么"   # 只体检一条描述，不跑闭环
 python -m factory api --export-openapi   # 导出 OpenAPI 到 outputs/reports/
-python -m factory api --port 8000        # /health、/templates、/run
+python -m factory api --port 8000        # /health、/templates、/intake/guide、/intake/review、/run
 python -m factory --version
 python -m factory --check
 python -m unittest discover -s tests -v
@@ -269,7 +288,7 @@ python -m unittest discover -s tests -v
 
 **最小依赖**：核心闭环需 `pydantic`、`PyYAML`、`pandas`、`scikit-learn`、`networkx`、`langgraph`、`rank-bm25`、`markdown-it-py`、`psutil`、`structlog`（全部为现成库，`requirements.txt` 已锁版本区间）；`pyvis`、`Jinja2`、`Typer`、`openai` 按入口加载。全量清单 23 个直接依赖，含传递依赖共 106 个安装包。
 
-**干净环境实测（P5 记录）**：空 venv 仅执行一次 `pip install -r requirements.txt`（无冲突），随后跑通 `ruff check`（全绿）、端到端 `factory run`（`四层全通过=True`、退出码 0），未安装任何清单外依赖；P6 与 1.1.x 未新增第三方依赖，当前全量测试 148 个。
+**干净环境实测（P5 记录）**：空 venv 仅执行一次 `pip install -r requirements.txt`（无冲突），随后跑通 `ruff check`（全绿）、端到端 `factory run`（`四层全通过=True`、退出码 0），未安装任何清单外依赖；P6 与 1.1.x 未新增第三方依赖，1.2.0 只加代码不加依赖，当前全量测试 163 个。
 
 **持续集成**：`.github/workflows/ci.yml` 用 matrix 并行 **Python 3.11**（最低版本）与 **3.12**（本地实测版本），各自执行 `ruff check`、全量单元测试与三条端到端（信用卡 / 短信 / 回归），断言 `四层全通过=True`。端到端走默认 provider（Interpreter 用已入库 cassette），CI 不依赖任何 API key。
 
@@ -393,6 +412,7 @@ def build_pipeline(config):
 | 确定性实测 | 三个候选同一子进程内二次 fit，两次输出最大绝对差均为 `0.00e+00` |
 | test 终评 | 最佳候选 `plan.02` 一次性评估：AUC 0.7883、KS 0.4399、F1 0.4590、PSI 0.0681、分组 AUC 差 0.0201；不参与排序与修复 |
 | 代码来源 | 默认 mock 路径全为 `template`（Mock 输出不冒充模型生成）；真实 DeepSeek 下 3 候选有 2 个采用 LLM 代码（`plan.02` AUC 0.78992，可区分于模板 0.78990），采用前均过 AST 静态检查 |
+| 输入引导 | 三份官方示例均判 `OK`（完备度 0.83），不被误拦；空白 / 乱码判 `REJECT` 并附可复制示例（CLI 退出码 3、API 422）；缺「输入数据」判 `CLARIFY` 并给出追问；把短信需求提给信用卡任务时提示 `--task-config configs/verify_text.yaml`。结论写入 `RunTrace.intake` 与报告第 0 节 |
 
 **四层验证结论（最佳候选 random_forest）**
 
@@ -464,6 +484,7 @@ def build_pipeline(config):
 | **跨平台盲区**：Typer 着色破坏 CLI 断言、CRLF 改变证据哈希、shebang 文件模式差异导致 `EXE001` | 子进程设 `NO_COLOR=1` / `TERM=dumb` 并剥离 ANSI；`read_sources` 归一化换行；`git update-index --chmod=+x` 修正模式 |
 | **接口层把用户输入直接当文件名**：`POST /run` 传 `../../x` 可写出产物目录 | 双层校验（接口 Pydantic pattern + 拒绝 `..` → 422；工作流 `_RUN_ID_PATTERN` 兜底 → 退出码 2），API 区分 400 / 500 |
 | **早期自研轻量件与「复用优先」有张力** | 逐项评估现成库后替换（LangGraph、`psutil`、`structlog`、`Typer`、`markdown-it-py`、`rank_bm25`），未采用的写入选型表，规则与过程见 `.codebuddy/rules/architecture.md` |
+| **用户输入不可控**：描述可能过短、跑题，或把另一个场景的需求提给当前任务，让七步闭环在 a.Parse 就失败并浪费一次完整运行 | 入口加规则体检（`factory/intake/`）：缺要素给追问、跑题直接拦、场景错配直接给 `--task-config`；结论写入报告第 0 节，CLI 与 API 都拿得到。三份官方示例由测试锁定，避免误判 |
 
 ---
 
@@ -504,13 +525,13 @@ def build_pipeline(config):
 | 4 | 知识抽取结果文件（JSON / CSV / GraphML） | `outputs/kg/{capabilities,text_capabilities,repo_capabilities}.json` + `.csv` + `*.graphml` |
 | 5 | Agent 工作流代码或流程配置 | `factory/workflow/pipeline.py`（LangGraph `StateGraph`）+ `factory/agents/roles.py`（8 角色）；流程图见第 4 节 |
 | 6 | 至少 1 个从能力描述到代码生成的完整示例 | `outputs/reports/run_demo.md`（描述 → 检索证据 → 3 候选 → 代码 → 修复 diff）+ `outputs/generated/candidate_plan.0*.py` |
-| 7 | 自动验证脚本 | `python -m factory run`；`scripts/verify_baseline.py`；CI（lint + 148 用例 + 3 条端到端） |
+| 7 | 自动验证脚本 | `python -m factory run`；`scripts/verify_baseline.py`；CI（lint + 163 用例 + 3 条端到端） |
 | 8 | 验证报告样例 | `outputs/reports/`：`run_demo.md`、`run_text_demo.md`、`run_regression_demo.md`、`validation_sample.md`、`ablation.md`、`resources.md`、`openapi.json` |
 | 9 | 项目文档 README.md | 本文件（十节 + 附录 A/B/C） |
 | 10 | 环境依赖文件 | `requirements.txt`（23 个直接依赖；含传递依赖共 106 个安装包） |
 | 11 | 使用示例和测试用例 | 第 5 节命令清单 + `tests/`（15 个文件 / 148 个用例） |
 
-**进阶 8 项**：CLI/API（第 5 节，`factory/api/app.py` 与 `outputs/reports/openapi.json`）、多轮修复与多候选比较（第 4 节）、图谱可视化（`outputs/kg/kg.html`）、自动验证报告（第 8 节）、结果回写（第 4、8 节）、不同任务类型配置（三份 `verify_*.yaml`）、插件式接入（指标插件 + 算法模板装饰器注册）。
+**进阶 8 项**：CLI/API（第 5 节，`factory/api/app.py` 与 `outputs/reports/openapi.json`）、多轮修复与多候选比较（第 4 节）、图谱可视化（`outputs/kg/kg.html`）、自动验证报告（第 8 节）、结果回写（第 4、8 节）、不同任务类型配置（三份 `verify_*.yaml`）、插件式接入（指标插件 + 算法模板装饰器注册）、入口输入引导（第 4 节，`factory/intake/`）。
 **加分 10 项**：Beam Search、8 角色多智能体、真实仓库 AST 抽取（第 3 节）、沙箱与 AST 安全检查（第 4、9 节）、失败案例复用（第 8 节）、能力版本递增、设计依据生成、跨场景迁移（第 8 节）、OpenAPI 自动生成、资源消耗分析（第 8 节）。
 
 ## 附录 C · 数据与引用

@@ -3,6 +3,15 @@ status: active
 task_type: tabular_binary_classification
 capability_id: cap.credit.default.v1
 
+# 输入引导：场景名、场景关键词与可直接复制的合格描述。
+# 关键词既用于判断描述是否属于本场景，也用于发现「用户其实想跑别的场景」。
+intake:
+  scenario: 信用卡违约预测
+  dataset_hint: assets/data/UCI_Credit_Card.csv（UCI 30,000 条）
+  keywords: [违约, 信用卡, 客户, 还款, 账单, 额度, 逾期, 信用]
+  examples:
+    - 预测信用卡客户下月违约概率，时间外划分，按 5:1 成本比选阈值，禁止 ID 入模。
+
 dataset:
   path: assets/data/UCI_Credit_Card.csv
   target: default.payment.next.month

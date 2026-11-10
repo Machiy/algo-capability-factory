@@ -1,7 +1,7 @@
 ﻿# 全局默认配置；任务级配置见 verify_*.yaml
 project:
   name: algocap-factory
-  version: 1.1.1
+  version: 1.2.0
   seed: 42
   log_level: INFO
 
@@ -74,6 +74,58 @@ workflow:
     - Verifier
     - Repairer
     - Curator
+
+# 入口输入引导：用户描述不清楚时先追问/给示例，不把「瞎说」带进七步闭环。
+# 判定全部是字符串匹配，不调用 LLM，断网可复现；场景级关键词与示例在 verify_*.yaml。
+intake:
+  min_chars: 8                  # 低于此长度直接判不可执行
+  max_examples: 3               # 提示里最多给几条可复制示例
+  off_topic_patterns:           # 命中且完全不沾当前场景 → 直接拦下
+    - 写诗
+    - 作诗
+    - 写一首
+    - 一首诗
+    - 写小说
+    - 写作文
+    - 讲笑话
+    - 讲个笑话
+    - 天气预报
+    - 订机票
+    - 写周报
+    - 菜谱
+  off_topic_message: 这条描述看起来不是算法能力需求
+  # 一条可执行的描述至少要表达「目标 + 数据」；指标与约束缺了只提示不拦
+  elements:
+    - key: goal
+      label: 任务目标
+      required: true
+      keywords: [预测, 分类, 回归, 识别, 判别, 打分, 评分, 估计, 复刻, 违约, 流失,
+                欺诈, 垃圾短信, 需求, 预测值, predict, classify, forecast, score]
+      hint: 要解决什么问题（预测 / 分类 / 回归 / 复刻已有能力）
+    - key: data
+      label: 输入数据
+      required: true
+      keywords: [数据, 客户, 样本, 特征, 短信, 文本, 交易, 账单, 语料, 表格, 工单,
+                数据集, dataset, feature, text]
+      hint: 用哪份数据、以什么字段作为输入
+    - key: metric
+      label: 评价指标
+      keywords: [指标, auc, ks, f1, pr_auc, rmse, mae, r2, 准确率, 召回, 精确, 宏平均,
+                成本加权, accuracy, recall, precision]
+      hint: 主指标与业务门槛（如 AUC ≥ 0.78、RMSE 最小）
+    - key: constraint
+      label: 业务约束
+      keywords: [约束, 划分, 时间外, 成本比, 阈值, 禁止, 合规, 敏感, 公平, 可解释,
+                不泄漏, 入模, 洗牌, split, temporal, cost, threshold, leakage]
+      hint: 划分方式、成本比、禁入模字段、可解释性等硬约束
+  questions:
+    goal: 这条能力要输出什么？例如「预测客户是否会在下月违约」
+    data: 用哪份数据、哪些字段作为输入？
+    metric: 主指标与业务门槛是什么？例如「AUC 不低于 0.78」
+    constraint: 有哪些硬约束？例如「时间外划分、成本比 5:1、禁止 ID 入模」
+  examples:
+    - 预测信用卡客户下月违约概率，时间外划分，按 5:1 成本比选阈值，禁止 ID 入模。
+    - 把短信分类为垃圾短信或正常短信，输出准确率与宏平均 F1。
 
 runtime:
   timeout_seconds: 60

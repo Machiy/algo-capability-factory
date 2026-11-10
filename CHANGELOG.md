@@ -3,6 +3,24 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循
 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本对应一个 annotated tag 与 GitHub Release。
 
+## [1.2.0] - 2026-11-10
+
+入口输入引导：用户提交的自然语言描述不再直接灌进七步闭环。导师反馈「用户可能会瞎说」，因此把「引导」做成一层可测试的规则引擎，而不是靠文档提醒。
+
+### 新增
+
+- **`factory/intake/`（L5 接入前的引导层）**：`IntakeGuide.review()` 给出 `OK` / `CLARIFY` / `REJECT` 三档结论，附缺失要素、针对性追问、可复制的合格示例。判定全部是字符串匹配，不调用 LLM，断网可复现。
+- **契约 `IntakeGuidance`**：结论、完备度、已表达/未提及要素、问题清单、追问、示例、场景建议；写入 `RunTrace.intake` 并在报告新增第 0 节，证明「输入被体检过」而不是只做终端提示。
+- **配置驱动**：要素关键词、跑题模式、追问话术在 `configs/default.yaml` 的 `intake` 段；场景名、场景关键词与示例在各自 `verify_*.yaml` 的 `intake` 段。换场景只改 yaml。
+- **场景错配提示**：在信用卡任务里描述短信分类时，直接给出 `--task-config configs/verify_text.yaml`，并把示例换成对应场景的示例。
+- **能力 id 引用**：描述里出现 `cap.*` 时视为复刻已有能力，缺字段由图谱补齐，不再追问。
+- **CLI**：`factory guide`（菜单 / `--spec` 体检 / `--json`）；`run --spec` 改为可选，留空进入交互向导（非交互环境打印菜单并以退出码 2 结束，不挂起）；新增 `--force` 跳过拦截；拒绝时退出码 3。
+- **API**：`GET /intake/guide`、`POST /intake/review`；`POST /run` 前置体检，`REJECT` 返回 422 并携带结构化 `guidance`，`CLARIFY` 照常运行并在响应 `intake` 字段回传结论；`force` 可跳过拦截。
+
+### 测试
+
+- 新增 `tests/test_intake.py` 15 个用例：三份官方示例不被误拦、空白/乱码/跑题拦截、缺要素追问、场景错配、能力 id 引用、工作流前置拦截与报告第 0 节、CLI 菜单与不挂起、API 两个新端点与 422。全量 163 个用例通过，`ruff check` 全绿。
+
 ## [1.1.1] - 2026-11-09
 
 真实 LLM 通路实测后的健壮性补丁。mock 路径永远返回结构化 JSON，测不出「模型输出与契约不一致」这一类问题，只有切到 `openai_compat` 才会暴露。

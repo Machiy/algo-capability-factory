@@ -7,7 +7,7 @@
 
 基于 AI Agent 的算法能力工厂原型：从业务材料抽取**能力知识图谱** → 按自然语言描述**规划并生成算法代码** → 四层**验证** → 按错误签名**修复** → 结果**回写图谱**。行业场景为信用卡下月违约预测（UCI，30000 行）。
 
-当前状态：a–g 七步闭环、P4 沉淀闭环、算法模板插件、FastAPI 接入层与 OpenAPI 均已落地，1.1.1 完成了真实 LLM 通路的健壮性修复；148 个用例全过、`ruff` 全绿、干净虚拟环境实测可复现。
+当前状态：a–g 七步闭环、P4 沉淀闭环、算法模板插件、FastAPI 接入层与 OpenAPI 均已落地，1.1.1 完成了真实 LLM 通路的健壮性修复，1.2.0 补上入口输入引导；163 个用例全过、`ruff` 全绿、干净虚拟环境实测可复现。
 
 ## 文档分工
 
@@ -21,6 +21,8 @@
 python -m venv .venv && pip install -r requirements.txt   # 干净环境
 python -m factory run --spec "预测信用卡客户下月违约概率，时间外划分，按 5:1 成本比选阈值，禁止 ID 入模。"
 python -m factory run --spec "..." --mock                 # 全链路规则模板
+python -m factory guide                                    # 输入引导菜单
+python -m factory guide --spec "随便写点什么"               # 只体检描述，不跑闭环
 python -m factory api --export-openapi                     # 导出 OpenAPI 文档
 python scripts/build_kg.py                                 # 能力图谱与检索产物
 python scripts/run_ablation.py                             # 有 KG / 无 KG 消融
@@ -66,6 +68,7 @@ ruff check factory scripts tests
 | 接入层 | `d04c517` | FastAPI 三端点 + CLI `api` 子命令 + 导出 OpenAPI |
 | 收尾补强 | `db58c34`、`6c04b87`、`5a8e214` | 文档按实测回填、资源基准与内存看门狗修复、真实仓库 AST 抽取、文本跨场景迁移 |
 | 1.1.x 真实性整改 | `1.1.0` / `1.1.1` 两次提交 | 确定性重复 fit、test 终评接线、Coder 采用 LLM 代码、KG 边按文本命中、失败经验跨轮复用、Planner / Coder prompt 补输出契约 |
+| 1.2.0 入口输入引导 | `1.2.0` 一次提交 | 新增 `factory/intake/` 与 `IntakeGuidance` 契约：要素体检（OK / CLARIFY / REJECT）、跑题拦截、场景错配提示、能力 id 引用；`guide` 子命令与交互向导、`/intake/guide` 与 `/intake/review`、`/run` 422 结构化引导；结论写入 `RunTrace.intake` 与报告第 0 节 |
 
 完整历史以 `git --no-pager log` 为准，提交时间由 Git 按实际时刻记录，未做调整。
 

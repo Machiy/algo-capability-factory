@@ -165,6 +165,49 @@ class KnowledgeSourceSettings(_ConfigModel):
     legacy: str = ""
 
 
+class IntakeElementSettings(_ConfigModel):
+    """输入体检的一个要素：命中任一 ``keywords`` 即视为用户表达了该要素。"""
+
+    key: str
+    label: str = ""
+    keywords: list[str] = Field(default_factory=list)
+    required: bool = False
+    hint: str = ""
+
+
+class IntakeSettings(_ConfigModel):
+    """``default.yaml`` 的 intake 段：输入引导的通用规则。
+
+    规则全部是纯字符串匹配，不调用 LLM——入口引导必须离线、确定、可测试。
+    """
+
+    min_chars: int = Field(default=8, ge=1)
+    max_examples: int = Field(default=3, ge=0)
+    # 明显跑题的请求直接拦在闭环之前，不浪费一次七步运行
+    off_topic_patterns: list[str] = Field(default_factory=list)
+    off_topic_message: str = "这条描述看起来不是算法能力需求"
+    elements: list[IntakeElementSettings] = Field(default_factory=list)
+    questions: dict[str, str] = Field(default_factory=dict)
+    examples: list[str] = Field(default_factory=list)
+
+    @property
+    def required_keys(self) -> list[str]:
+        return [item.key for item in self.elements if item.required]
+
+
+class TaskIntakeSettings(_ConfigModel):
+    """``verify_*.yaml`` 的 intake 段：场景名、场景关键词与可直接复制的示例。
+
+    场景关键词有两个用途：判断描述是否属于本场景，以及发现「用户其实想跑
+    另一个场景」时给出 `--task-config` 建议。
+    """
+
+    scenario: str = ""
+    keywords: list[str] = Field(default_factory=list)
+    examples: list[str] = Field(default_factory=list)
+    dataset_hint: str = ""
+
+
 class TaskSettings(_ConfigModel):
     """任务级验证配置：换任务只改 ``verify_*.yaml``，不改核心验证器。"""
 
@@ -175,6 +218,7 @@ class TaskSettings(_ConfigModel):
     constraints: dict[str, Any] = Field(default_factory=dict)
     candidates: CandidateSettings = Field(default_factory=CandidateSettings)
     knowledge: KnowledgeSourceSettings = Field(default_factory=KnowledgeSourceSettings)
+    intake: TaskIntakeSettings = Field(default_factory=TaskIntakeSettings)
 
     @property
     def sensitive_features(self) -> list[str]:
@@ -226,6 +270,7 @@ class Settings(_ConfigModel):
     runtime: RuntimeSettings = Field(default_factory=RuntimeSettings)
     llm: LLMSettings = Field(default_factory=LLMSettings)
     workflow: WorkflowSettings = Field(default_factory=WorkflowSettings)
+    intake: IntakeSettings = Field(default_factory=IntakeSettings)
 
 
 def _read_mapping(path: Path) -> dict:
@@ -266,6 +311,7 @@ def load_settings(config_path: str | Path, apply_env: bool = False) -> Settings:
         runtime=RuntimeSettings(**payload.get("runtime", {})),
         llm=LLMSettings(**llm_payload),
         workflow=WorkflowSettings(**payload.get("workflow", {})),
+        intake=IntakeSettings(**payload.get("intake", {})),
     )
 
 
@@ -278,12 +324,16 @@ __all__ = [
     "CandidateSettings",
     "CassetteSettings",
     "DatasetSettings",
+    "IntakeElementSettings",
+    "IntakeSettings",
     "KnowledgeSettings",
+    "KnowledgeSourceSettings",
     "LLMSettings",
     "PathsSettings",
     "RetrievalSettings",
     "RuntimeSettings",
     "Settings",
+    "TaskIntakeSettings",
     "TaskSettings",
     "WorkflowSettings",
     "load_settings",

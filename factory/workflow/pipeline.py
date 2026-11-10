@@ -28,10 +28,12 @@ from factory.agents import (
     Verifier,
 )
 from factory.config import Settings, TaskSettings, load_settings, load_task_settings
+from factory.contracts.intake import IntakeGuidance, IntakeVerdict
 from factory.contracts.knowledge import RetrievalResult
 from factory.contracts.models import CandidatePlan, CapabilitySpec, ValidationReport
 from factory.contracts.validation import StaticCheckResult
 from factory.contracts.workflow import CandidateEvaluation, RunTrace, TestEvaluation
+from factory.intake import IntakeGuide, SpecRejected, render_guidance
 from factory.knowledge import MockExtractor, read_sources
 from factory.knowledge.graph import load_graph
 from factory.llm import build_llm
@@ -48,6 +50,13 @@ _RUN_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 SEVEN_STEPS = ["a.Parse", "b.Retrieve", "c.Plan", "d.Generate",
                "e.Execute+Validate", "f.Diagnose+Repair", "g.Sink"]
 
+# 入口体检结论在报告里的可读名称（REJECT 仅出现在 --force 强制放行的运行里）
+INTAKE_LABELS = {
+    IntakeVerdict.OK: "OK（要素齐全）",
+    IntakeVerdict.CLARIFY: "CLARIFY（可继续，缺失要素已提示）",
+    IntakeVerdict.REJECT: "REJECT（不可执行，已 --force 强制放行）",
+}
+
 
 class _GraphState(TypedDict, total=False):
     """LangGraph 状态：全部为契约对象或标量，不引入跨轮隐式全局状态。"""
@@ -55,6 +64,7 @@ class _GraphState(TypedDict, total=False):
     spec_text: str
     run_id: str
     trace: RunTrace
+    guidance: IntakeGuidance
     spec: CapabilitySpec
     retrieval: RetrievalResult
     plans: list[CandidatePlan]
@@ -80,6 +90,28 @@ def _candidate_score(report: ValidationReport, metric_name: str = "auc",
     if not isinstance(value, (int, float)):
         return 0.0
     return float(value) if direction != "minimize" else -float(value)
+
+
+def render_intake_section(guidance: IntakeGuidance | None) -> list[str]:
+    """报告第 0 节：入口体检结论，证明用户输入被引导过而非直接灌进流水线。"""
+    if guidance is None:
+        return []
+    elements = "、".join(guidance.matched_elements) or "无"
+    missing = "、".join(guidance.missing_elements) or "无"
+    lines = [
+        "## 0. 输入引导（入口体检）",
+        "",
+        f"- 结论：**{INTAKE_LABELS[guidance.verdict]}**，要素完备度 {guidance.score:.2f}",
+        f"- 已表达要素：{elements}",
+        f"- 缺失要素：{missing}",
+    ]
+    for issue in guidance.issues:
+        hint = f"（建议：{issue.hint}）" if issue.hint else ""
+        lines.append(f"- 问题 `{issue.code}`：{issue.message}{hint}")
+    if guidance.suggestion:
+        lines.append(f"- 引导建议：{guidance.suggestion}")
+    lines.append("")
+    return lines
 
 
 def render_run_report(trace: RunTrace, reports: list[ValidationReport],
@@ -117,6 +149,7 @@ def render_run_report(trace: RunTrace, reports: list[ValidationReport],
         f"> 说明：四层全通过为 FAIL 时，通常是「指标表现」层未达 `{task_config}`",
         "> 的业务门槛；接口 / 功能 / 稳定性结论见第 3 节，失败记录已回写 FailureCase。",
         "",
+        *render_intake_section(trace.intake),
         "## 1. 检索证据（进入 Planner / Coder prompt）",
         "",
         "```text",
@@ -218,6 +251,14 @@ class Workflow:
             graph = loaded
             self.graph_source = "after_run"
             logger.info("加载上一轮回写图谱：%s（%d 节点）", after_run, len(loaded.nodes))
+        # 入口引导：描述不可执行时先追问 / 给示例，不把噪声直接灌进七步闭环。
+        # 判据来自两个 yaml 的 intake 段，本类只负责编排。
+        self.intake = IntakeGuide(
+            settings.intake, task.intake,
+            configs_dir=root / "configs",
+            task_config=task_config,
+            graph_path=after_run,
+        )
         llm = build_llm(settings.llm, root)
         self.task_type = task.task_type
         self.text_column = task.dataset.text_column
@@ -303,7 +344,8 @@ class Workflow:
     def _n_parse(self, state: _GraphState) -> dict:
         spec = self.interpreter.parse(state["spec_text"])
         trace = RunTrace(run_id=state["run_id"], spec=state["spec_text"],
-                         interpreter_source=self.interpreter.last_source)
+                         interpreter_source=self.interpreter.last_source,
+                         intake=state.get("guidance"))
         trace.steps.append(SEVEN_STEPS[0])
         return {"spec": spec, "trace": trace}
 
@@ -480,19 +522,32 @@ class Workflow:
                     trace.passed, len(state["plans"]), len(trace.repairs))
         return {"trace": trace}
 
-    def run(self, spec_text: str, run_id: str = "demo") -> RunTrace:
+    def run(self, spec_text: str, run_id: str = "demo",
+            force: bool = False) -> RunTrace:
         """用 LangGraph 执行七步，返回与旧状态机完全一致的 RunTrace。
 
         ``run_id`` 会拼进 ``run_<id>.md`` / ``trace_<id>.json`` 与图谱节点 id，
         因此入口处强制校验字符集，避免从 API 传参造成路径穿越。
+
+        ``force=False`` 时先做入口体检：REJECT 的描述抛 ``SpecRejected``（附
+        引导内容），CLARIFY 记 warning 但继续——用户对自己的描述有最终决定权，
+        引导只负责把明显不可执行的输入挡在闭环之外。
         """
         if not _RUN_ID_PATTERN.match(run_id) or ".." in run_id:
             raise ValueError(
                 f"run_id 只允许字母、数字、点、下划线与连字符（不得含 ..），"
                 f"长度 1–64：{run_id!r}"
             )
+        guidance = self.intake.review(spec_text)
+        if guidance.verdict is IntakeVerdict.REJECT and not force:
+            logger.warning("输入被入口引导拦下：%s",
+                           "；".join(item.code for item in guidance.issues))
+            raise SpecRejected(guidance)
+        if guidance.verdict is IntakeVerdict.CLARIFY:
+            logger.warning("输入引导：%s",
+                           "；".join(item.message for item in guidance.issues))
         final = self._graph.invoke(
-            {"spec_text": spec_text, "run_id": run_id},
+            {"spec_text": spec_text, "run_id": run_id, "guidance": guidance},
             config={"recursion_limit": 100},
         )
         return final["trace"]
@@ -503,10 +558,13 @@ def run_from_cli(spec_text: str, mock: bool = False,
                  task_config: str = "configs/verify_credit.yaml",
                  run_id: str = "demo",
                  kg_filename: str = "capabilities_after_run.json",
-                 generated_subdir: str = "") -> int:
+                 generated_subdir: str = "",
+                 force: bool = False) -> int:
     """CLI 入口；默认按配置 provider，--mock 时强制规则模板。
 
     ``task_config`` 决定任务类型与指标门槛——换场景只换 yaml，不改代码。
+    ``force=True`` 跳过入口引导的拦截，用于用户确认自己的描述没问题时。
+    退出码：0 正常、2 运行前检查失败、3 输入被引导拦下。
     """
     from factory.logging_setup import configure_logging
     root = root or Path.cwd()
@@ -524,12 +582,20 @@ def run_from_cli(spec_text: str, mock: bool = False,
                         kg_filename=kg_filename,
                         generated_subdir=generated_subdir)
     try:
-        trace = workflow.run(spec_text, run_id)
+        trace = workflow.run(spec_text, run_id, force=force)
+    except SpecRejected as exc:
+        # 输入不可执行：打印引导后退出，不消耗一次七步闭环
+        logger.error("输入被入口引导拦下：%s", len(exc.guidance.issues))
+        print(render_guidance(exc.guidance))
+        return 3
     except (FileNotFoundError, ValueError) as exc:
         # 数据缺失 / 配置非法 / 标识不合法属于使用问题：给出可读原因并返回非 0
         logger.error("运行前检查失败：%s", exc)
         print(f"错误：{exc}")
         return 2
+    if trace.intake is not None and trace.intake.verdict is IntakeVerdict.CLARIFY:
+        # 已在入口放过，这里把「补什么会更稳」留一份痕迹
+        print(render_guidance(trace.intake))
     print(f"[P3] 七步闭环执行完成；四层全通过={trace.passed} "
           f"理解来源={trace.interpreter_source} "
           f"候选={len(trace.candidates)} 修复={len(trace.repairs)} "
@@ -545,4 +611,4 @@ def run_from_cli(spec_text: str, mock: bool = False,
     return 0
 
 
-__all__ = ["Workflow", "render_run_report", "run_from_cli"]
+__all__ = ["Workflow", "render_intake_section", "render_run_report", "run_from_cli"]
