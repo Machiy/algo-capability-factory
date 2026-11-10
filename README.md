@@ -63,7 +63,7 @@
 | 10. 后续可扩展方向 | 还能往哪里做 |
 | 附录 A / B / C / D | 十项要求对照、交付物索引、数据引用、术语表 |
 
-> **项目状态**：v1.3.0（变更见 [`CHANGELOG.md`](CHANGELOG.md)，阶段与提交对照见 [`AGENTS.md`](AGENTS.md)）；`ruff` 全绿、177 个用例通过；CI 覆盖 Python 3.11 / 3.12 与三条端到端；最近一次实测最佳候选 `random_forest` 四层全 PASS（valid AUC 0.7899，test AUC 0.7883）。
+> **项目状态**：v1.3.0（变更见 [`CHANGELOG.md`](CHANGELOG.md)，阶段与提交对照见 [`AGENTS.md`](AGENTS.md)）；`ruff` 全绿、179 个用例通过；CI 覆盖 Python 3.11 / 3.12 与三条端到端；最近一次实测最佳候选 `random_forest` 四层全 PASS（valid AUC 0.7899，test AUC 0.7883）。
 
 ---
 
@@ -196,7 +196,7 @@ python -m factory run --spec "预测信用卡客户下月违约概率，时间�
 |---|---|---|---|
 | LLM | `BaseLLM` 抽象：`MockLLM` / `OpenAICompatLLM` / `RecordedLLM` | 默认 mock 保证断网复现；本地 CPU 跑开源模型过慢，按开发要求 g 的「API 调用方式」接 DeepSeek | LangChain / LlamaIndex 的 LLM 包装只需一行配置即可替代，不必引入整套链路；`openai` SDK 已直接使用 |
 | 编排 | LangGraph `StateGraph` | 条件边、状态传递与循环上限由框架提供，8 个角色作为节点动作 | 曾自研轻量状态机，按「有现成的不要重复造轮子」已替换；AutoGen / CrewAI 的 `Agent` / `Task` 会接管 LLM 调用链，破坏「检索证据显式进 prompt」与 `MockLLM` 默认路径 |
-| 知识图谱 | NetworkX（GraphML）+ SQLite | 零部署、可直接交付 GraphML / CSV | Neo4j 需 Docker，伤「本地一键复现」 |
+| 知识图谱 | NetworkX（GraphML / Cypher）+ SQLite | 零部署、可直接交付 GraphML / CSV；另导出 Cypher，需要时用 `cypher-shell` 导入 Neo4j | Neo4j 需 Docker 服务，伤「本地一键复现」；百节点级规模用 NetworkX 足够 |
 | 检索 | `rank_bm25.BM25Okapi` + 一跳图邻域扩展 | 相关性由现成库计算，权重来自 `configs/default.yaml`；Top-K 命中后按边类型加权（`EVALUATED_BY` / `USES` 1.0，`APPLIES_TO` 0.4） | 手写词元计数已替换；LlamaIndex retrievers 需向量库或 LLM，离线成本高 |
 | Markdown 解析 | `markdown-it-py` | 章节 / 表格 / 代码块结构由现成解析器识别，原始行仍作证据摘录 | 手写正则已替换；LlamaIndex loaders 过重且改动证据哈希口径 |
 | 沙箱资源监控 | `psutil` + 标准库 `subprocess` | 跨平台读取子进程内存；POSIX 另有 `RLIMIT_AS` 硬限制 | `ctypes` 手写 Win32 结构已替换；RestrictedPython / Docker 过重 |
@@ -223,7 +223,7 @@ python -m factory run --spec "预测信用卡客户下月违约概率，时间�
 | **CrewAI** | 未采用 | — | 同上。role / goal 配置适合开放式协作，但无法约束「必须先检索再规划」，也无法让同一份 `RunTrace` 逐节点回放 |
 | **OpenAI API** | 采用（OpenAI 兼容协议，默认接 DeepSeek） | `factory/llm/openai_compat.py`；`configs/default.yaml` 的 `llm.base_url` | 只需一次 Chat Completions 调用，`openai` SDK 即标准客户端；用兼容端点便于换供应商（改 `LLM_BASE_URL` 即可），key 只从环境变量读取 |
 | **本地开源模型** | 未采用 | — | CPU 环境跑 7B 级模型单次响应超分钟级，与 60s 沙箱预算冲突；题目允许 API 方式；同时默认 `MockLLM` 保证无模型、断网也能复现全链路 |
-| **Neo4j** | 未采用 | — | 需要 Docker 服务，与「本地一键复现」冲突；本项目图规模为百节点级，NetworkX + SQLite 已经够用，且能直接导出 GraphML / CSV 交付 |
+| **Neo4j** | 未采用服务，但提供导入文件 | `outputs/kg/*.cypher`（`scripts/export_cypher.py`） | 需要 Docker 服务，与「本地一键复现」冲突；百节点级规模用 NetworkX + SQLite 足够。为覆盖交付物里的「Neo4j 导入文件」，额外导出 Cypher：把 `outputs/kg/capabilities.cypher` 交给 `cypher-shell` 即可导入，不引入驱动依赖 |
 | **NetworkX** | 采用 | `factory/knowledge/graph.py`（属性图构建、`GraphML` 导出）；`pyvis` 做可视化 | 零部署、纯 Python，属性图与 MultiDiGraph 语义足够表达能力—算子—指标—失败案例；导出 GraphML 可交给任意图工具查看 |
 | **SQLite** | 采用 | `factory/knowledge/graph.py` 的 `persist_sqlite`（`outputs/kg/*.db`） | 标准库自带，用来承载节点 / 边表，供版本谱系与验证记录按 SQL 查询，不引入数据库服务 |
 | **FastAPI** | 采用 | `factory/api/app.py`（`/health`、`/templates`、`/intake/guide`、`/intake/review`、`/run`，并自动导出 OpenAPI） | 题目要求「API 或 Web UI」；FastAPI 自带 OpenAPI 文档与 Pydantic 校验，正好复用项目已有的契约模型，交付物里还能附一份 `openapi.json` |
@@ -237,11 +237,11 @@ python -m factory run --spec "预测信用卡客户下月违约概率，时间�
 algo-capability-factory/
 ├── README.md  CHANGELOG.md  AGENTS.md  requirements.txt  .env.example  pyproject.toml  .gitignore
 ├── configs/     default.yaml + verify_{credit,text,regression}.yaml
-├── factory/     47 个模块：contracts / knowledge / agents / llm / runtime / validation / workflow / intake / api
-├── scripts/     数据准备、图谱构建、消融、资源基准、仓库抽取、cassette 录制（11 个）
+├── factory/     48 个模块：contracts / knowledge / agents / llm / runtime / validation / workflow / intake / api
+├── scripts/     数据准备、图谱构建、Cypher 导出、消融、资源基准、仓库抽取、cassette 录制（11 个）
 ├── assets/      data/、docs/(+text/)、legacy/、repo/scorecardpy/、llm_cassettes/
 ├── outputs/     generated/、reports/、kg/（runs/ 为临时轨迹，不入库）
-└── tests/       17 个测试文件 / 177 个用例
+└── tests/       17 个测试文件 / 179 个用例
 ```
 
 内部规划文档（`PLAN.md`）、原始数据包与 `_archive/` 不纳入版本控制。
@@ -313,9 +313,9 @@ algo-capability-factory/
 
 | 场景 | 材料 | 子图规模 | 产物 |
 |---|---|---|---|
-| 信用卡违约（主） | `assets/docs/`（7 份）+ `assets/legacy/` | 108 节点 / 200 边 / 36 类能力 / 12 条教训 | `capabilities.json`、`graph.graphml`、`kg.html` |
-| 短信垃圾过滤 | `assets/docs/text/`（3 份）+ 共享教训库 | 30 节点 / 27 边 / 10 类能力 / 12 条教训 | `text_capabilities.json`、`text_graph.graphml`、`text_kg.html` |
-| 真实开源仓库 `scorecardpy`（MIT） | `assets/repo/` | 95 节点 / 248 边 / 81 个公开能力 | `repo_capabilities.json`、`repo_graph.graphml` |
+| 信用卡违约（主） | `assets/docs/`（7 份）+ `assets/legacy/` | 108 节点 / 200 边 / 36 类能力 / 12 条教训 | `capabilities.json`、`graph.graphml`、`capabilities.cypher`、`kg.html` |
+| 短信垃圾过滤 | `assets/docs/text/`（3 份）+ 共享教训库 | 30 节点 / 27 边 / 10 类能力 / 12 条教训 | `text_capabilities.json`、`text_graph.graphml`、`text_capabilities.cypher`、`text_kg.html` |
+| 真实开源仓库 `scorecardpy`（MIT） | `assets/repo/` | 95 节点 / 248 边 / 81 个公开能力 | `repo_capabilities.json`、`repo_graph.graphml`、`repo_capabilities.cypher` |
 
 源图谱覆盖 10 类关系（主场景）/ 3 类（仓库子图）；`RESULTED_IN` / `DERIVED_FROM` / `FIXED_BY` 由 Curator 回写补齐，回写后的知识图覆盖 12 类。`HAS_RUN` 只在内存里连接运行日志，日志另存 `*_runs.json`，不写进交付图谱。
 
@@ -422,6 +422,7 @@ python scripts/verify_baseline.py        # baseline 四层验证自检
 python scripts/run_ablation.py           # 有 KG / 无 KG 消融对比
 python scripts/resource_benchmark.py     # 1× / 10× 资源消耗与性能基准
 python scripts/extract_repo.py           # 真实开源仓库函数 / 依赖 / 能力抽取
+python scripts/export_cypher.py          # 知识图谱导出 Cypher（Neo4j 导入文件）
 python scripts/record_llm.py             # 录制真实 DeepSeek 调用（需 key）
 
 # 5) 接入层与自检
@@ -448,7 +449,7 @@ python -m unittest discover -s tests -v
 
 **最小依赖**：核心闭环需 `pydantic`、`PyYAML`、`pandas`、`scikit-learn`、`networkx`、`langgraph`、`rank-bm25`、`markdown-it-py`、`psutil`、`structlog`（全部为现成库，`requirements.txt` 已锁版本区间）；`pyvis`、`Jinja2`、`Typer`、`openai` 按入口加载。全量清单 23 个直接依赖，含传递依赖共 106 个安装包。
 
-**干净环境实测（P5 记录）**：空 venv 仅执行一次 `pip install -r requirements.txt`（无冲突），随后跑通 `ruff check`（全绿）、端到端 `factory run`（`四层全通过=True`、退出码 0），未安装任何清单外依赖；P6、1.1.x、1.2.0 与 1.3.0 均未新增第三方依赖（教训提炼与日志分离只用标准库 + 现有 pydantic），当前全量测试 177 个。
+**干净环境实测（P5 记录）**：空 venv 仅执行一次 `pip install -r requirements.txt`（无冲突），随后跑通 `ruff check`（全绿）、端到端 `factory run`（`四层全通过=True`、退出码 0），未安装任何清单外依赖；P6、1.1.x、1.2.0 与 1.3.0 均未新增第三方依赖（教训提炼与日志分离只用标准库 + 现有 pydantic），当前全量测试 179 个。
 
 **持续集成**：`.github/workflows/ci.yml` 用 matrix 并行 **Python 3.11**（最低版本）与 **3.12**（本地实测版本），各自执行 `ruff check`、全量单元测试与三条端到端（信用卡 / 短信 / 回归），断言 `四层全通过=True`。端到端走默认 provider（Interpreter 用已入库 cassette），CI 不依赖任何 API key。
 
@@ -711,17 +712,17 @@ done
 
 | # | 题目交付物 | 本仓库对应位置 |
 |---|---|---|
-| 1 | 完整的项目代码库 | 仓库根目录；`factory/` 六层 47 个模块，git 历史按 P0 → P6 分阶段提交（对照见 `AGENTS.md`） |
+| 1 | 完整的项目代码库 | 仓库根目录；`factory/` 六层 48 个模块，git 历史按 P0 → P6 分阶段提交（对照见 `AGENTS.md`） |
 | 2 | 示例行业数据、文档或模拟业务材料 | `assets/data/`、`assets/docs/`（7 份 + `text/` 3 份）、`assets/legacy/`、`assets/repo/scorecardpy/` |
 | 3 | 能力知识图谱 schema 设计说明 | 第 3 节：10 类节点 / 13 类关系 / 六要素映射 / 按场景拆分子图 |
-| 4 | 知识抽取结果文件（JSON / CSV / GraphML） | `outputs/kg/{capabilities,text_capabilities,repo_capabilities}.json` + `.csv` + `*.graphml`；回写后的知识图谱 `capabilities_after_run.json`（能力 + 失败案例 + 教训）与运行日志 `capabilities_after_run_runs.json`；教训演进示例 `capabilities_lesson_demo.json` |
+| 4 | 知识抽取结果文件（JSON / CSV / GraphML / Neo4j 导入文件） | `outputs/kg/{capabilities,text_capabilities,repo_capabilities}.json` + `.csv` + `*.graphml` + `.cypher`（Cypher 导入脚本）；SQLite 表 `*.db`；回写后的知识图谱 `capabilities_after_run.json`（能力 + 失败案例 + 教训）与运行日志 `capabilities_after_run_runs.json`；教训演进示例 `capabilities_lesson_demo.json` |
 | 5 | Agent 工作流代码或流程配置 | `factory/workflow/pipeline.py`（LangGraph `StateGraph`）+ `factory/agents/roles.py`（8 角色）；流程图见第 4 节 |
 | 6 | 至少 1 个从能力描述到代码生成的完整示例 | `outputs/reports/run_demo.md`（描述 → 检索证据 → 3 候选 → 代码 → 修复 diff）+ `outputs/generated/candidate_plan.0*.py` |
-| 7 | 自动验证脚本 | `python -m factory run`；`scripts/verify_baseline.py`；CI（lint + 177 用例 + 3 条端到端） |
+| 7 | 自动验证脚本 | `python -m factory run`；`scripts/verify_baseline.py`；CI（lint + 179 用例 + 3 条端到端） |
 | 8 | 验证报告样例 | `outputs/reports/`：`run_demo.md`、`run_text_demo.md`、`run_regression_demo.md`、`run_lesson_demo_{1,2,3}.md`（知识沉淀三轮）、`validation_sample.md`、`ablation.md`、`resources.md`、`openapi.json` |
 | 9 | 项目文档 README.md | 本文件（十节 + 附录 A/B/C） |
 | 10 | 环境依赖文件 | `requirements.txt`（23 个直接依赖；含传递依赖共 106 个安装包） |
-| 11 | 使用示例和测试用例 | 第 5 节命令清单 + `tests/`（17 个测试文件 / 177 个用例） |
+| 11 | 使用示例和测试用例 | 第 5 节命令清单 + `tests/`（17 个测试文件 / 179 个用例） |
 
 **进阶 8 项**：CLI/API（第 5 节，`factory/api/app.py` 与 `outputs/reports/openapi.json`）、多轮修复与多候选比较（第 4 节）、图谱可视化（`outputs/kg/kg.html`）、自动验证报告（第 8 节）、结果回写（第 4、8 节）、不同任务类型配置（三份 `verify_*.yaml`）、插件式接入（指标插件 + 算法模板装饰器注册）、入口输入引导（第 4 节，`factory/intake/`）。
 **加分 10 项**：Beam Search、8 角色多智能体、真实仓库 AST 抽取（第 3 节）、沙箱与 AST 安全检查（第 4、9 节）、失败案例复用与教训沉淀（第 3、4、8 节）、能力版本递增、设计依据生成、跨场景迁移（第 8 节）、OpenAPI 自动生成、资源消耗分析（第 8 节）。

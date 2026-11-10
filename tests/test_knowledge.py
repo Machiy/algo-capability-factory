@@ -63,6 +63,32 @@ class KnowledgeLayerTests(unittest.TestCase):
         # 9 类节点 + Lesson（教训）：知识层与运行日志层在 schema 上就分开
         self.assertEqual(len(NodeType), 10)
         self.assertEqual(len(EdgeType), 13)
+
+    def test_cypher_export_covers_nodes_and_edges(self) -> None:
+        """交付物含 Neo4j 导入文件：Cypher 文本要能覆盖全部节点与关系。"""
+        from factory.knowledge.cypher import graph_to_cypher
+
+        script = graph_to_cypher(self.graph)
+        self.assertIn("CREATE CONSTRAINT", script)
+        self.assertEqual(script.count("MERGE (n:"), len(self.graph.nodes))
+        self.assertEqual(script.count("MERGE (a)-[:"), len(self.graph.edges))
+        for node_type in {node.node_type.value for node in self.graph.nodes}:
+            self.assertIn(f"(n:{node_type} {{node_id:", script)
+        for edge in self.graph.edges[:5]:
+            self.assertIn(f"MERGE (a)-[:{edge.edge_type.value}]->(b);", script)
+
+    def test_cypher_escapes_quotes(self) -> None:
+        """属性里出现单引号时不能破坏 Cypher 语法。"""
+        from factory.contracts.knowledge import KGNode, KnowledgeGraph
+        from factory.knowledge.cypher import graph_to_cypher
+
+        graph = KnowledgeGraph(nodes=[KGNode(
+            node_id="cap.quote.v1", node_type=NodeType.CAPABILITY,
+            name="含 ' 单引号的节点", attributes={"note": "it's fine"},
+        )])
+        script = graph_to_cypher(graph)
+        self.assertIn("含 \\' 单引号", script)
+        self.assertIn("it\\'s fine", script)
         used = {edge.edge_type for edge in self.graph.edges}
         # 源材料里没有验证运行记录，HAS_RUN / RESULTED_IN / DERIVED_FROM 由
         # Curator 回写时建立（见 test_workflow.CuratorTests），源图谱要求覆盖其余 10 类
