@@ -1,9 +1,9 @@
 {
   "nodes": [
     {
-      "node_id": "run.search_on.01",
+      "node_id": "run.demo.01",
       "node_type": "ValidationRun",
-      "name": "验证运行 run.search_on.01",
+      "name": "验证运行 run.demo.01",
       "version": "v1",
       "task_type": "tabular_binary_classification",
       "status": "active",
@@ -18,14 +18,14 @@
           "grouped_auc_gap": 0.006730880194030342
         },
         "passed": true,
-        "duration_seconds": 14.813
+        "duration_seconds": 14.985
       },
       "evidence": []
     },
     {
-      "node_id": "run.search_on.02",
+      "node_id": "run.demo.02",
       "node_type": "ValidationRun",
-      "name": "验证运行 run.search_on.02",
+      "name": "验证运行 run.demo.02",
       "version": "v1",
       "task_type": "tabular_binary_classification",
       "status": "active",
@@ -40,34 +40,34 @@
           "grouped_auc_gap": 0.009296354350979863
         },
         "passed": true,
-        "duration_seconds": 2.141
+        "duration_seconds": 2.11
       },
       "evidence": []
     },
     {
-      "node_id": "run.search_on.03",
+      "node_id": "run.demo.03",
       "node_type": "ValidationRun",
-      "name": "验证运行 run.search_on.03",
+      "name": "验证运行 run.demo.03",
       "version": "v1",
       "task_type": "tabular_binary_classification",
       "status": "active",
       "attributes": {
         "metrics": {
-          "auc": 0.7215855854310995,
-          "ks": 0.3929521915083339,
-          "pr_auc": 0.5035453205958532,
-          "f1": 0.36140470508012273,
-          "cost_weighted_loss": 0.731,
-          "psi": 0.04066252035650155,
-          "grouped_auc_gap": 0.0573244041549843
+          "auc": 0.7828058337334522,
+          "ks": 0.435125865971603,
+          "pr_auc": 0.5535245387798818,
+          "f1": 0.4955406911928651,
+          "cost_weighted_loss": 0.5223333333333333,
+          "psi": 0.057598927408381045,
+          "grouped_auc_gap": 0.009074939319780206
         },
-        "passed": false,
-        "duration_seconds": 2.141
+        "passed": true,
+        "duration_seconds": 14.812
       },
       "evidence": []
     }
   ],
   "edges": [],
   "source_files": [],
-  "content_sha256": "30f20d66e3d5aafeba3f44e82164e6f632e2f473a0b3f05f045712e711aae43b"
+  "content_sha256": "deb8e2f1f72765feaa7e6762841c34d840ec2d1a685c411aa11682277fd81a59"
 }

@@ -2874,59 +2874,6 @@
       ]
     },
     {
-      "node_id": "failure.demo.01",
-      "node_type": "FailureCase",
-      "name": "失败案例 KeyError: PAY_1",
-      "version": "v1",
-      "task_type": "tabular_binary_classification",
-      "status": "active",
-      "attributes": {
-        "error_signature": "KeyError: PAY_1",
-        "fix_strategy": "按 Dataset 列名映射把 PAY_1 改为 PAY_0（T1 陷阱）",
-        "repair_round": 1,
-        "run_id": "demo",
-        "occurrence": 1
-      },
-      "evidence": []
-    },
-    {
-      "node_id": "failure.demo.02",
-      "node_type": "FailureCase",
-      "name": "失败案例 MetricBelowThreshold",
-      "version": "v1",
-      "task_type": "tabular_binary_classification",
-      "status": "active",
-      "attributes": {
-        "error_signature": "MetricBelowThreshold",
-        "fix_strategy": "检索历史高分方案，切换模型族或按成本比调阈值",
-        "repair_round": 2,
-        "run_id": "demo",
-        "occurrence": 1,
-        "run_ids": [
-          "demo",
-          "kg_refresh",
-          "search_off",
-          "search_on"
-        ],
-        "occurrences": 4
-      },
-      "evidence": []
-    },
-    {
-      "node_id": "cap.data_dictionary.T1.v2",
-      "node_type": "Capability",
-      "name": "修复后的能力版本",
-      "version": "v2",
-      "task_type": "tabular_binary_classification",
-      "status": "active",
-      "attributes": {
-        "derived_from": "cap.data_dictionary.T1",
-        "run_id": "demo",
-        "repair_rounds": 2
-      },
-      "evidence": []
-    },
-    {
       "node_id": "lesson.workflow.metricbelowthreshold",
       "node_type": "Lesson",
       "name": "教训 workflow：MetricBelowThreshold",
@@ -2943,7 +2890,7 @@
           "MetricBelowThreshold"
         ],
         "applies_to": "跨场景通用",
-        "occurrences": 4,
+        "occurrences": 5,
         "run_ids": [
           "demo",
           "kg_refresh"
@@ -2951,6 +2898,45 @@
         "confidence": 0.95,
         "source": "measured",
         "record_kind": "knowledge"
+      },
+      "evidence": []
+    },
+    {
+      "node_id": "failure.demo.01",
+      "node_type": "FailureCase",
+      "name": "失败案例 MetricBelowThreshold",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "error_signature": "MetricBelowThreshold",
+        "fix_strategy": "检索历史高分方案，切换模型族或按成本比调阈值；按图谱历史分数切换模型族 logistic_regression → hist_gradient_boosting",
+        "repair_round": 1,
+        "run_id": "demo",
+        "run_ids": [
+          "demo"
+        ],
+        "occurrences": 1
+      },
+      "evidence": []
+    },
+    {
+      "node_id": "cap.data_dictionary.T1.v2",
+      "node_type": "Capability",
+      "name": "修复后的能力版本（MetricBelowThreshold）",
+      "version": "v2",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "derived_from": "cap.data_dictionary.T1",
+        "run_id": "demo",
+        "repair_rounds": 2,
+        "fixed_signatures": [
+          "MetricBelowThreshold"
+        ],
+        "lesson_ids": [
+          "lesson.workflow.metricbelowthreshold"
+        ]
       },
       "evidence": []
     }
@@ -4175,27 +4161,15 @@
       "attributes": {}
     },
     {
-      "source": "cap.data_dictionary.T1",
-      "target": "failure.demo.02",
-      "edge_type": "RESULTED_IN",
-      "attributes": {}
-    },
-    {
       "source": "cap.data_dictionary.T1.v2",
       "target": "cap.data_dictionary.T1",
       "edge_type": "DERIVED_FROM",
       "attributes": {}
     },
     {
-      "source": "failure.demo.02",
+      "source": "failure.demo.01",
       "target": "cap.data_dictionary.T1.v2",
       "edge_type": "FIXED_BY",
-      "attributes": {}
-    },
-    {
-      "source": "lesson.workflow.metricbelowthreshold",
-      "target": "failure.demo.02",
-      "edge_type": "DERIVED_FROM",
       "attributes": {}
     }
   ],
@@ -4209,5 +4183,5 @@
     "assets/docs/test_report.md",
     "assets/legacy/legacy_default_model.py"
   ],
-  "content_sha256": "bbf7844ed48ae0855afe10ea6a71324b5c43a7e86de9bf7345fa94bc4045fd1a"
+  "content_sha256": "bfea93c0a2d376b5108690ebe8f2b4c535c5a2f909082962631a97c1a38bba0a"
 }

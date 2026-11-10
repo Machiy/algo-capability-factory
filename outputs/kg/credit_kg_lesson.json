@@ -2876,33 +2876,14 @@
     {
       "node_id": "failure.lesson_1.01",
       "node_type": "FailureCase",
-      "name": "失败案例 KeyError: PAY_1",
-      "version": "v1",
-      "task_type": "tabular_binary_classification",
-      "status": "active",
-      "attributes": {
-        "error_signature": "KeyError: PAY_1",
-        "fix_strategy": "按 Dataset 列名映射把 PAY_1 改为 PAY_0（T1 陷阱）",
-        "repair_round": 1,
-        "run_id": "lesson_1",
-        "run_ids": [
-          "lesson_1"
-        ],
-        "occurrences": 1
-      },
-      "evidence": []
-    },
-    {
-      "node_id": "failure.lesson_1.02",
-      "node_type": "FailureCase",
       "name": "失败案例 MetricBelowThreshold",
       "version": "v1",
       "task_type": "tabular_binary_classification",
       "status": "active",
       "attributes": {
         "error_signature": "MetricBelowThreshold",
-        "fix_strategy": "检索历史高分方案，切换模型族或按成本比调阈值",
-        "repair_round": 2,
+        "fix_strategy": "检索历史高分方案，切换模型族或按成本比调阈值；按图谱历史分数切换模型族 logistic_regression → hist_gradient_boosting",
+        "repair_round": 1,
         "run_id": "lesson_1",
         "run_ids": [
           "lesson_1",
@@ -2916,7 +2897,7 @@
     {
       "node_id": "cap.data_dictionary.T1.v2",
       "node_type": "Capability",
-      "name": "修复后的能力版本（KeyError: PAY_1、MetricBelowThreshold）",
+      "name": "修复后的能力版本（MetricBelowThreshold）",
       "version": "v2",
       "task_type": "tabular_binary_classification",
       "status": "active",
@@ -2925,7 +2906,6 @@
         "run_id": "lesson_1",
         "repair_rounds": 2,
         "fixed_signatures": [
-          "KeyError: PAY_1",
           "MetricBelowThreshold"
         ],
         "lesson_ids": []
@@ -4181,26 +4161,20 @@
       "attributes": {}
     },
     {
-      "source": "cap.data_dictionary.T1",
-      "target": "failure.lesson_1.02",
-      "edge_type": "RESULTED_IN",
-      "attributes": {}
-    },
-    {
       "source": "cap.data_dictionary.T1.v2",
       "target": "cap.data_dictionary.T1",
       "edge_type": "DERIVED_FROM",
       "attributes": {}
     },
     {
-      "source": "failure.lesson_1.02",
+      "source": "failure.lesson_1.01",
       "target": "cap.data_dictionary.T1.v2",
       "edge_type": "FIXED_BY",
       "attributes": {}
     },
     {
       "source": "lesson.workflow.metricbelowthreshold",
-      "target": "failure.lesson_1.02",
+      "target": "failure.lesson_1.01",
       "edge_type": "DERIVED_FROM",
       "attributes": {}
     }
@@ -4215,5 +4189,5 @@
     "assets/docs/test_report.md",
     "assets/legacy/legacy_default_model.py"
   ],
-  "content_sha256": "9b94a90733c95a1cbd71f125df79df1ed103026712d1b53cbfa25df81b917eb7"
+  "content_sha256": "150b6269ad53fe0daf8b231123f331b12ff7ee79afd4a158d67d7097416fd591"
 }

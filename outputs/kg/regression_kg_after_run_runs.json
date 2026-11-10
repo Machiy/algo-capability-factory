@@ -14,7 +14,7 @@
           "r2": 0.9775905179039528
         },
         "passed": true,
-        "duration_seconds": 1.562
+        "duration_seconds": 1.468
       },
       "evidence": []
     },
@@ -32,7 +32,7 @@
           "r2": 0.950073049666301
         },
         "passed": true,
-        "duration_seconds": 2.796
+        "duration_seconds": 2.593
       },
       "evidence": []
     },
@@ -50,12 +50,12 @@
           "r2": 0.917723337463352
         },
         "passed": true,
-        "duration_seconds": 4.719
+        "duration_seconds": 4.594
       },
       "evidence": []
     }
   ],
   "edges": [],
   "source_files": [],
-  "content_sha256": "5a6405cac0a4ccc445ba8a0e39f9e1c2a74dbd86bcab894c68142c472d009d9a"
+  "content_sha256": "692717c7c846356cccd6ff6d25a3eee3f4279d566535e3c10ec349163f44a266"
 }

@@ -9,16 +9,16 @@
       "status": "active",
       "attributes": {
         "metrics": {
-          "auc": 0.7206124391247685,
-          "ks": 0.3925920845051101,
-          "pr_auc": 0.5055017147063443,
-          "f1": 0.3467843631778058,
-          "cost_weighted_loss": 0.8026666666666666,
-          "psi": 0.0489035188420989,
-          "grouped_auc_gap": 0.05875830231396728
+          "auc": 0.7899049146031963,
+          "ks": 0.4458879209822348,
+          "pr_auc": 0.5585265737164163,
+          "f1": 0.5267944137707048,
+          "cost_weighted_loss": 0.5155,
+          "psi": 0.033255863484548585,
+          "grouped_auc_gap": 0.006730880194030342
         },
-        "passed": false,
-        "duration_seconds": 1.797
+        "passed": true,
+        "duration_seconds": 15.156
       },
       "evidence": []
     },
@@ -31,16 +31,16 @@
       "status": "active",
       "attributes": {
         "metrics": {
-          "auc": 0.7899049146031963,
-          "ks": 0.4458879209822348,
-          "pr_auc": 0.5585265737164163,
-          "f1": 0.4737417943107221,
-          "cost_weighted_loss": 0.685,
-          "psi": 0.033255863484548585,
-          "grouped_auc_gap": 0.006730880194030342
+          "auc": 0.788149478702243,
+          "ks": 0.4348583579120653,
+          "pr_auc": 0.5562053858557281,
+          "f1": 0.48794858061060525,
+          "cost_weighted_loss": 0.5246666666666666,
+          "psi": 0.023203599762199992,
+          "grouped_auc_gap": 0.009296354350979863
         },
         "passed": true,
-        "duration_seconds": 11.469
+        "duration_seconds": 2.078
       },
       "evidence": []
     },
@@ -53,21 +53,21 @@
       "status": "active",
       "attributes": {
         "metrics": {
-          "auc": 0.784336717195967,
-          "ks": 0.43995472940530905,
-          "pr_auc": 0.5542701926276595,
-          "f1": 0.48986125933831376,
-          "cost_weighted_loss": 0.6666666666666666,
-          "psi": 0.045279533232217034,
-          "grouped_auc_gap": 0.004885606390561015
+          "auc": 0.7828058337334522,
+          "ks": 0.435125865971603,
+          "pr_auc": 0.5535245387798818,
+          "f1": 0.4955406911928651,
+          "cost_weighted_loss": 0.5223333333333333,
+          "psi": 0.057598927408381045,
+          "grouped_auc_gap": 0.009074939319780206
         },
         "passed": true,
-        "duration_seconds": 2.407
+        "duration_seconds": 14.594
       },
       "evidence": []
     }
   ],
   "edges": [],
   "source_files": [],
-  "content_sha256": "ce2d7cba1c4ee1e6504761ea42f531d6fe2088501fc1ea5957c58c5ae2a31bb4"
+  "content_sha256": "5735f20b8f3749839582db47d28011ad4b3f5dc413914bad4865d90f1035a806"
 }

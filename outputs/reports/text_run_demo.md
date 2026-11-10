@@ -8,7 +8,7 @@
 - 能力理解来源：mock
 - LLM 后端分布：Coder=规则模板、Curator=规则模板、Interpreter=规则模板、Planner=规则模板
 - 知识图谱：with_kg（图谱来源 sources+after_run）
-- 历史失败经验命中：否
+- 历史经验实际生效：否
 - 七步流程：执行完成（a.Parse → b.Retrieve → c.Plan → d.Generate → e.Execute+Validate → f.Diagnose+Repair → g.Sink 均有产物）
 - 四层全通过：**PASS**
 - 七步轨迹：a.Parse → b.Retrieve → c.Plan → d.Generate → e.Execute+Validate → d.Generate → e.Execute+Validate → d.Generate → e.Execute+Validate → g.Sink
@@ -27,11 +27,11 @@
 
 ```text
 # 检索证据（query=把短信分类为垃圾短信或正常短信，输出准确率与宏平均F1）
-- [0.475] [macro_f1] 0.90 (metric.sms_policy.macro_f1)
-- [0.460] [r01] 0.95 (metric.sms_policy.r01)
-- [0.425] [S2] 语言范围 (cap.sms_policy.S2)
-- [0.425] [S3] 类别严重不平衡 (cap.sms_policy.S3)
-- [0.425] [S4] 词表边界 (cap.sms_policy.S4)
+- [0.175] [macro_f1] 0.90 (metric.sms_policy.macro_f1)
+- [0.175] [r01] 0.95 (metric.sms_policy.r01)
+- [0.125] [S2] 语言范围 (cap.sms_policy.S2)
+- [0.125] [S3] 类别严重不平衡 (cap.sms_policy.S3)
+- [0.125] [S4] 词表边界 (cap.sms_policy.S4)
 ## 适用条件
 - [S1] 文本长度：少于 3 个字符的样本不参与训练，避免噪声主导词表
 - [S2] 语言范围：当前仅覆盖英文短信；中文短信需要另行分词，不能直接复用本词表
@@ -113,4 +113,4 @@
 - `outputs/generated/text/candidate_plan.03.py`
 - 回写图谱（知识）：`outputs/kg/text_kg_after_run.json`
 
-模式 with_kg（图谱来源 sources+after_run）；候选 3 个；修复 0 轮；评审协作 0 次；历史失败经验命中 否；检索证据 5 项已注入 Planner 与 Coder prompt。
+模式 with_kg（图谱来源 sources+after_run）；候选 3 个；修复 0 轮；评审协作 0 次；历史经验实际生效 否；检索证据 5 项已注入 Planner 与 Coder prompt。

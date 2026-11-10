@@ -2,14 +2,14 @@
 
 > 本报告为真实运行的产物。核心闭环演示走 `MockLLM` 规则模板路径
 > （开发要求 g），生成代码在子进程用真实数据集执行，指标均为实测，未造数值。
-> T1 列名错误由规则模板模拟 LLM 的直觉命名，并在子进程用真实数据集触发 `KeyError` 后定向修复。
+> 失败来自沙箱实测或 `verify_*.yaml` 的真实门槛，不向生成代码注入人工错误；修复动作见第 4 节。
 > test 段仅在候选比较结束后对最佳候选评估一次，不参与排序与修复。引用 cassette 回放的内容须另标注「离线回放」。
 
 - 能力描述：根据多期特征预测日需求量，最小化RMSE，输出RMSE/MAE/R2
 - 能力理解来源：mock
 - LLM 后端分布：Coder=规则模板、Curator=规则模板、Interpreter=规则模板、Planner=规则模板
 - 知识图谱：with_kg（图谱来源 sources+after_run）
-- 历史失败经验命中：否
+- 历史经验实际生效：否
 - 七步流程：执行完成（a.Parse → b.Retrieve → c.Plan → d.Generate → e.Execute+Validate → f.Diagnose+Repair → g.Sink 均有产物）
 - 四层全通过：**PASS**
 - 七步轨迹：a.Parse → b.Retrieve → c.Plan → d.Generate → e.Execute+Validate → d.Generate → e.Execute+Validate → d.Generate → e.Execute+Validate → g.Sink
@@ -28,11 +28,11 @@
 
 ```text
 # 检索证据（query=根据多期特征预测日需求量，最小化RMSE，输出RMSE/MAE/R2）
-- [0.455] [EXP-03] LogisticRegression (run.experiment_log.EXP-03)
-- [0.455] [EXP-04] LogisticRegression (run.experiment_log.EXP-04)
-- [0.435] [E4] 所有预处理器置于 sklearn.Pipeline 内并仅在训练集 fit (cap.expert_rules.E4)
-- [0.425] [K1] WOE 分箱对逻辑回归的 KS 提升明显（0.318 → 0.361） (cap.experiment_log.K1)
-- [0.425] [K2] 按成本比调阈值比换模型更能降低业务损失 (cap.experiment_log.K2)
+- [0.349] [EXP-08] HistGB(全量随机划分) (run.experiment_log.EXP-08)
+- [0.329] [EXP-02] LogisticRegression (run.experiment_log.EXP-02)
+- [0.310] [EXP-06] HistGB(max_iter=200) (run.experiment_log.EXP-06)
+- [0.309] [EXP-05] RandomForest(200) (run.experiment_log.EXP-05)
+- [0.307] [EXP-04] LogisticRegression (run.experiment_log.EXP-04)
 ## 适用条件
 - [C1] 客群范围：仅适用于持有 ≥6 期账单历史的存量客户；新客无 `PAY_*` / `BILL_AMT*` 序列，不在适用范围内
 - [C2] 额度区间：`LIMIT_BAL` 在本样本覆盖区间内；超出区间需人工复核
@@ -78,7 +78,7 @@
 ## 设计依据
 
 - 评价口径：主指标 `rmse`（minimize，门槛由任务配置给出）；候选在 valid 段实测后统一打分排名，test 段只在比较结束后消费一次。
-- 检索证据：命中 5 项（run.experiment_log.EXP-03、run.experiment_log.EXP-04、cap.expert_rules.E4、cap.experiment_log.K1、cap.experiment_log.K2），适用条件 5 条、系统级教训 5 条已注入 Planner / Coder 的 prompt。
+- 检索证据：命中 5 项（run.experiment_log.EXP-08、run.experiment_log.EXP-02、run.experiment_log.EXP-06、run.experiment_log.EXP-05、run.experiment_log.EXP-04），适用条件 5 条、系统级教训 5 条已注入 Planner / Coder 的 prompt。
 - 硬约束：[C1] 客群范围：仅适用于持有 ≥6 期账单历史的存量客户；新客无 `PAY_*` / `BILL_AMT*` 序列，不在适用范围内；[C2] 额度区间：`LIMIT_BAL` 在本样本覆盖区间内；超出区间需人工复核；[C3] 时间范围：训练样本观测期为 2005-04 至 2005-09；上线前须做 PSI 群体稳定性检查，PSI > 0.25 触发重训
 - 候选实测比较：
   - `plan.01`（ridge）：rmse=19.3141 PASS，修复 0 轮
@@ -118,4 +118,4 @@
 - `outputs/generated/regression/candidate_plan.03.py`
 - 回写图谱（知识）：`outputs/kg/regression_kg_after_run.json`
 
-模式 with_kg（图谱来源 sources+after_run）；候选 3 个；修复 0 轮；评审协作 0 次；历史失败经验命中 否；检索证据 5 项已注入 Planner 与 Coder prompt。
+模式 with_kg（图谱来源 sources+after_run）；候选 3 个；修复 0 轮；评审协作 0 次；历史经验实际生效 否；检索证据 5 项已注入 Planner 与 Coder prompt。
