@@ -2,35 +2,141 @@
 
 [![ci](https://github.com/Machiy/algo-capability-factory/actions/workflows/ci.yml/badge.svg)](https://github.com/Machiy/algo-capability-factory/actions/workflows/ci.yml)
 
-> 面向「信用卡客户下月违约预测」，实现从自然语言能力描述到可运行算法代码的端到端半自主生成，跑通 **能力抽取 → 能力复刻 → 能力验证 → 能力沉淀** 完整闭环。对应题目：《基于 AI Agent 的算法能力系统开发》。
+**一句话**：给它一句中文需求，它从业务材料里查出相关算法能力，规划 3 个候选、生成可运行代码、在沙箱里做四层验证、按错误签名定向修复，最后把踩过的坑沉淀成下次能用的知识。
 
-- **当前版本** `1.3.0`，变更记录见 [`CHANGELOG.md`](CHANGELOG.md)，开发阶段与提交对照见 [`AGENTS.md`](AGENTS.md)。
-- **落地范围** P0–P6 全部完成：a–g 七步闭环、六层结构、入口输入引导、知识沉淀分层（教训 vs 日志）、三种 LLM 后端（Mock / DeepSeek / cassette 回放）。`ruff` 全绿、177 个用例通过，CI 覆盖 Python 3.11 / 3.12 与三条端到端。
-- **最新实测** 3 候选（LR / RF / HGB），最佳候选 `random_forest` 四层全 PASS：valid AUC 0.7899，test AUC 0.7883。
+> 对应题目：《基于 AI Agent 的算法能力系统开发》。行业场景为 UCI 信用卡下月违约预测（30,000 行真实数据，自带列名 / 类别 / 泄漏陷阱，不需要人工埋 bug）。
+
+## 30 秒看懂
+
+| 你给它 | 它给你 |
+|---|---|
+| 一句自然语言需求，例如「预测信用卡客户下月违约概率，时间外划分，按 5:1 成本比选阈值，禁止 ID 入模。」 | ① 3 份可运行代码 ② 一份四层验证报告（接口 / 功能 / 指标 / 稳定性）③ 一段修复轨迹 ④ 回写到知识图谱的失败经验与教训 |
+| 不知道需求怎么写 | `python -m factory guide` 打印要素清单、合格示例与可用场景，不合格的描述直接被拦下 |
+| 想换任务（短信分类 / 需求量回归） | 换一份 `--task-config`，核心验证器、沙箱与工作流一行不改 |
+
+**它要解决的三个问题**
+
+1. **算法能力散落在文档、旧代码、专家经验和失败复盘里**，新人复刻一遍等于重踩一遍坑 → 把这些能力抽成图谱，检索结果直接进 Planner / Coder 的 prompt，不是拿来做展示。
+2. **LLM 写的代码不能直接信** → 生成代码只在子进程沙箱跑（超时、内存上限、AST import 白名单），并且必须过四层验证才算通过。
+3. **失败经验用完就丢** → 失败按错误签名累积，独立运行中出现 ≥2 次才升级为「教训」，写清根因 / 处置 / 预防，下次运行自动注入。
+
+**和「直接让 LLM 写代码」的区别**
+
+| | 直接问 LLM | 本项目 |
+|---|---|---|
+| 依据 | 模型记忆 | 从你的材料里检索出的能力、约束与历史失败项，带证据哈希 |
+| 正确性 | 看运气 | 子进程沙箱实测 + 四层验证，指标门槛写在 yaml 里 |
+| 失败后 | 重新问一遍 | 按错误签名定向修复（≤3 轮），并回写为可复用经验 |
+| 换任务 | 重新写 prompt | 换 `verify_*.yaml`，验证器与沙箱不动 |
+| 断网 / 无 key | 不可用 | 默认 `MockLLM` + 已入库 cassette，全程离线可复现 |
+
+**不想装环境？先看这几份现成结论**
+
+| 想知道 | 打开 |
+|---|---|
+| 一句话需求如何一步步变成可运行代码 | [`outputs/reports/run_demo.md`](outputs/reports/run_demo.md) |
+| 生成的代码长什么样 | [`outputs/generated/candidate_plan.01.py`](outputs/generated/candidate_plan.01.py) |
+| 知识图谱长什么样 | 浏览器打开 `outputs/kg/kg.html`，或看第 3 节的 JSON 示例 |
+| 实测指标与四层结论 | 第 8 节 |
+
+**你是哪类读者**
+
+- **评审 / 面试官**：第 1 节（做什么）→ 第 2 节（怎么分层）→ 第 4 节（Agent 怎么跑）→ 第 8 节（实测结果）→ 附录 A（十项要求对照）。
+- **想跑起来**：直接跳到下面「快速上手」，三条命令出结果。
+- **想接新场景**：第 5 节的配置说明 + 第 4 节的入口引导 + 第 6 节的测试任务表。
+
+## 目录
+
+| 章节 | 回答什么问题 |
+|---|---|
+| 快速上手 | 三条命令怎么跑出结果？跑完看哪几个文件？报错怎么办？ |
+| 核心闭环 | 从一句话到产物，中间经过哪几步？ |
+| 1. 项目背景和目标 | 为什么要做、做成什么样算成功 |
+| 2. 系统架构和模块设计 | 六层怎么分、为什么这么选、有哪些现成库被替换 |
+| 3. 能力知识图谱 schema 和示例 | 10 类节点 / 13 类边、六要素怎么落、知识怎么和日志分开 |
+| 4. Agent 工作流设计 | 8 个角色、状态机、四层验证、修复策略、教训怎么沉淀 |
+| 5. 环境配置和运行方法 | 装环境、跑分阶段脚本、主要产物在哪、真实 LLM 怎么接 |
+| 6. 示例数据和测试任务说明 | 用了哪些数据、材料长什么样、三个测试任务、已知陷阱 |
+| 7. 生成算法代码示例 | 生成的代码片段与实现约束 |
+| 8. 验证结果和报告样例 | 实测指标、消融、知识沉淀三轮、性能、跨场景迁移 |
+| 9. 遇到的挑战和解决方案 | 16 个真实问题与处理方式 |
+| 10. 后续可扩展方向 | 还能往哪里做 |
+| 附录 A / B / C / D | 十项要求对照、交付物索引、数据引用、术语表 |
+
+> **项目状态**：v1.3.0（变更见 [`CHANGELOG.md`](CHANGELOG.md)，阶段与提交对照见 [`AGENTS.md`](AGENTS.md)）；`ruff` 全绿、177 个用例通过；CI 覆盖 Python 3.11 / 3.12 与三条端到端；最近一次实测最佳候选 `random_forest` 四层全 PASS（valid AUC 0.7899，test AUC 0.7883）。
 
 ---
 
-## 5 分钟验收路径
+## 快速上手（5 分钟，断网可跑）
 
-> 无 GPU、无 Docker、无数据库、无需 API key；数据与 cassette 均已入库，**断网可跑**。
+> 前提：Python 3.11+。无需 GPU、Docker、数据库，也无需 API key——数据和 LLM 回放文件都在仓库里。
 
-| # | 命令 | 应看到 |
-|---|---|---|
-| 0 | `python -m venv .venv` → 激活（Windows `.venv\Scripts\activate`，Linux/macOS `source .venv/bin/activate`）→ `pip install -r requirements.txt` | 一次性安装完成，无需清单外依赖 |
-| 1 | `python -m ruff check .` | `All checks passed!` |
-| 2 | `python -m unittest discover -s tests` | `Ran 177 tests ... OK` |
-| 3 | `python -m factory guide` | 打印输入引导菜单：4 项要素、可复制的合格示例、3 个可用场景、图谱已沉淀能力分组；`--spec "随便写点什么"` 只体检不跑闭环 |
-| 4 | `python -m factory run --spec "预测信用卡客户下月违约概率，时间外划分，按 5:1 成本比选阈值，禁止 ID 入模。"` | `四层全通过=True 理解来源=cassette 候选=3`；最佳候选 random_forest AUC 0.7899。修复轮次取决于是否已有回写图谱：仓库自带 `capabilities_after_run.json` 时为 **1**（T1 经验命中，首轮即避开），删掉该文件再跑为 **2**（现场复现 `KeyError: PAY_1` → 定向修复，再处理指标层） |
-| 5 | `python -m factory run --spec "把短信分类为垃圾短信或正常短信，输出准确率与宏平均F1" --mock --task-config configs/verify_text.yaml --run-id text_demo --kg-out capabilities_text_after_run.json --gen-dir text` | `四层全通过=True`；linear_svc accuracy 0.9803 |
-| 6 | `python -m factory run --spec "根据多期特征预测日需求量，最小化RMSE，输出RMSE/MAE/R2" --mock --task-config configs/verify_regression.yaml --run-id regression_demo --kg-out capabilities_regression_after_run.json --gen-dir regression` | `四层全通过=True`；ridge RMSE 19.31、R² 0.978 |
+### 第 1 步：拿到代码并装依赖
 
-**只看一个文件**：`outputs/reports/run_demo.md` —— 七步轨迹、检索证据、候选排名、四层结论、修复轨迹、图谱 diff 全在里面。
-**只看一处修复**：删掉 `outputs/kg/capabilities_after_run.json` 后重跑，报告第 4 节会出现 `KeyError: PAY_1 → 按 Dataset 列名映射把 PAY_1 改为 PAY_0`。`PAY_1` 是首轮按 LLM 直觉命名习惯生成的列名，报错由子进程在真实数据集上抛出（数据字典里最近一期实为 `PAY_0`，即 T1），再由 `Repairer` 定向修复——注入的是命名习惯，错误本身不是伪造的。
-**只看图谱**：浏览器打开 `outputs/kg/kg.html`（PyVis 可视化），或 `outputs/kg/graph.graphml`（任意图工具）。
+```bash
+git clone https://github.com/Machiy/algo-capability-factory.git
+cd algo-capability-factory
+python -m venv .venv
+.venv\Scripts\activate              # Windows；Linux/macOS 用 source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### 第 2 步：跑一次
+
+```bash
+python -m factory run --spec "预测信用卡客户下月违约概率，时间外划分，按 5:1 成本比选阈值，禁止 ID 入模。"
+```
+
+终端会打印（真实输出，节选）：
+
+```text
+[P3] 七步闭环执行完成；四层全通过=True 理解来源=cassette 候选=3 修复=1 报告=outputs/reports/run_demo.md
+  plan.02: auc=0.7899049146031963 passed=True repairs=0
+  plan.03: auc=0.784336717195967 passed=True repairs=0
+  plan.01: auc=0.7206124391247685 passed=False repairs=2
+  修复[1] KeyError: PAY_1 -> 按 Dataset 列名映射把 PAY_1 改为 PAY_0（T1 陷阱）
+  修复[2] MetricBelowThreshold -> 检索历史高分方案，切换模型族或按成本比调阈值
+```
+
+修复轮次取决于有没有历史图谱：仓库自带回写图谱时为 **1 轮**（T1 经验命中，首轮就避开 `PAY_1`）；删掉 `outputs/kg/capabilities_after_run.json` 再跑为 **2 轮**（现场触发 `KeyError: PAY_1` → 定向修复 → 再处理指标层）。
+
+### 第 3 步：看结果（三个文件）
+
+| 文件 | 看什么 |
+|---|---|
+| `outputs/reports/run_demo.md` | 主报告：七步轨迹、检索证据、候选排名、四层结论、修复轨迹、图谱 diff |
+| `outputs/generated/candidate_plan.0{1,2,3}.py` | 三个候选的最终源码（可直接阅读） |
+| `outputs/kg/kg.html` | 知识图谱可视化，浏览器直接打开 |
+
+想看「为什么会失败又怎么修好的」：删掉 `outputs/kg/capabilities_after_run.json` 重跑，报告第 4 节会出现 `KeyError: PAY_1 → 按 Dataset 列名映射把 PAY_1 改为 PAY_0`。`PAY_1` 是首轮按直觉命名习惯生成的列名，报错由子进程在真实数据集上抛出（数据字典里最近一期实为 `PAY_0`，即 T1），再由 `Repairer` 定向修复——注入的是命名习惯，错误本身不是伪造的。
+
+### 其余常用命令
+
+| 想做什么 | 命令 |
+|---|---|
+| 不知道需求怎么写 | `python -m factory guide`（要素清单 + 合格示例 + 可用场景） |
+| 只体检一条描述，不跑闭环 | `python -m factory guide --spec "随便写点什么"` |
+| 换短信分类场景 | `python -m factory run --spec "把短信分类为垃圾短信或正常短信，输出准确率与宏平均F1" --mock --task-config configs/verify_text.yaml --run-id text_demo --kg-out capabilities_text_after_run.json --gen-dir text` |
+| 换需求量回归场景 | `python -m factory run --spec "根据多期特征预测日需求量，最小化RMSE，输出RMSE/MAE/R2" --mock --task-config configs/verify_regression.yaml --run-id regression_demo --kg-out capabilities_regression_after_run.json --gen-dir regression` |
+| 全链路规则模板（最稳） | 在任意命令后加 `--mock` |
+| 跑全量测试 / 检查代码规范 | `python -m unittest discover -s tests` / `python -m ruff check .` |
+
+### 卡住了怎么办
+
+| 现象 | 处理 |
+|---|---|
+| `pip install` 失败 | 确认 `python -V` ≥ 3.11；建议新建 venv 后重装 |
+| 提示数据文件缺失 | 仓库已内置数据；也可 `python scripts/download_data.py` 重新拉取 |
+| Windows 终端中文乱码 | PowerShell 先执行 `$env:PYTHONIOENCODING="utf-8"` |
+| 生成的报告打不开 / 想定位产物 | 产物目录见第 5 节「主要产物」表 |
+| 想接真实 LLM | `cp .env.example .env`，填 `LLM_API_KEY` 并设 `LLM_PROVIDER=openai_compat`；不带 `--mock` 运行才读 `.env` |
+| 想知道自己能写什么需求 | 第 4 节「入口引导」；三档结论分别是直接跑、给追问、直接拦下 |
 
 ---
 
 ## 核心闭环
+
+> 本节回答：从一句话到产物，中间经过哪几步。
 
 ```
 自然语言能力描述
@@ -46,11 +152,13 @@
                      验证报告 + 候选排名 + 设计依据 + 图谱 diff
 ```
 
-最短路径：`pip install -r requirements.txt` → 上方验收路径第 4 行即可跑通全链路。`--mock` 使用内置规则模板 LLM，全程离线；去掉该参数并配置 `.env` 即切换真实 LLM，细节见第 5 节。
+最短路径：`pip install -r requirements.txt` → 上方「快速上手」第 2 步即可跑通全链路。`--mock` 使用内置规则模板 LLM，全程离线；去掉该参数并配置 `.env` 即切换真实 LLM，细节见第 5 节。
 
 ---
 
 ## 1. 项目背景和目标
+
+> 本节回答：为什么要做这个系统，做成什么样算成功。
 
 真实行业中的算法能力往往分散在业务文档、历史代码仓库、专家经验、实验记录和测试报告中，包括数据预处理方法、模型选择经验、特征工程策略、评价指标、失败案例、调参经验与业务约束。本项目构建一个小型「算法能力工厂」原型，把这些能力自动抽取为结构化知识并沉淀到能力图谱，再由多智能体协作完成算法复刻与自动验证。
 
@@ -66,6 +174,8 @@
 ---
 
 ## 2. 系统架构和模块设计
+
+> 本节回答：代码分几层、每层管什么、为什么不用别的框架。
 
 | 层 | 模块 | 职责 |
 |---|---|---|
@@ -111,7 +221,7 @@ algo-capability-factory/
 ├── scripts/     数据准备、图谱构建、消融、资源基准、仓库抽取、cassette 录制（11 个）
 ├── assets/      data/、docs/(+text/)、legacy/、repo/scorecardpy/、llm_cassettes/
 ├── outputs/     generated/、reports/、kg/（runs/ 为临时轨迹，不入库）
-└── tests/       16 个测试文件 / 177 个用例
+└── tests/       17 个测试文件 / 177 个用例
 ```
 
 内部规划文档（`PLAN.md`）、原始数据包与 `_archive/` 不纳入版本控制。
@@ -119,6 +229,8 @@ algo-capability-factory/
 ---
 
 ## 3. 能力知识图谱 schema 和示例
+
+> 本节回答：知识存成什么形状、一条能力长什么样、知识怎么和运行日志分开。
 
 **节点（10 类）**
 
@@ -193,6 +305,8 @@ algo-capability-factory/
 
 ## 4. Agent 工作流设计
 
+> 本节回答：一句需求进来后，8 个角色如何接力、失败怎么修、经验怎么写回。
+
 **入口引导（`factory/intake/`，1.2.0）**
 
 自然语言入口最容易失效：用户可能只写「做个预测」，也可能把短信分类的需求提给信用卡任务。因此在 a.Parse 之前加一层规则体检，结论固定为三档：
@@ -264,6 +378,8 @@ Parse → Retrieve → Plan → Generate → StaticCheck → Execute → Validat
 
 ## 5. 环境配置和运行方法
 
+> 本节回答：怎么装、怎么分阶段跑、产物在哪、真实 LLM 怎么接。
+
 **环境**：Python 3.11+（实测 3.12.9），纯 CPU，无需 GPU、无需 Docker、无需数据库服务。
 
 ```bash
@@ -279,7 +395,7 @@ cp .env.example .env              # 填 LLM_API_KEY，并把 LLM_PROVIDER 改成
 # 3) 可选：重新拉取数据（仓库已内置，断网可跳过）
 python scripts/download_data.py
 
-# 4) 端到端命令见上方「5 分钟验收路径」第 3–5 行；分阶段入口：
+# 4) 端到端命令见上方「快速上手」第 2 步；下面是分阶段入口
 python scripts/build_kg.py               # 主场景能力图谱与检索产物
 python scripts/build_text_kg.py          # 文本场景子图
 python scripts/verify_baseline.py        # baseline 四层验证自检
@@ -325,6 +441,8 @@ python -m unittest discover -s tests -v
 ---
 
 ## 6. 示例数据和测试任务说明
+
+> 本节回答：用了什么数据、模拟材料有哪些、三个测试任务分别验证什么。
 
 **主数据集**：UCI Default of Credit Card Clients（Yeh & Lien, 2009，DOI `10.24432/C55S3H`），30,000 实例、23 特征 + 1 标签，正例约 22.1%。UCI 页面标注 **CC BY 4.0**，OpenML `d/43435` 提供 **CC0** 版本，均可随仓库分发。
 
@@ -373,6 +491,8 @@ python -m unittest discover -s tests -v
 ---
 
 ## 7. 生成算法代码示例
+
+> 本节回答：生成的代码长什么样、有哪些硬约束。
 
 `python -m factory run --spec "..." --mock` 会在 `outputs/generated/` 落盘 3 个候选的最终源码，均由 `Coder` 按方案渲染、经 `Reviewer` 静态检查与 `Repairer` 定向修复。
 
@@ -424,6 +544,8 @@ def build_pipeline(config):
 ---
 
 ## 8. 验证结果和报告样例
+
+> 本节回答：实测指标是多少、消融与沉淀带来什么差别、性能边界在哪。
 
 > 以下为一次真实运行的实测结果，不做数值填充或美化。候选按 Beam Top-3 比较不同算法族；未达标候选如实判 FAIL 并回写 `FailureCase`。明细见 `outputs/reports/`。
 
@@ -512,6 +634,8 @@ done
 
 ## 9. 遇到的挑战和解决方案
 
+> 本节回答：踩过哪些真实的坑，每个坑怎么定位与修掉的。
+
 | 挑战 | 解决方案 |
 |---|---|
 | **数据字典与实际数据不一致**（T1、T2），生成代码易按直觉写错列名与类别枚举 | 把 T1–T4 抽成 `Dataset.known_issues` 与能力节点，验证期做 schema 断言，失败后按列名表定向修复并回写为可复用经验 |
@@ -534,6 +658,8 @@ done
 ---
 
 ## 10. 后续可扩展方向
+
+> 本节回答：如果继续做，优先补哪几块。
 
 1. 以真实向量检索替换 BM25，保留可解释打分作为对照；
 2. 用 MCTS 替代 Beam Search，比较方案搜索效率与最终指标；
@@ -575,7 +701,7 @@ done
 | 8 | 验证报告样例 | `outputs/reports/`：`run_demo.md`、`run_text_demo.md`、`run_regression_demo.md`、`run_lesson_demo_{1,2,3}.md`（知识沉淀三轮）、`validation_sample.md`、`ablation.md`、`resources.md`、`openapi.json` |
 | 9 | 项目文档 README.md | 本文件（十节 + 附录 A/B/C） |
 | 10 | 环境依赖文件 | `requirements.txt`（23 个直接依赖；含传递依赖共 106 个安装包） |
-| 11 | 使用示例和测试用例 | 第 5 节命令清单 + `tests/`（15 个文件 / 148 个用例） |
+| 11 | 使用示例和测试用例 | 第 5 节命令清单 + `tests/`（17 个测试文件 / 177 个用例） |
 
 **进阶 8 项**：CLI/API（第 5 节，`factory/api/app.py` 与 `outputs/reports/openapi.json`）、多轮修复与多候选比较（第 4 节）、图谱可视化（`outputs/kg/kg.html`）、自动验证报告（第 8 节）、结果回写（第 4、8 节）、不同任务类型配置（三份 `verify_*.yaml`）、插件式接入（指标插件 + 算法模板装饰器注册）、入口输入引导（第 4 节，`factory/intake/`）。
 **加分 10 项**：Beam Search、8 角色多智能体、真实仓库 AST 抽取（第 3 节）、沙箱与 AST 安全检查（第 4、9 节）、失败案例复用与教训沉淀（第 3、4、8 节）、能力版本递增、设计依据生成、跨场景迁移（第 8 节）、OpenAPI 自动生成、资源消耗分析（第 8 节）。
@@ -589,3 +715,23 @@ License: CC BY 4.0 (UCI) / CC0 Public Domain (OpenML d/43435)
 ```
 
 衍生材料 `assets/docs/` 与 `assets/legacy/` 为本项目构造的模拟业务材料，仅用于演示能力抽取流程。开发阶段与提交对照、内部规划文档见 `AGENTS.md` 与 `.codebuddy/rules/`（`PLAN.md` 不入库）。
+
+## 附录 D · 术语表（读正文卡住时回来查）
+
+| 术语 | 在本项目里指什么 |
+|---|---|
+| 能力（`Capability`） | 一条可复用的算法能力：输入输出、适用条件、指标、依赖、证据 |
+| `CapabilitySpec` | 把「那句中文需求」解析成的结构化契约，后续所有角色都读它 |
+| 候选（`CandidatePlan`） | 一个待验证的方案：算法族 + 超参 + 特征处理方式 |
+| Beam Top-3 | 同时保留 3 个候选比较，而不是只赌一个方案 |
+| 四层验证 | 接口规范 / 功能正确性 / 指标表现 / 运行稳定性，缺一不可 |
+| 知识图谱（KG） | 能力 + 约束 + 指标 + 失败案例 + 教训组成的图，检索结果会进 prompt |
+| 回写（Sink） | 把本轮结果写回图谱，供下一轮检索；对应流程的 g 步 |
+| `FailureCase` | 一次失败的现象记录：错误签名、当次处置、出现在哪些运行里 |
+| `Lesson` | 跨运行成立的系统级教训：现象 / 根因 / 处置 / 预防 / 适用面 / 置信度 |
+| 错误签名 | 对错误做归一化后的标签（如 `KeyError: PAY_1`），用于定向修复与经验复用 |
+| 沙箱 | 独立子进程执行生成代码，带超时、内存上限与 AST import 白名单 |
+| cassette | 录制好的真实 LLM 响应，断网时按角色 + prompt 命中回放 |
+| `MockLLM` | 内置规则模板，不调用任何模型，保证离线与确定性（`--mock`） |
+| 时间外划分 | 用过去预测未来，禁止随机打散，避免模型看到未来信息 |
+| T1–T4 | 数据集自带的四个真实陷阱：`PAY_0` 列名、未文档化类别、负账单、标签为「下月」 |
