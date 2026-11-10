@@ -3,6 +3,45 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循
 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本对应一个 annotated tag 与 GitHub Release。
 
+## [1.13.0] - 2026-11-10
+
+把「修复」从演示改成可复核：删掉人为注入的失败，让失败由真实门槛产生，并让图谱历史记录真正参与指标层修复。
+
+### 变更
+
+- **删除 `Coder` 的直觉命名注入**：`generate(..., induce_t1=...)` 与 `PAY_0 → PAY_1` 的源码改写全部移除，特征列只取数据集实际列名。原先行星标注的「T1 修复轨迹」由脚本演示变为真实门槛失败：LR 变体 AUC 0.7216 < 0.78。
+- **新增图谱方案级修复**（`RepairRecord.patch_source="kg_escalation"`）：`MetricBelowThreshold`
+  的确定性补丁仍如实记 `no_change`，工作流再从 `RetrievalResult.recommended_families`
+  取下一个算法族重新生成源码，下一轮用同一套四层验证复验；已尝试过的族不重复，
+  3 轮上限不变。报告第 4 节把三种轨（确定性 / LLM / 图谱换族）分开标注。
+- **`recommended_families`**：从 `ValidationRun` 历史实验记录按
+  `knowledge.retrieval.historical_metric_key` 排序，用 `candidates.family_aliases`
+  把模型名映射回可渲染算法族，并按 `invalid_markers` 剔除「随机划分 / 判定无效」的虚高记录。
+- **`historical_metric` 不再对节点所有数值取最大**：此前耗时、编号、样本量都算成绩，
+  任何带数字的节点都拿满分；现在只认配置指定的主指标列，历史证据才有区分度。
+- **Successive Halving 真正预算递增**：第 1 轮用 `search.smoke_train_ratio`（默认 0.4）
+  比例的训练行跑全部扩展候选，之后每轮把训练预算抬到全量、按算法族分层保留一半变体
+  （`search.halving_rounds`，默认 2）；评估段始终是完整 valid。沙箱新增 `train_ratio`。
+- **`family_aliases` / `historical_metric_key` / `invalid_markers` 进 yaml**：换数据集或改
+  模型命名习惯只改配置，检索器不认识具体业务命名。
+- **`used_historical_warnings` 语义收紧**：只有图谱证据真的改变了本轮执行路径才记「是」，
+  不再因为检索里出现一条历史警告就声称命中。
+
+### 文档
+
+- README 第 4 节补三轨修复与「指标层为什么必须换族」；第 3 节补图谱如何参与修复；
+  第 8 节按新实测替换候选、消融、搜索消融、三场景数字；第 9 节补两条真实性整改；
+  加分表更新边界（预算递增的是训练行与候选数，不是 MCTS）。
+- 用例数 249 → 251，`contracts/knowledge.py` 的「9 类节点」笔误更正为 10 类，
+  `render_run_report` 的 `kg_path` 默认值不再写死某个图谱文件。
+
+### 实测
+
+- 主场景：3 候选全 PASS，2 轮图谱换族（LR → HGB → RF），test AUC 0.7883。
+- 消融：有 KG 3/3 候选通过、`kg_escalation` ×2；无 KG 2/3 通过、`none` ×1。
+- 搜索消融：Top-1 0.788149 → 0.789905（+0.0018），耗时 31.8s → 123.7s（+289%）。
+- 三场景（信用卡 / 短信 / 回归）端到端通过；`ruff` 全绿。
+
 ## [1.12.0] - 2026-11-10
 
 把「换任务只改 yaml」这句话从宣称补成事实：抽取规则与部署用法都落到了配置与文档里。

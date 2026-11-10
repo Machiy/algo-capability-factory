@@ -63,7 +63,7 @@
 | 10. 后续可扩展方向 | 还能往哪里做 |
 | 附录 A / B / C / D | 十项要求对照、交付物索引、数据引用、术语表 |
 
-> **项目状态**：v1.12.0（变更见 [`CHANGELOG.md`](CHANGELOG.md)，阶段与提交对照见 [`AGENTS.md`](AGENTS.md)）；`ruff` 全绿、249 个用例通过；CI 覆盖 Python 3.11 / 3.12 与三条端到端；最近一次实测最佳候选 `random_forest` 四层全 PASS（valid AUC 0.7899，test AUC 0.7883，成本最优阈值 0.201）。
+> **项目状态**：v1.13.0（变更见 [`CHANGELOG.md`](CHANGELOG.md)，阶段与提交对照见 [`AGENTS.md`](AGENTS.md)）；`ruff` 全绿、251 个用例通过；CI 覆盖 Python 3.11 / 3.12 与三条端到端；最近一次实测最佳候选 `random_forest` 四层全 PASS（valid AUC 0.7899，test AUC 0.7883，成本最优阈值 0.201）。
 
 ---
 
@@ -90,14 +90,15 @@ python -m factory run --spec "预测信用卡客户下月违约概率，时间�
 终端会打印（真实输出，节选；本次为 `--mock` 路径，默认配置下 `Interpreter` 走 cassette 回放，指标与排名一致）：
 
 ```text
-[P3] 七步闭环执行完成；四层全通过=True 理解来源=mock 候选=3 修复=1 报告=outputs/reports/credit_run_demo.md
+[P3] 七步闭环执行完成；四层全通过=True 理解来源=mock 候选=3 修复=2 报告=outputs/reports/credit_run_demo.md
   plan.01: auc=0.7899049146031963 passed=True repairs=0
   plan.02: auc=0.788149478702243 passed=True repairs=0
-  plan.03: auc=0.7215855854310995 passed=False repairs=1
-  修复[1] MetricBelowThreshold -> 检索历史高分方案，切换模型族或按成本比调阈值
+  plan.03: auc=0.7828058337334522 passed=True repairs=2
+  修复[1] MetricBelowThreshold -> 检索历史高分方案，切换模型族或按成本比调阈值；按图谱历史分数切换模型族 logistic_regression → hist_gradient_boosting
+  修复[2] MetricBelowThreshold -> 检索历史高分方案，切换模型族或按成本比调阈值；按图谱历史分数切换模型族 hist_gradient_boosting → random_forest
 ```
 
-修复轮次取决于有没有历史图谱：仓库自带回写图谱时为 **1 轮**（T1 经验命中，首轮就避开 `PAY_1`，只在指标层失败）；删掉 `outputs/kg/credit_kg_after_run.json` 再跑为 **2 轮**（现场触发 `KeyError: PAY_1` → 定向修复 → 再处理指标层）。候选编号是粗评淘汰后按最终排名重编的 `plan.01`–`plan.03`，不随扩展候选空间变化。
+这 2 轮修复都不含人工注入：`plan.03` 抽到的 LR 变体在真实数据上 AUC 0.7216，低于 `verify_credit.yaml` 的 0.78 门槛，`Repairer` 的确定性补丁改不了「模型能力」，于是按图谱历史实验记录的分数排序换族重生成，下一轮用同一套四层验证复验，直到通过或达到 3 轮上限。候选编号是粗评淘汰后按最终排名重编的 `plan.01`–`plan.03`，不随扩展候选空间变化。
 
 ### 第 3 步：看结果（三个文件）
 
@@ -107,7 +108,7 @@ python -m factory run --spec "预测信用卡客户下月违约概率，时间�
 | `outputs/generated/credit/candidate_plan.0{1,2,3}.py` | 三个候选的最终源码（可直接阅读） |
 | `outputs/kg/credit_kg.html` | 知识图谱可视化，浏览器直接打开 |
 
-想看「为什么会失败又怎么修好的」：删掉 `outputs/kg/credit_kg_after_run.json` 重跑，报告第 4 节会出现 `KeyError: PAY_1 → 按 Dataset 列名映射把 PAY_1 改为 PAY_0`。`PAY_1` 是首轮按直觉命名习惯生成的列名，报错由子进程在真实数据集上抛出（数据字典里最近一期实为 `PAY_0`，即 T1），再由 `Repairer` 定向修复——注入的是命名习惯，错误本身不是伪造的。
+想看「为什么会失败又怎么修好的」：打开 `outputs/reports/credit_run_demo.md` 第 4 节，`MetricBelowThreshold → 按图谱历史分数切换模型族 logistic_regression → hist_gradient_boosting → random_forest` 两轮都写着「换成了哪个族、下一轮实测多少」。`KeyError: <列名> → 按 Dataset.column_aliases 映射` 这条确定性补丁仍在（单测与真实 LLM 轨迹覆盖），但默认路径不再主动把列名改错来制造它——失败必须由真实数据或真实门槛产生。
 
 ### 其余常用命令
 
@@ -180,7 +181,7 @@ python -m factory run --spec "预测信用卡客户下月违约概率，时间�
 |---|---|---|
 | L0 契约 | `contracts/` | `CapabilitySpec`、`CandidatePlan`、`ValidationReport`（Pydantic），全系统唯一数据协议 |
 | L1 知识 | `knowledge/` | Schema、材料抽取器、真实仓库 AST 抽取器、NetworkX 图 + SQLite、混合检索、教训提炼（`lessons.py`）、图谱合并（`merge.py`）、PyVis 可视化 |
-| L2 Agent | `agents/`、`workflow/` | 8 个角色、LangGraph 状态机、Top-3 候选比较（`beam_width` 可配）、修复策略表 |
+| L2 Agent | `agents/`、`workflow/` | 8 个角色、LangGraph 状态机、Top-3 候选比较（`beam_width` 可配）、三轨修复（确定性 / LLM / 图谱换族） |
 | L2 支撑 | `llm/` | `BaseLLM` 抽象与三实现：`MockLLM`（默认）、`OpenAICompatLLM`（DeepSeek）、`RecordedLLM`（cassette 回放） |
 | L3 执行 | `runtime/` | 子进程沙箱、AST 静态检查、超时 / 内存限制、错误分类器 |
 | L4 验证 | `validation/` | 四层检查器、指标插件注册、报告生成 |
@@ -259,7 +260,7 @@ algo-capability-factory/
 ├── scripts/     数据准备、图谱构建、Cypher 导出、消融、资源基准、仓库抽取、cassette 录制、发布标签、版本查询（14 个）
 ├── assets/      data/、docs/(+text/)、legacy/、repo/scorecardpy/、llm_cassettes/
 ├── outputs/     generated/、reports/、kg/（产物地图见 outputs/README.md；runs/ 不入库）
-└── tests/       22 个测试文件 / 245 个用例
+└── tests/       22 个测试文件 / 251 个用例
 ```
 
 内部规划文档（`PLAN.md`）、原始数据包与 `_archive/` 不纳入版本控制。
@@ -302,6 +303,8 @@ algo-capability-factory/
 | `HAS_RUN` → `RESULTED_IN` → `FIXED_BY` | 沉淀闭环：`Capability → ValidationRun(日志) → FailureCase → Capability(v+1)` |
 | `DERIVED_FROM` | 版本谱系，以及 `Lesson ← FailureCase` 的教训溯源 |
 | `TRANSFERABLE_TO`、`SIMILAR_TO` | 跨场景迁移、检索邻域扩展 |
+
+**图谱怎么参与修复，而不只是参与检索**：检索结果除 `hits` / `constraints` / `lessons` 外，还输出 `recommended_families`——从 `ValidationRun`（历史实验记录）里按 `knowledge.retrieval.historical_metric_key`（默认「验证集 AUC」）排序、用 `candidates.family_aliases` 把人类可读模型名映射回可渲染算法族、并按 `invalid_markers` 剔除「随机划分 / 判定无效」这类虚高记录。指标层失败时，工作流按这个顺序换族重生成。该分项此前对所有数值取最大值（耗时 6.1s、编号 -2 也算成绩），任何带数字的节点都会拿满分——现在只认主指标列，历史证据才有区分度。
 
 **六要素落地**
 
@@ -369,7 +372,7 @@ algo-capability-factory/
 | Coder | Plan → 可运行代码：LLM 代码先过 AST 静态检查，通过才采用，否则回退模板（`RunTrace.code_sources` 记录来源） |
 | Reviewer | 代码 → AST 静态评审（危险 import、泄漏、契约签名） |
 | Verifier | 沙箱结果 → 四层 `ValidationReport` |
-| Repairer | 错误签名 → 定向修复：确定性补丁保底，LLM 补丁过静态检查 + 沙箱复验才采用 |
+| Repairer | 错误签名 → 定向修复：确定性补丁保底；LLM 补丁过静态检查 + 沙箱复验才采用；指标层改不动时按图谱历史高分换族重生成 |
 | Curator | 报告 → 失败案例累积 → 教训提升 + 能力版本 + 日志分离 + 设计依据说明 |
 
 **状态机**
@@ -382,12 +385,15 @@ Parse → Retrieve → Plan → Generate → StaticCheck → Execute → Validat
                                                        └─ Fail → Diagnose → Repair → Execute (≤3 轮)
 ```
 
-修复轮次达到上限或候选全部处理完才进入 Sink；`Generate` 只在切换下一个候选时调用。定向修复走两轨：
+修复轮次达到上限或候选全部处理完才进入 Sink；`Generate` 只在切换下一个候选时调用。定向修复走三轨：
 
 - **确定性补丁（保底）**：`KeyError` 按 `Dataset.column_aliases` 映射列名、`ForbiddenFeature` / `LeakageDetected` 剔除禁入模字段、`Nondeterminism` 注入 `random_state`、`MemoryLimitExceeded` 注入 `n_jobs=1`。
 - **LLM 补丁（增强）**：真实模型返回的完整源码必须先过 `StaticChecker` 与一次沙箱复验才被采用；未通过则自动回退确定性补丁，未采纳原因写进报告，不伪造补丁。
+- **图谱方案级修复（指标层）**：`MetricBelowThreshold` 的正解不是改一行源码，而是换掉达不到门槛的模型族。`Repairer` 先如实记 `no_change`，工作流再从检索结果的 `recommended_families`（按图谱历史实验记录的实测指标降序、已剔除作废记录）里取下一个族，重新生成源码并在下一轮用同一套四层验证复验；已尝试过的族不再重复，达到 3 轮上限即收尾。
 
-`RepairRecord.patch_source` 记录实际改动源码的那一轨（`deterministic` / `llm` / `none`），报告第 4 节据此区分「谁真的改了代码」。`--mock` 路径不触发 LLM 补丁，离线基线因此保持确定性。
+`RepairRecord.patch_source` 记录实际改动源码的那一轨（`deterministic` / `llm` / `kg_escalation` / `none`），报告第 4 节据此区分「谁真的改了代码」。`--mock` 路径不触发 LLM 补丁，离线基线因此保持确定性；图谱方案级修复是纯确定性查表，断网可复现。
+
+> 边界：LLM 补丁可能顺手把实现换成别的模型（例如把 LR 改成 RF），此时 `CandidatePlan.model_family` 仍是原提案；报告第 2 节「代码来源=`llm`」表示这一行以源码为准。方案级换族（`kg_escalation`）会同步更新计划，不存在这个偏差。
 
 **统一验证机制（对应题目四层）**
 
@@ -414,7 +420,7 @@ Parse → Retrieve → Plan → Generate → StaticCheck → Execute → Validat
 | `KeyError: <列名>` | 按 `Dataset.column_aliases` 映射为真实列名（如 `PAY_1 → PAY_0`），写入列名映射能力节点；换数据集只改 yaml |
 | `SchemaError` | 未文档化类别归入 `others`，`PAY_* = -2` 重编码，记录清洗 `Operator` |
 | `LeakageDetected` | 强制 `sklearn.Pipeline`，按 `PRECEDES` 重排，改时间外划分 |
-| `MetricBelowThreshold` | 检索历史高分方案 → 切换模型族 / 加采样 / 改用 `cost_optimal` 阈值；确定性轨通常 `no_change`，由 LLM 补丁轨尝试，未通过复验则如实记录 |
+| `MetricBelowThreshold` | 源码补丁无法改变模型能力：先记 `no_change`，再按图谱历史高分记录换族重生成（`logistic_regression → hist_gradient_boosting → random_forest`），每轮都过四层复验；无图谱证据的消融组不换族，如实保留 FAIL |
 | `ImportError` / `Timeout` / `Nondeterminism` / `MemoryLimitExceeded` | 换白名单库 / 降采样换轻量模型 / 注入 `random_state` / 注入 `n_jobs=1` |
 
 每个 `(错误签名 → 修复动作 → 结果)` 三元组先回写为 `FailureCase`（带 `run_ids` 与 `occurrences`），同一签名在**独立 run** 中出现 ≥ `knowledge.lesson_promote_threshold`（默认 2）次后提升为 `Lesson`：写明根因、处置、预防、适用面与置信度，并连 `DERIVED_FROM` 回到失败案例。一个 run 内重跑不会重复计数，因此偶发失败不会被重跑次数"喂"成知识。
@@ -498,15 +504,19 @@ python scripts/tag_release.py             # push 后按版本号打 tag 并创�
 
 **最小依赖**：核心闭环需 `pydantic`、`PyYAML`、`pandas`、`scikit-learn`、`networkx`、`langgraph`、`rank-bm25`、`markdown-it-py`、`psutil`、`structlog`（全部为现成库，`requirements.txt` 已锁版本区间）；`pyvis`、`Jinja2`、`Typer`、`openai` 按入口加载。全量清单 23 个直接依赖，含传递依赖共 106 个安装包。
 
-**干净环境实测（P5 记录）**：空 venv 仅执行一次 `pip install -r requirements.txt`（无冲突），随后跑通 `ruff check`（全绿）、端到端 `factory run`（`四层全通过=True`、退出码 0），未安装任何清单外依赖；P6、1.1.x、1.2.0、1.3.0 与 1.4.0 均未新增第三方依赖（教训提炼、Cypher 导出与命名重构只用标准库 + 现有 pydantic），当前全量测试 245 个。
+**干净环境实测（P5 记录）**：空 venv 仅执行一次 `pip install -r requirements.txt`（无冲突），随后跑通 `ruff check`（全绿）、端到端 `factory run`（`四层全通过=True`、退出码 0），未安装任何清单外依赖；P6、1.1.x、1.2.0、1.3.0、1.4.0 与 1.13.0 均未新增第三方依赖（教训提炼、Cypher 导出、图谱换族修复与预算递增淘汰只用标准库 + 现有依赖），当前全量测试 251 个。
 
 **持续集成**：`.github/workflows/ci.yml` 用 matrix 并行 **Python 3.11**（最低版本）与 **3.12**（本地实测版本），各自执行 `ruff check`、全量单元测试与三条端到端（信用卡 / 短信 / 回归），断言 `四层全通过=True`。端到端走默认 provider（Interpreter 用已入库 cassette），CI 不依赖任何 API key。
 
 **关于 LLM**：默认配置是「`Interpreter` 走 cassette（真实 DeepSeek 录制响应），其余角色走规则模板」——能力理解由真实 LLM 驱动，其余环节保持确定性；`llm.role_providers` 控制按角色路由，`--mock` 强制全链路规则模板。本地部署模型在 CPU 上过慢，因此按开发要求 g 的「API 调用方式」接入 **DeepSeek 的 OpenAI 兼容接口**。
 
-**凭据与录制回放**：`LLM_API_KEY` 只从环境变量 / `.env` 读取，`.gitignore` 已排除 `.env` 与 `.env.*`；key、token、Authorization header 不会写入仓库文件、日志或 cassette。真实响应脱敏后落盘 `assets/llm_cassettes/`（当前 2 条 Interpreter 录制，回放一致性由 `tests/test_cassette_replay.py` 离线校验）；1.1.1 另做过一次全链路实时复测，真实出站调用 7 次（Planner 1、Coder 3、Repairer 2、Curator 1），结论见 `CHANGELOG.md`。回放未命中按 `cassette.on_miss` 显式报错或回退 `MockLLM`，不静默造假；引用回放结果的报告段落均标注「离线回放」。
+**凭据与录制回放**：`LLM_API_KEY` 只从环境变量 / `.env` 读取，`.gitignore` 已排除 `.env` 与 `.env.*`；key、token、Authorization header 不会写入仓库文件、日志或 cassette。真实响应脱敏后落盘 `assets/llm_cassettes/`（当前 6 条录制：Interpreter 2 条，Planner / Coder / Repairer / Curator 各 1 条；回放一致性由 `tests/test_cassette_replay.py` 离线校验）；1.1.1 另做过一次全链路实时复测，真实出站调用 7 次（Planner 1、Coder 3、Repairer 2、Curator 1），结论见 `CHANGELOG.md`。回放未命中按 `cassette.on_miss` 显式报错或回退 `MockLLM`，不静默造假；引用回放结果的报告段落均标注「离线回放」。
+
+> Repairer 的命中键是「角色 + system + 完整 user」：补丁会真正改源码，若只按角色回放，就会把「针对 `KeyError` 录制的补丁」套到 `MetricBelowThreshold` 上——能跑、静态检查也过，但改的不是当前失败。因此那条录制只作样例，不会被跨签名复用。
 
 **配置说明**：三份 `verify_*.yaml` 均为 `status: active`，全部端到端跑通——`verify_credit.yaml`（表格二分类，主指标 AUC）、`verify_text.yaml`（文本分类，accuracy）、`verify_regression.yaml`（回归，RMSE，`direction: minimize`）。切换任务只换 `--task-config`，核心验证器、沙箱与工作流代码不改。
+
+`configs/default.yaml` 的 `search` 段控制预算递增淘汰：`candidate_budget`（默认 12）、`halving_rounds`（默认 2）、`smoke_train_ratio`（默认 0.4）；`knowledge.retrieval` 的历史指标列名与作废标记也在 yaml。`verify_*.yaml` 的 `candidates.family_aliases` 负责把图谱里的人类可读模型名（`HistGB(max_iter=200)`）映射回可渲染算法族（`hist_gradient_boosting`），换数据集只改这一处。
 
 **抽取画像为什么在 yaml 里**：`knowledge.extraction` 段声明「文件名 → 材料类型」与「章节 → 节点类型」两张映射。新增一种材料（例如加一份「催收记录.md」）只需要登记两行，抽取器、验证器与工作流代码一行都不改；`tests/test_knowledge.py` 用一份虚构材料证明这条路径真的走得通，同时锁定 yaml 与代码内置兜底值一致，避免两处漂移。
 
@@ -545,7 +555,7 @@ curl -s -X POST localhost:8000/run -H "Content-Type: application/json" -d '{
   "interpreter_source": "mock",
   "kg_mode": "with_kg",
   "candidate_count": 3,
-  "repair_count": 1,
+  "repair_count": 2,
   "report_path": "outputs/reports/credit_run_demo.md",
   "candidates": [{
     "plan_id": "plan.01",
@@ -632,7 +642,7 @@ curl -s -o /dev/null -w "%{http_code}\n" -X POST localhost:8000/run \
 
 | 任务 | 配置 | 用途 |
 |---|---|---|
-| T-credit 信用卡违约二分类（主） | `verify_credit.yaml` | 端到端闭环演示，含 2 轮真实修复（有回写图谱时 1 轮） |
+| T-credit 信用卡违约二分类（主） | `verify_credit.yaml` | 端到端闭环演示，含 2 轮图谱方案级换族修复（LR → HGB → RF，每轮过四层复验） |
 | T-text 短信垃圾文本二分类 | `verify_text.yaml` | 跨场景迁移实测，3 候选全通过，报告 `text_run_demo.md` |
 | T-regression 需求量回归 | `verify_regression.yaml` | 第二种任务类型（RMSE / `minimize`），报告 `regression_run_demo.md` |
 
@@ -663,7 +673,7 @@ def build_pipeline(config):
     ])
 ```
 
-首轮 `Coder` 规则模板按直觉把最近一期写成 `PAY_1`（T1 陷阱），在子进程用真实数据集触发 `KeyError: PAY_1`；`Repairer` 按策略表替换为 `PAY_0` 后重新通过沙箱。三个候选由算法模板插件按不同模型族渲染（LR / RF / HGB 各一，族去重后不再出现同族占满 Beam 宽度）。
+`Coder` 的特征列直接取自数据集实际列名，不按直觉补序号，也不制造 `PAY_1` 这类错误；`KeyError: <列名> → column_aliases 映射` 这条修复路径仍由单测与真实 LLM 轨迹覆盖（真实模型更可能按教程习惯写错列名）。三个候选由算法模板插件按不同模型族渲染（LR / RF / HGB 各一，粗评阶段按族分层淘汰，不会出现同族占满 Beam 宽度）。
 
 ```python
 # outputs/generated/text/candidate_plan.02.py（完整文件）
@@ -697,15 +707,15 @@ def build_pipeline(config):
 
 > 本节回答：实测指标是多少、消融与沉淀带来什么差别、性能边界在哪。
 
-> 以下为一次真实运行的实测结果，不做数值填充或美化。候选由 12 个 `model_family × sampler × threshold` 组合经**单轮粗评淘汰**为 3 个，排序键是「主指标优先、成本加权损失收口」的复合键；未达标候选如实判 FAIL 并回写 `FailureCase`。明细见 `outputs/reports/`。
+> 以下为一次真实运行的实测结果，不做数值填充或美化。候选由 12 个 `model_family × sampler × threshold` 组合经**两轮预算递增淘汰**为 3 个（40% 训练行粗评 → 按族分层保留一半变体 → 全量训练行复评），排序键是「主指标优先、成本加权损失收口」的复合键；未达标候选如实判 FAIL 并回写 `FailureCase`。明细见 `outputs/reports/`。
 
 | 项目 | 实测结果 |
 |---|---|
 | 七步流程 | a–g 全部执行完成，CLI 退出码 0 |
 | 能力理解 | `能力理解来源=cassette`、`spec_id=spec.next_month_default`（真实 DeepSeek 响应，离线回放） |
-| 候选方案 | 3 个（三种算法族，粗评后重编号）：LR 0.7216（FAIL，阈值 0.30）、**RF 0.7899（PASS）**、HGB 0.7881（PASS）；RF / HGB 的 `cost_optimal` 阈值分别落在 **0.201 / 0.158** |
-| 修复轨迹 | 源材料首轮复现 `KeyError: PAY_1` → 映射为 `PAY_0`，再处理指标层（2 轮）；有回写图谱时 T1 经验命中，仅剩指标层（1 轮） |
-| 图谱沉淀 | `credit_kg_after_run.json`（知识：112 节点含 13 条教训、14 个失败案例）+ `credit_kg_after_run_runs.json`（运行日志 3 条）；失败案例按错误签名去重，教训按签名去重并累积独立 run 数 |
+| 候选方案 | 3 个（粗评后按最终排名重编号）：**RF 0.7899（PASS）**、HGB 0.7881（PASS）、LR 0.7216（FAIL，阈值 0.30）；RF / HGB 的 `cost_optimal` 阈值分别落在 **0.201 / 0.158** |
+| 修复轨迹 | LR 在 valid 段 AUC 0.7216 < 0.78，源码补丁改不动模型能力 → 按图谱历史高分换族 `LR → HGB`（AUC 0.78 边缘，PR-AUC 未过）→ `HGB → RF`（0.7828，四层 PASS）；共 2 轮，全程无人工注入错误 |
+| 图谱沉淀 | `credit_kg_after_run.json`（知识：111 节点含 13 条教训、13 个失败案例）+ `credit_kg_after_run_runs.json`（运行日志 3 条）；失败案例按错误签名去重，教训按签名去重并累积独立 run 数 |
 | 确定性实测 | 三个候选同一子进程内二次 fit，两次输出最大绝对差均为 `0.00e+00` |
 | test 终评 | 最佳候选 `plan.01` 一次性评估：AUC 0.7883、KS 0.4399、F1 0.5275（沿用 valid 定下的阈值 0.201）、成本加权损失 0.5367、PSI 0.0681、分组 AUC 差 0.0201；不参与排序与修复 |
 | 代码来源 | 默认模板路径全为 `template`（Mock 输出不冒充模型生成）；1.4.1 的真实 DeepSeek 实测中 3 候选有 2 个采用 LLM 代码（`plan.02` AUC 0.78992，可区分于模板 0.78990），采用前均过 AST 静态检查 |
@@ -718,26 +728,39 @@ def build_pipeline(config):
 | 接口规范 | 契约签名 / AST 白名单 / 禁 `ID` 入模 | PASS | 静态检查 |
 | 功能正确性 | smoke / 无异常 / 确定性 | PASS | 子进程用真实数据 fit / predict |
 | 指标表现 | AUC 0.7899 ≥ 0.78、F1 0.5268 ≥ 0.45、KS 0.4459 ≥ 0.35、分组 AUC 差 0.0067 ≤ 0.10 | PASS | 时间外划分，阈值 `cost_optimal` |
-| 运行稳定性 | 超时 60s / 内存 2GB / 确定性 Δ = 0 | PASS | 单次约 2.1–2.6s，峰值内存 150–180MB |
+| 运行稳定性 | 超时 60s / 内存 2GB / 确定性 Δ = 0 | PASS | 单次 1.8–15s（随机器负载；基准中位数见下方性能表），峰值内存 150–180MB |
 
 **沉淀闭环消融**（`scripts/run_ablation.py`，唯一变量是是否检索并注入图谱证据）
 
 | 指标 | 有 KG | 无 KG |
 |---|---|---|
-| 命中历史失败经验 | 是 | 否 |
-| 修复轮次 / 是否首轮避开 T1 | 1 / 是 | 2 / 否 |
-| 错误签名 | `MetricBelowThreshold` | `KeyError: PAY_1` + `MetricBelowThreshold` |
-| 候选 AUC（降序） | 0.789905 / 0.784337 / 0.720612 | 0.789905 / 0.784337 / 0.720612 |
+| 历史经验实际生效 | 是 | 否 |
+| 修复轮次 / 修复动作 | 2 / `kg_escalation` ×2 | 1 / `none` |
+| 四层通过的候选数 | 3/3 | 2/3 |
+| 错误签名 | `MetricBelowThreshold` ×2 | `MetricBelowThreshold` |
+| 候选 AUC（降序） | 0.789905 / 0.788149 / 0.782806 | 0.789905 / 0.788149 / 0.721586 |
 
-两组 AUC 完全一致，说明沉淀改变的是过程效率而非指标口径；完整对比见 `outputs/reports/shared_ablation.md` 与 `credit_run_ablation_{with,without}_kg.md`。
+两组候选中前三名的口径不变，差异在「指标层失败后是否有据可依地换族」：无 KG 组没有历史高分记录，只能把失败如实记为 `no_change`，`plan.03` 维持 FAIL（AUC 0.7216）。完整对比见 `outputs/reports/shared_ablation.md` 与 `credit_run_ablation_{with,without}_kg.md`。
+
+**搜索消融**（`scripts/run_search_ablation.py`，唯一变量是 `search.halving_enabled`）
+
+| 指标 | 关闭搜索 | 开启搜索 |
+|---|---|---|
+| 完整评估候选数 | 3 | 3 |
+| 最终 Top-1 主指标 | 0.788149 | **0.789905** |
+| 最佳候选 | `plan.03`（HGB） | `plan.01`（RF） |
+| 修复轮次 | 1 | 2 |
+| run 总耗时（含沙箱） | 31.8s | 123.7s |
+
+搜索带来的是「候选空间从 3 扩到 12 + 两轮预算递增淘汰」：Top-1 +0.0018，代价是耗时 +91.9s（+289%）。这是可复核的取舍，不是「多跑几次把指标刷高」——两组 test 段都只消费一次。完整对比见 `outputs/reports/shared_search_ablation.md`。
 
 **知识沉淀实测（三轮，同一份回写图谱）**
 
 | 轮次 | 失败签名 | 图谱变化 | 效果 |
 |---|---|---|---|
-| 第 1 轮 `lesson_demo_1` | `KeyError: PAY_1`、`MetricBelowThreshold` | 两个失败案例各记 1 个独立 run，不提教训 | 修复 2 轮 |
-| 第 2 轮 `lesson_demo_2` | 仅 `MetricBelowThreshold`（T1 已被经验规避） | 该签名达 2 次 → 提升 `lesson.workflow.metricbelowthreshold`（置信度 0.65），连 `DERIVED_FROM` 回到失败案例 | 修复 1 轮 |
-| 第 3 轮 `lesson_demo_3` | 仅 `MetricBelowThreshold` | 检索命中上一轮沉淀的教训，`## 系统级教训` 首条即它 | 修复 1 轮 |
+| 第 1 轮 `lesson_1` | `MetricBelowThreshold` | 失败案例记 1 个独立 run，不提教训 | 修复 2 轮 |
+| 第 2 轮 `lesson_2` | `MetricBelowThreshold` | 该签名达 2 次 → 提升 `lesson.workflow.metricbelowthreshold`（置信度 0.65），连 `DERIVED_FROM` 回到失败案例 | 修复 2 轮 |
+| 第 3 轮 `lesson_3` | `MetricBelowThreshold` | 检索命中上一轮沉淀的教训，`## 系统级教训` 首条即它（出现 2 次） | 修复 2 轮 |
 
 教训在第 2 轮末尾沉淀、第 3 轮生效——这是学习闭环的真实时间语义，不虚构「同一轮内自我改进」。复现：
 
@@ -748,7 +771,7 @@ for i in 1 2 3; do
 done
 ```
 
-产物：`credit_kg_lesson.json`（知识，13 条教训）、`credit_kg_lesson_runs.json`（日志）、`credit_run_lesson_{1,2,3}.md`。
+产物：`credit_kg_lesson.json`（知识：111 节点、13 条教训、13 个失败案例）、`credit_kg_lesson_runs.json`（日志）、`credit_run_lesson_{1,2,3}.md`。
 
 **真实 LLM 全链路实测（不替代上面的离线基线）**
 
@@ -781,21 +804,21 @@ done
 
 | 候选 | 模型族 | accuracy | macro-F1 | 四层 |
 |---|---|---|---|---|
-| plan.02 | linear_svc | **0.9803** | 0.9564 | 全 PASS |
-| plan.01 | logistic_regression | 0.9785 | 0.9535 | 全 PASS |
+| plan.01 | linear_svc | **0.9803** | 0.9564 | 全 PASS |
+| plan.02 | logistic_regression | 0.9785 | 0.9535 | 全 PASS |
 | plan.03 | complement_nb | 0.9731 | 0.9447 | 全 PASS |
 
-差异收敛到配置与模板两处：`verify_text.yaml` 声明 `text_column`、`knowledge.docs` 与 `candidates.model_families`，`templates.py` 注册 `text_classification.*` 模板；核心验证器、沙箱与工作流**未改**。检索证据也已按场景隔离（报告第 1 节列的是 `S1 文本长度`、`S3 类别不平衡`、`LeakageDetected → 向量器进 Pipeline`，不再是信用卡 `PAY_*` 约束）。修复轮次为 0——文本场景没有表格列名陷阱，失败修复能力由表格场景的 T1 轨迹证明，不硬造失败。
+差异收敛到配置与模板两处：`verify_text.yaml` 声明 `text_column`、`knowledge.docs` 与 `candidates.model_families`，`templates.py` 注册 `text_classification.*` 模板；核心验证器、沙箱与工作流**未改**。检索证据也已按场景隔离（报告第 1 节列的是 `S1 文本长度`、`S3 类别不平衡`、`LeakageDetected → 向量器进 Pipeline`，不再是信用卡 `PAY_*` 约束）。修复轮次为 0——文本场景没有表格列名陷阱，也没有低于门槛的候选，失败修复能力由表格场景的换族轨迹证明，不硬造失败。
 
 **第二种任务类型（`verify_regression.yaml`）**：主指标 RMSE（`direction: minimize`），用于验证候选排序对指标方向的处理。
 
 | 候选 | 模型族 | RMSE ↓ | MAE ↓ | R² ↑ | 四层 |
 |---|---|---|---|---|---|
-| plan.02 | ridge | **19.31** | 15.58 | 0.9776 | 全 PASS |
-| plan.01 | hist_gradient_boosting_regressor | 28.53 | 22.02 | 0.9511 | 全 PASS |
+| plan.01 | ridge | **19.31** | 15.58 | 0.9776 | 全 PASS |
+| plan.02 | hist_gradient_boosting_regressor | 28.83 | 22.00 | 0.9501 | 全 PASS |
 | plan.03 | random_forest_regressor | 37.01 | 28.33 | 0.9177 | 全 PASS |
 
-打分时对 `minimize` 指标取负号，因此 plan.02 排第一；原始值保留在 `metrics` 里未被污染。报告见 `outputs/reports/regression_run_demo.md`。
+打分时对 `minimize` 指标取负号，因此 plan.01 排第一；原始值保留在 `metrics` 里未被污染。报告见 `outputs/reports/regression_run_demo.md`。
 
 ---
 
@@ -810,7 +833,9 @@ done
 | **无大模型 / 无额度时 demo 跑不起来** | `BaseLLM` 抽象 + `MockLLM` 规则模板为默认路径，真实 LLM 仅作增强，prompt 与输出 schema 落盘保证确定性 |
 | **生成代码不可信** | 独立子进程沙箱 + 超时 / 内存限制 + AST import 白名单 + 临时目录 + 禁读标签路径；网络库不在白名单内，生成代码无法出网 |
 | **内存上限曾是纸面约束**：Windows 下 venv 的 `python.exe` 是 redirector，只读父进程 RSS 只有 4MB，看门狗永不触发 | 改为对整棵进程树求和（`psutil.children(recursive=True)`）并超限终止；峰值内存从 4MB 假数据变为 170MB 实测，新增两个回归用例 |
-| **知识图谱容易沦为静态展示** | 检索结果强制进入 Planner / Coder prompt，`PRECEDES` 参与验证，并做有 KG / 无 KG 消融写入报告 |
+| **知识图谱容易沦为静态展示** | 检索结果强制进入 Planner / Coder prompt，`PRECEDES` 参与验证；历史实验记录进一步用于**指标层修复的换族决策**，并做有 KG / 无 KG 消融写入报告（3/3 vs 2/3 候选通过） |
+| **修复轨迹靠注入错误制造**：默认路径把 `PAY_0` 改写为 `PAY_1` 以触发 `KeyError`，看着有修复、实则脚本演示 | 删掉 `Coder` 的直觉命名逻辑（特征列只取数据集实际列名），失败改由真实门槛产生：LR 变体 AUC 0.7216 < 0.78 判 FAIL，再按图谱历史高分换族复验。`KeyError` 修复能力保留在确定性补丁与单测里，不再靠伪造错误演示 |
+| **检索的历史指标分项是常数**：原先对节点所有数值取最大值（耗时、编号、样本量都算成绩），几乎所有带数字的节点都拿满分 | 只读配置指定的主指标列（`historical_metric_key`），作废记录按 `invalid_markers` 剔除；历史证据从此有区分度，也才能支撑换族排序 |
 | **修复退化为反复重试；沉淀只写不读、经验只活一轮** | 先分类错误签名再定向修复（≤3 轮）；工作流启动时优先加载回写图谱，`FailureCase` 按 `error_signature` 复用而非按 `run_id` 覆盖 |
 | **四层验证里有两项只是标签**：`deterministic` 恒为 True、test 段从未被读取 | 沙箱支持 `repeat>=2`（同进程二次 fit）与 `segment="test"`；工作流在比较结束后对最佳候选消费一次 test，指标只进报告。新增 4 个回归用例 |
 | **知识图谱的边看着多、其实语义随机**（`index % len(metrics)` 轮转） | 改为名称 / 属性文本命中才连边，边数 259→188 但每条都能答出「凭什么连」 |
@@ -868,11 +893,11 @@ done
 | 4 | 知识抽取结果文件（JSON / CSV / GraphML / Neo4j 导入文件） | `outputs/kg/{credit,text,repo}_kg.{json,csv,graphml,cypher}`（同一份图的四种格式）+ `*.db`（SQLite 表）；回写后的知识图谱 `credit_kg_after_run.json`（能力 + 失败案例 + 教训）与运行日志 `credit_kg_after_run_runs.json`；教训演进示例 `credit_kg_lesson.json` |
 | 5 | Agent 工作流代码或流程配置 | `factory/workflow/pipeline.py`（LangGraph `StateGraph`）+ `factory/agents/roles.py`（8 角色）；流程图见第 4 节 |
 | 6 | 至少 1 个从能力描述到代码生成的完整示例 | `outputs/reports/credit_run_demo.md`（描述 → 检索证据 → 3 候选 → 代码 → 修复 diff）+ `outputs/generated/credit/candidate_plan.0*.py` |
-| 7 | 自动验证脚本 | `python -m factory run`；`scripts/verify_baseline.py`；CI（lint + 245 用例 + 3 条端到端） |
+| 7 | 自动验证脚本 | `python -m factory run`；`scripts/verify_baseline.py`；CI（lint + 251 用例 + 3 条端到端） |
 | 8 | 验证报告样例 | `outputs/reports/`：`credit_run_demo.md`、`text_run_demo.md`、`regression_run_demo.md`、`credit_run_lesson_{1,2,3}.md`（知识沉淀三轮）、`shared_validation_sample.md`、`shared_ablation.md`、`shared_resources.md`、`shared_openapi.json` |
 | 9 | 项目文档 README.md | 本文件（十节 + 附录 A/B/C/D） |
 | 10 | 环境依赖文件 | `requirements.txt`（23 个直接依赖；含传递依赖共 106 个安装包） |
-| 11 | 使用示例和测试用例 | 第 5 节命令清单 + `tests/`（22 个测试文件 / 245 个用例） |
+| 11 | 使用示例和测试用例 | 第 5 节命令清单 + `tests/`（22 个测试文件 / 251 个用例） |
 
 ### 进阶 8 项逐项对照
 
@@ -892,11 +917,11 @@ done
 
 | 加分项 | 状态 | 落地位置与自检 | 边界 |
 |---|---|---|---|
-| 图搜索 / Beam / MCTS 方案搜索 | 部分 | 默认开关 `search.halving_enabled`：`model_family × sampler × threshold` 扩到 12 个组合 → 每个候选真跑一次沙箱粗评 → 按「主指标优先、成本损失收口」的复合键淘汰，按 family 去重保留 Top-3 后重编号；检索层另有 `graph_neighbor` 一跳邻域扩展与多跳 BFS | 是**单轮粗评淘汰**，没有多轮资源递增（严格意义的 Successive Halving 未实现），也没有 MCTS；消融见 `shared_search_ablation.md`（Top-1 +0.0018，耗时 +183%） |
-| 多智能体协作 | 完整 | 8 角色各有独立 system prompt 与输入输出契约（`roles.py`）；LangGraph 8 节点 + 3 组条件边；**Reviewer 语义评审否决 → Coder 带意见重生成**的反馈环（`max_review_rounds` 封顶），协作记录写进报告；检索证据显式进 Planner / Coder prompt | 默认配置只让 Interpreter 走 cassette、其余规则模板；语义评审失败默认放行，不阻塞主流程 |
+| 图搜索 / Beam / MCTS 方案搜索 | 部分 | 默认开关 `search.halving_enabled`：`model_family × sampler × threshold` 扩到 12 个组合 → 第 1 轮用 40% 训练行粗评 → 按族分层保留一半变体 → 第 2 轮全量训练行复评 → 按族去重保留 Top-3 后重编号；检索层另有 `graph_neighbor` 一跳邻域扩展与多跳 BFS | 预算递增体现在「训练行 40%→100% + 候选减半」，**评估段始终是完整 valid**；不是 MCTS / 贝叶斯优化，也不在多轮间改搜索空间；低预算轮可能淘汰掉在全量下更好的变体，消融见 `shared_search_ablation.md`（Top-1 +0.0018，耗时 +289%） |
+| 多智能体协作 | 完整 | 8 角色各有独立 system prompt 与输入输出契约（`roles.py`）；LangGraph 8 节点 + 4 组条件边；**Reviewer 语义评审否决 → Coder 带意见重生成**的反馈环（`max_review_rounds` 封顶）；**Verifier 判指标失败 → Repairer 记 no_change → 按图谱换族 → Coder 重新生成**的方案级协作环，记录写进报告；检索证据显式进 Planner / Coder prompt | 默认配置只让 Interpreter 走 cassette、其余规则模板；语义评审失败默认放行，不阻塞主流程；换族只在图谱有历史高分记录时发生 |
 | 真实仓库抽取函数 / 依赖 / 能力 | 完整 | `RepoExtractor` 用 `ast` 抽签名、module 级依赖、docstring、行号证据；MIT 快照 `assets/repo/scorecardpy` → `repo_kg.*` 五类产物 | — |
 | 代码安全检查 + 沙箱执行 | 完整 | `StaticChecker` 5 项（AST import 白名单、禁入模列等）；`DatasetSandbox` 独立子进程 + 60s / 2GB + 进程树内存看门狗 | `pandas.read_csv` 任意路径未拦；Windows 无 `RLIMIT_AS`，靠轮询杀进程 |
-| 失败案例 → 可复用经验 | 完整 | FailureCase 按独立 run 累积，达阈值提升 `Lesson`（根因 / 处置 / 预防），下一轮注入 prompt；`credit_run_lesson_{1,2,3}.md` 实证 | 确定性补丁覆盖 `KeyError` / 禁入模字段 / 非确定性 / 内存超限；`MetricBelowThreshold` 的确定性轨仍为 `no_change`，改由 LLM 补丁轨尝试（过静态检查 + 沙箱复验才采用），两条轨都失败时如实记录 |
+| 失败案例 → 可复用经验 | 完整 | FailureCase 按独立 run 累积，达阈值提升 `Lesson`（根因 / 处置 / 预防），下一轮注入 prompt；`credit_run_lesson_{1,2,3}.md` 实证 | 确定性补丁覆盖 `KeyError` / 禁入模字段 / 非确定性 / 内存超限；`MetricBelowThreshold` 不再只记 `no_change`：按图谱历史高分换族重生成（`kg_escalation`），无图谱证据时如实保留 FAIL；LLM 补丁轨仍需真实模型，离线基线不触发 |
 | 算法能力版本管理 | 完整 | v1→v2 增量节点 + `DERIVED_FROM` 版本链（图谱里有实物）；`scripts/capability_versions.py --list / --show / --diff` 可查询与对比 | 回滚（切换检索证据源）未做 |
 | 设计依据自然语言解释 | 完整 | `Curator.explain()` 按「判据 → 证据节点 id → 候选实测 → 排除原因 → 修复轨迹」生成，见任一报告的「设计依据」节 | 确定性拼接，不调用 LLM |
 | 跨场景迁移 | 完整 | 三份 `verify_*.yaml` + 三场景报告 + CI 三条端到端；核心验证器、沙箱、工作流不改 | — |
