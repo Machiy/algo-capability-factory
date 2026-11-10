@@ -3,6 +3,50 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循
 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本对应一个 annotated tag 与 GitHub Release。
 
+## [1.11.0] - 2026-11-10
+
+把「配置里有、实际没生效」的三处补齐，并堵住一个真实性漏洞。
+
+### 新增
+
+- **`cost_optimal` 阈值真正生效**（`factory/validation/thresholds.py`）：在 valid 段按
+  `cost = cost_ratio × FN + FP` 扫最优阈值，返回样本实际分数；缺成本比、样本为空、
+  长度不一致或单类别时回退 0.5 并记 warning，不编造数值。
+- **终评锁定阈值**：`CandidateEvaluation.threshold_resolved` 记录实际取值，test 段沿用
+  valid 定下的阈值，不在 test 上重选（等价于用未来数据调参）。
+- **候选排序接入成本损失**：粗评排序键改为「主指标优先、`cost_weighted_loss` 收口」，
+  同一模型族的不同阈值 / 采样器变体因此能分出优劣；淘汰后按最终排名重编号
+  `plan.01…plan.0N`，产物命名不随 `candidate_budget` 漂移。
+- **LLM 补丁准入**（`Repairer.repair(verify=...)`）：模型返回完整源码后必须先过
+  `StaticChecker` 与一次沙箱复验才被采用，否则回退确定性补丁；`RepairRecord.patch_source`
+  记录实际改动源码的那一轨（`deterministic` / `llm` / `none`），未采纳原因写进报告。
+- **`SourceRecorder`**：逐角色记录本次实际后端（`deepseek_api` / `cassette` / `mock`），
+  报告新增「LLM 后端分布」，实时与回放混用时按角色分别标注。
+
+### 修复
+
+- **阈值维度曾对指标无效**：沙箱返回的 `y_pred` 固定按 0.5 派生，候选写 0.30 只影响成本
+  损失一行，F1 仍按 0.5 算。现在算指标前按解析出的阈值重算 `y_pred`。
+- **报告页眉把自己写错**：只要 `Interpreter` 走 cassette 就写「MockLLM 规则模板路径」，
+  即使 Planner / Coder 正在实时调用。改为按 LLM 来源如实分档。
+- `TestGate` 加 `__test__ = False`，消除 pytest 误收集告警。
+
+### 文档
+
+- README 版本号、用例数（203 → 245）、终端示例改为当前实测输出；加分表补 A1 搜索消融与
+  B2 协作环，并写明「单轮粗评、非严格 Successive Halving」的边界。
+- 第 9 节新增 5 条本次修掉的问题（阈值空转、`y_pred` 口径、报告写错、LLM 只写推理）。
+
+### 测试
+
+- 新增 `tests/test_thresholds.py`（12 个用例，覆盖阈值扫描、口径重算、补丁准入）与
+  报告后端分布 2 个用例。全量 245 用例通过、`ruff` 全绿。
+
+### 兼容性
+
+- `Repairer.repair()` 的 `verify` 为可选参数，不传时行为与 1.10.0 完全一致；
+  `--mock` 路径不触发 LLM 补丁，离线基线保持确定性。
+
 ## [1.10.0] - 2026-11-10
 
 方案 B2 落地：Reviewer 双层评审 + 反馈协作环，让协作从单向流水线变成有反馈的闭环。
