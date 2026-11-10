@@ -26,6 +26,8 @@ class RepairRecord(_StrictModel):
     error_signature: str
     fix_strategy: str
     outcome: str = "repaired"
+    # LLM 对失败根因的推理摘要（双轨：确定性补丁保底 + LLM 推理进报告，不冒充补丁）
+    llm_reasoning: str = ""
 
 
 class CandidateEvaluation(_StrictModel):

@@ -239,6 +239,9 @@ def render_run_report(trace: RunTrace, reports: list[ValidationReport],
         for record in trace.repairs:
             lines.append(f"- 第 {record.round} 轮：`{record.error_signature}` → "
                          f"{record.fix_strategy}（{record.outcome}）")
+            # 双轨：确定性补丁改源码，LLM 推理只解释根因，不冒充补丁
+            if record.llm_reasoning:
+                lines.append(f"  - LLM 根因推理：{record.llm_reasoning}")
     else:
         lines.append("- 无失败轮次")
     # 评审协作轨迹与修复轨迹分开留证，证明协作不是单向流水线

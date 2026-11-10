@@ -18,6 +18,8 @@
   「评审协作轨迹」，证明这不是单向流水线。
 - **Coder 带意见重生成**：`Coder.generate` 新增 `review_comment` 参数，评审意见以
   「必须修正」小节注入 prompt。
+- **Repairer 双轨**：确定性补丁改写源码（保底、可测试），LLM 对失败根因的推理摘要
+  写入 `RepairRecord.llm_reasoning` 并在报告第 4 节展示，两者分开留证、不互相冒充。
 
 ### 测试
 

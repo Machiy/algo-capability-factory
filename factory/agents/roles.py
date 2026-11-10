@@ -247,6 +247,18 @@ def _repair_memory(source: str) -> str:
     return source
 
 
+def _summarize_repair_reasoning(response) -> str:
+    """从 Repairer 的 LLM 响应提取根因推理摘要（进报告，不冒充补丁）。
+
+    确定性补丁才是实际改动源码的部分；LLM 推理只作为「为什么失败」的解释留证。
+    """
+    parsed = response.parsed if isinstance(response.parsed, dict) else {}
+    summary = parsed.get("reasoning") or parsed.get("strategy") or ""
+    if not summary:
+        summary = (response.raw or "").strip()
+    return summary[:300]
+
+
 # 各族候选的默认超参；新增模板时在此登记，避免超参散落在单点。
 HYPERPARAM_PRESETS: dict[str, list[dict[str, float]]] = {
     "logistic_regression": [
@@ -682,10 +694,11 @@ class Repairer:
             fixed = _repair_memory(source)
         request = LLMRequest(role="Repairer", system=SYSTEM_PROMPTS["Repairer"],
                              user=f"错误签名：{key}\n策略：{strategy}")
-        self.llm.complete(request)
+        response = self.llm.complete(request)
         record = RepairRecord(round=round_index, error_signature=key,
                               fix_strategy=strategy,
-                              outcome="repaired" if fixed != source else "no_change")
+                              outcome="repaired" if fixed != source else "no_change",
+                              llm_reasoning=_summarize_repair_reasoning(response))
         return fixed, record
 
 
