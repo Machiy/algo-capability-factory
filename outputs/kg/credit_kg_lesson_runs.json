@@ -1,9 +1,9 @@
 {
   "nodes": [
     {
-      "node_id": "run.lesson_demo_3.01",
+      "node_id": "run.lesson_3.01",
       "node_type": "ValidationRun",
-      "name": "验证运行 run.lesson_demo_3.01",
+      "name": "验证运行 run.lesson_3.01",
       "version": "v1",
       "task_type": "tabular_binary_classification",
       "status": "active",
@@ -18,14 +18,14 @@
           "grouped_auc_gap": 0.05875830231396728
         },
         "passed": false,
-        "duration_seconds": 2.125
+        "duration_seconds": 1.797
       },
       "evidence": []
     },
     {
-      "node_id": "run.lesson_demo_3.02",
+      "node_id": "run.lesson_3.02",
       "node_type": "ValidationRun",
-      "name": "验证运行 run.lesson_demo_3.02",
+      "name": "验证运行 run.lesson_3.02",
       "version": "v1",
       "task_type": "tabular_binary_classification",
       "status": "active",
@@ -40,14 +40,14 @@
           "grouped_auc_gap": 0.006730880194030342
         },
         "passed": true,
-        "duration_seconds": 12.625
+        "duration_seconds": 11.469
       },
       "evidence": []
     },
     {
-      "node_id": "run.lesson_demo_3.03",
+      "node_id": "run.lesson_3.03",
       "node_type": "ValidationRun",
-      "name": "验证运行 run.lesson_demo_3.03",
+      "name": "验证运行 run.lesson_3.03",
       "version": "v1",
       "task_type": "tabular_binary_classification",
       "status": "active",
@@ -62,12 +62,12 @@
           "grouped_auc_gap": 0.004885606390561015
         },
         "passed": true,
-        "duration_seconds": 2.734
+        "duration_seconds": 2.407
       },
       "evidence": []
     }
   ],
   "edges": [],
   "source_files": [],
-  "content_sha256": "a33e291d2850fa410ccef296f4b9940f4f7c9768e87a0bd7794b6e58f13e6a94"
+  "content_sha256": "ce2d7cba1c4ee1e6504761ea42f531d6fe2088501fc1ea5957c58c5ae2a31bb4"
 }

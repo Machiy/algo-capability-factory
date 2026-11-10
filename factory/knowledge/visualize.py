@@ -1,4 +1,4 @@
-"""知识图谱可视化：PyVis 生成可直接打开的 ``outputs/kg/kg.html``。
+"""知识图谱可视化：PyVis 生成可直接打开的 ``outputs/kg/<scope>_kg.html``。
 
 PyVis 为可选依赖；未安装时只记录警告并返回 ``None``，不阻断抽取主流程。
 """

@@ -15,6 +15,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
+from factory.artifacts import kg_stem, scene_of
 from factory.contracts.intake import IntakeGuidance
 
 logger = logging.getLogger(__name__)
@@ -110,7 +111,8 @@ def _build_guide(base: Path, task_config: str) -> Any:
         settings.intake, task.intake,
         configs_dir=base / "configs",
         task_config=task_config,
-        graph_path=base / settings.paths.kg / "capabilities_after_run.json",
+        graph_path=(base / settings.paths.kg
+                    / f"{kg_stem(scene_of(task_config), 'after_run')}.json"),
     )
 
 

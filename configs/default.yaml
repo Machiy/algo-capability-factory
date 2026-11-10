@@ -1,7 +1,7 @@
 ﻿# 全局默认配置；任务级配置见 verify_*.yaml
 project:
   name: algocap-factory
-  version: 1.3.0
+  version: 1.4.0
   seed: 42
   log_level: INFO
 
@@ -45,11 +45,8 @@ llm:
     # 禁止落盘：任何 header、完整 endpoint、key/token（仅保留 provider 名）
 
 knowledge:
-  graph_path: outputs/kg/graph.graphml
-  sqlite_path: outputs/kg/capabilities.db
-  extraction_results:
-    - outputs/kg/capabilities.json
-    - outputs/kg/capabilities.csv
+  # 图谱等产物路径不再单独配置：统一由 factory/artifacts.py 按场景推导
+  # <scope>_kg[_<variant>].<ext>，杜绝「配置写一份、代码拼一份」的两个命名来源
   # 跨场景共享材料：工程教训库是系统层面的知识，换任务（文本 / 回归）也必须继续生效
   shared_docs:
     - assets/docs/engineering_lessons.md

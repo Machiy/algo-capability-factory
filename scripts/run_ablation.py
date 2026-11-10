@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from factory.artifacts import shared_report_path
 from factory.config import load_settings, load_task_settings
 from factory.logging_setup import configure_logging
 from factory.workflow import Workflow
@@ -83,15 +84,15 @@ def main() -> int:
     settings = load_settings(ROOT / "configs/default.yaml")
     task = load_task_settings(ROOT / "configs/verify_credit.yaml")
     with_trace = Workflow(settings, task, ROOT, use_knowledge=True).run(
-        SPEC, "ablation.with_kg"
+        SPEC, "ablation_with_kg"
     )
     without_trace = Workflow(settings, task, ROOT, use_knowledge=False).run(
-        SPEC, "ablation.without_kg"
+        SPEC, "ablation_without_kg"
     )
     with_summary = _summary(with_trace)
     without_summary = _summary(without_trace)
     out = _render(with_summary, without_summary,
-                  ROOT / settings.paths.reports / "ablation.md")
+                  shared_report_path(ROOT / settings.paths.reports, "ablation"))
     print(json.dumps({"with_kg": with_summary, "without_kg": without_summary},
                      ensure_ascii=False, indent=2))
     print(f"[P4] 消融报告：{out.relative_to(ROOT)}")

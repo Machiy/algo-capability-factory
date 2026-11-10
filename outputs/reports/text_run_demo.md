@@ -1,4 +1,4 @@
-# 端到端运行报告 · text_demo
+# 端到端运行报告 · demo
 
 > 本报告为真实运行的产物。核心闭环演示走 `MockLLM` 规则模板路径
 > （开发要求 g），生成代码在子进程用真实数据集执行，指标均为实测，未造数值。
@@ -6,7 +6,7 @@
 
 - 能力描述：把短信分类为垃圾短信或正常短信，输出准确率与宏平均F1
 - 能力理解来源：mock
-- 知识图谱：with_kg（图谱来源 after_run）
+- 知识图谱：with_kg（图谱来源 sources+after_run）
 - 历史失败经验命中：否
 - 七步流程：执行完成（a.Parse → b.Retrieve → c.Plan → d.Generate → e.Execute+Validate → f.Diagnose+Repair → g.Sink 均有产物）
 - 四层全通过：**PASS**
@@ -15,7 +15,14 @@
 > 说明：四层全通过为 FAIL 时，通常是「指标表现」层未达 `verify_text.yaml`
 > 的业务门槛；接口 / 功能 / 稳定性结论见第 3 节，失败记录已回写 FailureCase。
 
-## 1. 检索证据（进入 Planner / Coder prompt）
+## 0. 输入引导（入口体检）
+
+- 结论：**OK（要素齐全）**，要素完备度 0.83
+- 已表达要素：goal、data、metric
+- 缺失要素：constraint
+- 引导建议：描述要素齐全，可直接进入七步闭环
+
+## 1. 检索证据（进入 Planner / Coder prompt，含 5 条系统级教训）
 
 ```text
 # 检索证据（query=把短信分类为垃圾短信或正常短信，输出准确率与宏平均F1）
@@ -30,6 +37,12 @@
 - [S3] 类别严重不平衡：spam 约 13.4%，评估必须同时看 macro-F1，禁止只看 accuracy
 - [S4] 词表边界：向量器只能在训练集 fit，禁止在验证集 / 测试集上统计词表
 - [S5] 号码与链接：电话、URL 用占位符替换，禁止让模型记住具体号码
+## 系统级教训（跨运行成立，生成代码必须遵守）
+- [runtime] 内存看门狗永不触发，占用早已超过 2GB 仍判定通过 → 根因：Windows 虚拟环境里的 `python.exe` 是重定向器，读父进程 RSS 只有约 4MB，按单进程计量完全失真 → 处置：改为 `psutil.Process.children(recursive=True)` 对整棵进程树求和，超限即终止子进程（出现 1 次，置信度 0.90）
+- [platform] 本地跑通的 CLI 断言在 CI 上随机失败 → 根因：Typer 检测到终端后自动着色，输出里混入 ANSI 转义序列，按纯文本匹配必然失配 → 处置：子进程设 `NO_COLOR=1`、`TERM=dumb`，断言前统一剥离 ANSI（出现 1 次，置信度 0.90）
+- [platform] 证据 SHA-256 在 Windows 上校验失败，Linux 正常 → 根因：Git 检出的换行是 CRLF，与原文 LF 不同，同一内容算出不同哈希 → 处置：`read_sources` 读入后归一化换行再计算哈希（出现 1 次，置信度 0.90）
+- [validation] 报告写着四层验证，实际只有两层在生效：确定性恒为 True，test 段从未被读取 → 根因：检查项只存在于报告字段里，没有代码真正读取对应输入 → 处置：沙箱支持 `repeat>=2` 的同进程二次 fit 与 `segment="test"`；工作流在候选比较结束后消费一次 test（出现 1 次，置信度 0.90）
+- [knowledge] 边很多，但追问「这两点为什么相连」答不出来 → 根因：连边按 `index % len(metrics)` 轮转，与内容无关，属于凑数量 → 处置：改为名称或属性文本命中才连边，宁可边少（出现 1 次，置信度 0.90）
 ## 历史失败规避项
 - LeakageDetected → 向量器放进 `sklearn.Pipeline`，只在训练集 fit；划分前不触碰测试集
 - MetricBelowThreshold → 主指标改为 macro-F1 与 spam 召回，配合 `class_weight="balanced"`
@@ -56,7 +69,7 @@
 - 无失败轮次
 
 ## 设计依据
-- 检索证据条目：15
+- 检索证据条目：21
 - 候选排名：plan.02 > plan.01 > plan.03
 - 修复轨迹：无
 - 依据：检索到的适用条件约束候选方案，历史失败规避项触发列名映射修复。
@@ -70,16 +83,24 @@
 | accuracy | 0.9821 |
 | macro_f1 | 0.9625 |
 
-## 6. 图谱沉淀 diff
+## 6. 图谱沉淀（知识 vs 运行记录）
 
-- nodes_added：0
-- edges_added：0
+> 运行记录只用于追溯、可被重跑覆盖；教训跨运行成立，随证据累积置信度。
+
+- 新增节点：3
+- 新增边：3
+- 运行记录 ValidationRun（本次留痕，可随重跑覆盖）：3
+- 失败案例证据合并（独立 run 数累加）：0
+- 本次提升为教训（跨运行知识）：0
+- 图谱内教训总数：12
+
+- 运行日志另存：`outputs/kg/text_kg_after_run_runs.json`（仅追溯，不参与检索）
 
 ## 7. 产物
 
 - `outputs/generated/text/candidate_plan.01.py`
 - `outputs/generated/text/candidate_plan.02.py`
 - `outputs/generated/text/candidate_plan.03.py`
-- 回写图谱：`outputs/kg/capabilities_text_after_run.json`
+- 回写图谱（知识）：`outputs/kg/text_kg_after_run.json`
 
-模式 with_kg（图谱来源 after_run）；候选 3 个；修复 0 轮；历史失败经验命中 否；检索证据 5 项已注入 Planner 与 Coder prompt。
+模式 with_kg（图谱来源 sources+after_run）；候选 3 个；修复 0 轮；历史失败经验命中 否；检索证据 5 项已注入 Planner 与 Coder prompt。

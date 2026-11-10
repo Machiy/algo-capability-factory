@@ -68,11 +68,12 @@ class RetrievalSettings(_ConfigModel):
 
 
 class KnowledgeSettings(_ConfigModel):
-    """``configs/default.yaml`` 的 knowledge 段。"""
+    """``configs/default.yaml`` 的 knowledge 段。
 
-    graph_path: str
-    sqlite_path: str
-    extraction_results: list[str] = Field(default_factory=list)
+    产物路径不在这里配置：统一由 :mod:`factory.artifacts` 按场景推导，
+    避免「配置里写一份、代码里拼一份」的两套命名来源。
+    """
+
     # 跨场景共享的材料：工程教训库这类系统级知识，换任务也要继续生效
     shared_docs: list[str] = Field(default_factory=list)
     retrieval: RetrievalSettings = Field(default_factory=RetrievalSettings)

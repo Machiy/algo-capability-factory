@@ -24,10 +24,12 @@ from factory.knowledge.graph import load_graph
 from factory.logging_setup import configure_logging
 
 DEFAULT_TARGETS = [
-    "capabilities",
-    "capabilities_after_run",
-    "text_capabilities",
-    "repo_capabilities",
+    "credit_kg",
+    "credit_kg_after_run",
+    "text_kg",
+    "text_kg_after_run",
+    "regression_kg_after_run",
+    "repo_kg",
 ]
 
 

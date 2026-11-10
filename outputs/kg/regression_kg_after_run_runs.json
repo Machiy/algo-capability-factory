@@ -1,0 +1,61 @@
+{
+  "nodes": [
+    {
+      "node_id": "run.demo.01",
+      "node_type": "ValidationRun",
+      "name": "验证运行 run.demo.01",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "metrics": {
+          "rmse": 28.525799595649218,
+          "mae": 22.02084797309101,
+          "r2": 0.9511169495436053
+        },
+        "passed": true,
+        "duration_seconds": 2.906
+      },
+      "evidence": []
+    },
+    {
+      "node_id": "run.demo.02",
+      "node_type": "ValidationRun",
+      "name": "验证运行 run.demo.02",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "metrics": {
+          "rmse": 19.314104948770773,
+          "mae": 15.583249761770585,
+          "r2": 0.9775905179039528
+        },
+        "passed": true,
+        "duration_seconds": 1.672
+      },
+      "evidence": []
+    },
+    {
+      "node_id": "run.demo.03",
+      "node_type": "ValidationRun",
+      "name": "验证运行 run.demo.03",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "metrics": {
+          "rmse": 37.00887372266449,
+          "mae": 28.32603712095488,
+          "r2": 0.9177199810646829
+        },
+        "passed": true,
+        "duration_seconds": 3.328
+      },
+      "evidence": []
+    }
+  ],
+  "edges": [],
+  "source_files": [],
+  "content_sha256": "0044f535ab0363fa61d6051398dff4b575a91801e9aa93be4bc39afd54cb33de"
+}

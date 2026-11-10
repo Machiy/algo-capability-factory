@@ -34,9 +34,9 @@
 
 | 想知道 | 打开 |
 |---|---|
-| 一句话需求如何一步步变成可运行代码 | [`outputs/reports/run_demo.md`](outputs/reports/run_demo.md) |
-| 生成的代码长什么样 | [`outputs/generated/candidate_plan.01.py`](outputs/generated/candidate_plan.01.py) |
-| 知识图谱长什么样 | 浏览器打开 `outputs/kg/kg.html`，或看第 3 节的 JSON 示例 |
+| 一句话需求如何一步步变成可运行代码 | [`outputs/reports/credit_run_demo.md`](outputs/reports/credit_run_demo.md) |
+| 生成的代码长什么样 | [`outputs/generated/credit/candidate_plan.01.py`](outputs/generated/credit/candidate_plan.01.py) |
+| 知识图谱长什么样 | 浏览器打开 `outputs/kg/credit_kg.html`，或看第 3 节的 JSON 示例 |
 | 实测指标与四层结论 | 第 8 节 |
 
 **你是哪类读者**
@@ -63,7 +63,7 @@
 | 10. 后续可扩展方向 | 还能往哪里做 |
 | 附录 A / B / C / D | 十项要求对照、交付物索引、数据引用、术语表 |
 
-> **项目状态**：v1.3.0（变更见 [`CHANGELOG.md`](CHANGELOG.md)，阶段与提交对照见 [`AGENTS.md`](AGENTS.md)）；`ruff` 全绿、179 个用例通过；CI 覆盖 Python 3.11 / 3.12 与三条端到端；最近一次实测最佳候选 `random_forest` 四层全 PASS（valid AUC 0.7899，test AUC 0.7883）。
+> **项目状态**：v1.4.0（变更见 [`CHANGELOG.md`](CHANGELOG.md)，阶段与提交对照见 [`AGENTS.md`](AGENTS.md)）；`ruff` 全绿、179 个用例通过；CI 覆盖 Python 3.11 / 3.12 与三条端到端；最近一次实测最佳候选 `random_forest` 四层全 PASS（valid AUC 0.7899，test AUC 0.7883）。
 
 ---
 
@@ -90,7 +90,7 @@ python -m factory run --spec "预测信用卡客户下月违约概率，时间�
 终端会打印（真实输出，节选）：
 
 ```text
-[P3] 七步闭环执行完成；四层全通过=True 理解来源=cassette 候选=3 修复=1 报告=outputs/reports/run_demo.md
+[P3] 七步闭环执行完成；四层全通过=True 理解来源=cassette 候选=3 修复=1 报告=outputs/reports/credit_run_demo.md
   plan.02: auc=0.7899049146031963 passed=True repairs=0
   plan.03: auc=0.784336717195967 passed=True repairs=0
   plan.01: auc=0.7206124391247685 passed=False repairs=2
@@ -98,17 +98,17 @@ python -m factory run --spec "预测信用卡客户下月违约概率，时间�
   修复[2] MetricBelowThreshold -> 检索历史高分方案，切换模型族或按成本比调阈值
 ```
 
-修复轮次取决于有没有历史图谱：仓库自带回写图谱时为 **1 轮**（T1 经验命中，首轮就避开 `PAY_1`）；删掉 `outputs/kg/capabilities_after_run.json` 再跑为 **2 轮**（现场触发 `KeyError: PAY_1` → 定向修复 → 再处理指标层）。
+修复轮次取决于有没有历史图谱：仓库自带回写图谱时为 **1 轮**（T1 经验命中，首轮就避开 `PAY_1`）；删掉 `outputs/kg/credit_kg_after_run.json` 再跑为 **2 轮**（现场触发 `KeyError: PAY_1` → 定向修复 → 再处理指标层）。
 
 ### 第 3 步：看结果（三个文件）
 
 | 文件 | 看什么 |
 |---|---|
-| `outputs/reports/run_demo.md` | 主报告：七步轨迹、检索证据、候选排名、四层结论、修复轨迹、图谱 diff |
-| `outputs/generated/candidate_plan.0{1,2,3}.py` | 三个候选的最终源码（可直接阅读） |
-| `outputs/kg/kg.html` | 知识图谱可视化，浏览器直接打开 |
+| `outputs/reports/credit_run_demo.md` | 主报告：七步轨迹、检索证据、候选排名、四层结论、修复轨迹、图谱 diff |
+| `outputs/generated/credit/candidate_plan.0{1,2,3}.py` | 三个候选的最终源码（可直接阅读） |
+| `outputs/kg/credit_kg.html` | 知识图谱可视化，浏览器直接打开 |
 
-想看「为什么会失败又怎么修好的」：删掉 `outputs/kg/capabilities_after_run.json` 重跑，报告第 4 节会出现 `KeyError: PAY_1 → 按 Dataset 列名映射把 PAY_1 改为 PAY_0`。`PAY_1` 是首轮按直觉命名习惯生成的列名，报错由子进程在真实数据集上抛出（数据字典里最近一期实为 `PAY_0`，即 T1），再由 `Repairer` 定向修复——注入的是命名习惯，错误本身不是伪造的。
+想看「为什么会失败又怎么修好的」：删掉 `outputs/kg/credit_kg_after_run.json` 重跑，报告第 4 节会出现 `KeyError: PAY_1 → 按 Dataset 列名映射把 PAY_1 改为 PAY_0`。`PAY_1` 是首轮按直觉命名习惯生成的列名，报错由子进程在真实数据集上抛出（数据字典里最近一期实为 `PAY_0`，即 T1），再由 `Repairer` 定向修复——注入的是命名习惯，错误本身不是伪造的。
 
 ### 其余常用命令
 
@@ -116,8 +116,8 @@ python -m factory run --spec "预测信用卡客户下月违约概率，时间�
 |---|---|
 | 不知道需求怎么写 | `python -m factory guide`（要素清单 + 合格示例 + 可用场景） |
 | 只体检一条描述，不跑闭环 | `python -m factory guide --spec "随便写点什么"` |
-| 换短信分类场景 | `python -m factory run --spec "把短信分类为垃圾短信或正常短信，输出准确率与宏平均F1" --mock --task-config configs/verify_text.yaml --run-id text_demo --kg-out capabilities_text_after_run.json --gen-dir text` |
-| 换需求量回归场景 | `python -m factory run --spec "根据多期特征预测日需求量，最小化RMSE，输出RMSE/MAE/R2" --mock --task-config configs/verify_regression.yaml --run-id regression_demo --kg-out capabilities_regression_after_run.json --gen-dir regression` |
+| 换短信分类场景 | `python -m factory run --spec "把短信分类为垃圾短信或正常短信，输出准确率与宏平均F1" --mock --task-config configs/verify_text.yaml` |
+| 换需求量回归场景 | `python -m factory run --spec "根据多期特征预测日需求量，最小化RMSE，输出RMSE/MAE/R2" --mock --task-config configs/verify_regression.yaml` |
 | 全链路规则模板（最稳） | 在任意命令后加 `--mock` |
 | 跑全量测试 / 检查代码规范 | `python -m unittest discover -s tests` / `python -m ruff check .` |
 
@@ -223,10 +223,10 @@ python -m factory run --spec "预测信用卡客户下月违约概率，时间�
 | **CrewAI** | 未采用 | — | 同上。role / goal 配置适合开放式协作，但无法约束「必须先检索再规划」，也无法让同一份 `RunTrace` 逐节点回放 |
 | **OpenAI API** | 采用（OpenAI 兼容协议，默认接 DeepSeek） | `factory/llm/openai_compat.py`；`configs/default.yaml` 的 `llm.base_url` | 只需一次 Chat Completions 调用，`openai` SDK 即标准客户端；用兼容端点便于换供应商（改 `LLM_BASE_URL` 即可），key 只从环境变量读取 |
 | **本地开源模型** | 未采用 | — | CPU 环境跑 7B 级模型单次响应超分钟级，与 60s 沙箱预算冲突；题目允许 API 方式；同时默认 `MockLLM` 保证无模型、断网也能复现全链路 |
-| **Neo4j** | 未采用服务，但提供导入文件 | `outputs/kg/*.cypher`（`scripts/export_cypher.py`） | 需要 Docker 服务，与「本地一键复现」冲突；百节点级规模用 NetworkX + SQLite 足够。为覆盖交付物里的「Neo4j 导入文件」，额外导出 Cypher：把 `outputs/kg/capabilities.cypher` 交给 `cypher-shell` 即可导入，不引入驱动依赖 |
+| **Neo4j** | 未采用服务，但提供导入文件 | `outputs/kg/*.cypher`（`scripts/export_cypher.py`） | 需要 Docker 服务，与「本地一键复现」冲突；百节点级规模用 NetworkX + SQLite 足够。为覆盖交付物里的「Neo4j 导入文件」，额外导出 Cypher：把 `outputs/kg/credit_kg.cypher` 交给 `cypher-shell` 即可导入，不引入驱动依赖 |
 | **NetworkX** | 采用 | `factory/knowledge/graph.py`（属性图构建、`GraphML` 导出）；`pyvis` 做可视化 | 零部署、纯 Python，属性图与 MultiDiGraph 语义足够表达能力—算子—指标—失败案例；导出 GraphML 可交给任意图工具查看 |
 | **SQLite** | 采用 | `factory/knowledge/graph.py` 的 `persist_sqlite`（`outputs/kg/*.db`） | 标准库自带，用来承载节点 / 边表，供版本谱系与验证记录按 SQL 查询，不引入数据库服务 |
-| **FastAPI** | 采用 | `factory/api/app.py`（`/health`、`/templates`、`/intake/guide`、`/intake/review`、`/run`，并自动导出 OpenAPI） | 题目要求「API 或 Web UI」；FastAPI 自带 OpenAPI 文档与 Pydantic 校验，正好复用项目已有的契约模型，交付物里还能附一份 `openapi.json` |
+| **FastAPI** | 采用 | `factory/api/app.py`（`/health`、`/templates`、`/intake/guide`、`/intake/review`、`/run`，并自动导出 OpenAPI） | 题目要求「API 或 Web UI」；FastAPI 自带 OpenAPI 文档与 Pydantic 校验，正好复用项目已有的契约模型，交付物里还能附一份 `shared_openapi.json` |
 | **Streamlit** | 未采用 | — | 题目为「或」，CLI（Typer）+ REST API 已覆盖自动化验收与集成两种用法；再引入一个前端框架只增加依赖，不增加评分点 |
 
 > 库级别的更细理由（为什么换掉自研状态机、为什么用 `rank_bm25` / `markdown-it-py` / `psutil` / `structlog`）见上方选型表；「评估过什么、为何不用」也逐行写在那里。
@@ -237,7 +237,7 @@ python -m factory run --spec "预测信用卡客户下月违约概率，时间�
 algo-capability-factory/
 ├── README.md  CHANGELOG.md  AGENTS.md  requirements.txt  .env.example  pyproject.toml  .gitignore
 ├── configs/     default.yaml + verify_{credit,text,regression}.yaml
-├── factory/     48 个模块：contracts / knowledge / agents / llm / runtime / validation / workflow / intake / api
+├── factory/     49 个模块：contracts / knowledge / agents / llm / runtime / validation / workflow / intake / api
 ├── scripts/     数据准备、图谱构建、Cypher 导出、消融、资源基准、仓库抽取、cassette 录制（11 个）
 ├── assets/      data/、docs/(+text/)、legacy/、repo/scorecardpy/、llm_cassettes/
 ├── outputs/     generated/、reports/、kg/（产物地图见 outputs/README.md；runs/ 不入库）
@@ -267,7 +267,7 @@ algo-capability-factory/
 | `Lesson` | scope、symptom、root_cause、action、prevention、applies_to、occurrences、confidence（**系统级知识**） |
 | `Evidence` | path、excerpt、sha256、doc_type |
 
-**知识 ≠ 日志（1.3.0）**：`ValidationRun` 只说明「某次跑了什么」，可被同一 run 重跑覆盖，并且**不参与检索**；`Lesson` 回答「什么条件下会遇到什么现象、为什么、怎么处置、怎么预防」，随独立 run 数累积置信度并注入 Planner / Coder 的 prompt。两者在 schema、检索与产物文件三个层面分开：
+**知识 ≠ 日志（1.3.0 起）**：`ValidationRun` 只说明「某次跑了什么」，可被同一 run 重跑覆盖，并且**不参与检索**；`Lesson` 回答「什么条件下会遇到什么现象、为什么、怎么处置、怎么预防」，随独立 run 数累积置信度并注入 Planner / Coder 的 prompt。两者在 schema、检索与产物文件三个层面分开：
 
 | 层面 | 运行日志 | 系统级知识 |
 |---|---|---|
@@ -313,9 +313,9 @@ algo-capability-factory/
 
 | 场景 | 材料 | 子图规模 | 产物 |
 |---|---|---|---|
-| 信用卡违约（主） | `assets/docs/`（7 份）+ `assets/legacy/` | 108 节点 / 200 边 / 36 类能力 / 12 条教训 | `capabilities.json`、`graph.graphml`、`capabilities.cypher`、`kg.html` |
-| 短信垃圾过滤 | `assets/docs/text/`（3 份）+ 共享教训库 | 30 节点 / 27 边 / 10 类能力 / 12 条教训 | `text_capabilities.json`、`text_graph.graphml`、`text_capabilities.cypher`、`text_kg.html` |
-| 真实开源仓库 `scorecardpy`（MIT） | `assets/repo/` | 95 节点 / 248 边 / 81 个公开能力 | `repo_capabilities.json`、`repo_graph.graphml`、`repo_capabilities.cypher` |
+| 信用卡违约（主） | `assets/docs/`（7 份）+ `assets/legacy/` | 108 节点 / 200 边 / 36 类能力 / 12 条教训 | `credit_kg.{json,csv,graphml,cypher,html}` |
+| 短信垃圾过滤 | `assets/docs/text/`（3 份）+ 共享教训库 | 30 节点 / 27 边 / 10 类能力 / 12 条教训 | `text_kg.{json,csv,graphml,cypher,html}` |
+| 真实开源仓库 `scorecardpy`（MIT） | `assets/repo/` | 95 节点 / 248 边 / 81 个公开能力 | `repo_kg.{json,csv,graphml,cypher,html}` |
 
 源图谱覆盖 10 类关系（主场景）/ 3 类（仓库子图）；`RESULTED_IN` / `DERIVED_FROM` / `FIXED_BY` 由 Curator 回写补齐，回写后的知识图覆盖 12 类。`HAS_RUN` 只在内存里连接运行日志，日志另存 `*_runs.json`，不写进交付图谱。
 
@@ -435,21 +435,32 @@ python -m factory --check
 python -m unittest discover -s tests -v
 ```
 
+**产物命名规范**（`factory/artifacts.py` 单点定义）
+
+`<scope>_<kind>[_<variant>].<ext>`：`scope` 取 `credit` / `text` / `regression` / `repo`，跨场景实验与文档用 `shared`；`kind` 取 `kg`（图谱）/ `run`（报告）/ `candidate`（代码）/ `trace`（轨迹）；`variant` 是 `after_run`、`demo`、`lesson_1` 这类变体。换 `--task-config` 时产物自动切到对应 `scope`，不必再手传 `--kg-out` / `--gen-dir`（两者仍保留，用于覆盖默认值）。
+
+| 位置 | 示例 |
+|---|---|
+| 图谱 | `outputs/kg/credit_kg.json` → `credit_kg_after_run.json` → `credit_kg_after_run_runs.json` |
+| 报告 | `outputs/reports/credit_run_demo.md`、`credit_run_lesson_1.md`、`shared_ablation.md` |
+| 代码 | `outputs/generated/credit/candidate_plan.01.py` |
+| 轨迹 | `outputs/runs/trace_credit_demo.json`（不入库） |
+
 **主要产物**
 
 | 路径 | 内容 |
 |---|---|
-| `outputs/generated/{,text/,regression/}candidate_*.py` | 生成 / 修复后的算法代码 |
-| `outputs/reports/run_*.md` | 四层验证报告、候选排名、修复轨迹、设计依据 |
-| `outputs/kg/capabilities_after_run.json` | 回写后的**知识图谱**：能力 + 失败案例 + 教训（不含运行日志） |
-| `outputs/kg/capabilities_after_run_runs.json` | 本轮**运行日志**：仅追溯用，不参与检索 |
-| `outputs/kg/graph.graphml`、`kg.html` | 回写后的能力图谱与可视化 |
-| `outputs/runs/trace_*.json` | 七步流程可回放轨迹（运行时临时产物，不入库） |
+| `outputs/generated/<scope>/candidate_plan.0X.py` | 生成 / 修复后的算法代码 |
+| `outputs/reports/<scope>_run_<variant>.md`、`shared_*.md` | 四层验证报告、候选排名、修复轨迹、设计依据 |
+| `outputs/kg/credit_kg_after_run.json` | 回写后的**知识图谱**：能力 + 失败案例 + 教训（不含运行日志） |
+| `outputs/kg/credit_kg_after_run_runs.json` | 本轮**运行日志**：仅追溯用，不参与检索 |
+| `outputs/kg/credit_kg.graphml`、`credit_kg.html` | 回写后的能力图谱与可视化 |
+| `outputs/runs/trace_<scope>_<variant>.json` | 七步流程可回放轨迹（运行时临时产物，不入库） |
 | `assets/llm_cassettes/*.json` | 脱敏后的真实 LLM 对话与响应，供离线回放（入库） |
 
 **最小依赖**：核心闭环需 `pydantic`、`PyYAML`、`pandas`、`scikit-learn`、`networkx`、`langgraph`、`rank-bm25`、`markdown-it-py`、`psutil`、`structlog`（全部为现成库，`requirements.txt` 已锁版本区间）；`pyvis`、`Jinja2`、`Typer`、`openai` 按入口加载。全量清单 23 个直接依赖，含传递依赖共 106 个安装包。
 
-**干净环境实测（P5 记录）**：空 venv 仅执行一次 `pip install -r requirements.txt`（无冲突），随后跑通 `ruff check`（全绿）、端到端 `factory run`（`四层全通过=True`、退出码 0），未安装任何清单外依赖；P6、1.1.x、1.2.0 与 1.3.0 均未新增第三方依赖（教训提炼与日志分离只用标准库 + 现有 pydantic），当前全量测试 179 个。
+**干净环境实测（P5 记录）**：空 venv 仅执行一次 `pip install -r requirements.txt`（无冲突），随后跑通 `ruff check`（全绿）、端到端 `factory run`（`四层全通过=True`、退出码 0），未安装任何清单外依赖；P6、1.1.x、1.2.0、1.3.0 与 1.4.0 均未新增第三方依赖（教训提炼、Cypher 导出与命名重构只用标准库 + 现有 pydantic），当前全量测试 179 个。
 
 **持续集成**：`.github/workflows/ci.yml` 用 matrix 并行 **Python 3.11**（最低版本）与 **3.12**（本地实测版本），各自执行 `ruff check`、全量单元测试与三条端到端（信用卡 / 短信 / 回归），断言 `四层全通过=True`。端到端走默认 provider（Interpreter 用已入库 cassette），CI 不依赖任何 API key。
 
@@ -504,8 +515,8 @@ python -m unittest discover -s tests -v
 | 任务 | 配置 | 用途 |
 |---|---|---|
 | T-credit 信用卡违约二分类（主） | `verify_credit.yaml` | 端到端闭环演示，含 2 轮真实修复（有回写图谱时 1 轮） |
-| T-text 短信垃圾文本二分类 | `verify_text.yaml` | 跨场景迁移实测，3 候选全通过，报告 `run_text_demo.md` |
-| T-regression 需求量回归 | `verify_regression.yaml` | 第二种任务类型（RMSE / `minimize`），报告 `run_regression_demo.md` |
+| T-text 短信垃圾文本二分类 | `verify_text.yaml` | 跨场景迁移实测，3 候选全通过，报告 `text_run_demo.md` |
+| T-regression 需求量回归 | `verify_regression.yaml` | 第二种任务类型（RMSE / `minimize`），报告 `regression_run_demo.md` |
 
 **数据使用声明**：数据仅用于算法原型研究。敏感字段仅用于分组公平性审计，不构成任何授信或部署建议；样本来自 2005 年 4–9 月单一时段，结论不外推至当前客群。
 
@@ -518,7 +529,7 @@ python -m unittest discover -s tests -v
 `python -m factory run --spec "..." --mock` 会在 `outputs/generated/` 落盘 3 个候选的最终源码，均由 `Coder` 按方案渲染、经 `Reviewer` 静态检查与 `Repairer` 定向修复。
 
 ```python
-# outputs/generated/candidate_plan.01.py（节选，完整文件见仓库）
+# outputs/generated/credit/candidate_plan.01.py（节选，完整文件见仓库）
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
@@ -560,7 +571,7 @@ def build_pipeline(config):
 3. 不含文件写入、网络访问、危险 import，可在沙箱内重复运行且结果确定；
 4. 生成代码在独立子进程中执行，超时与内存上限由 `configs/default.yaml` 控制。
 
-完整的「能力描述 → 检索证据 → 3 个候选 → 代码 → 修复 diff」见 `outputs/reports/run_demo.md`。
+完整的「能力描述 → 检索证据 → 3 个候选 → 代码 → 修复 diff」见 `outputs/reports/credit_run_demo.md`。
 
 ---
 
@@ -576,7 +587,7 @@ def build_pipeline(config):
 | 能力理解 | `能力理解来源=cassette`、`spec_id=spec.next_month_default`（真实 DeepSeek 响应，离线回放） |
 | 候选方案 | 3 个（三种算法族）：LR 0.72061（FAIL）、**RF 0.78990（PASS）**、HGB 0.78434（PASS） |
 | 修复轨迹 | 源材料首轮复现 `KeyError: PAY_1` → 映射为 `PAY_0`，再处理指标层（2 轮）；有回写图谱时 T1 经验命中，仅剩指标层（1 轮） |
-| 图谱沉淀 | `capabilities_after_run.json`（知识：112 节点含 13 条教训、14 个失败案例）+ `capabilities_after_run_runs.json`（运行日志 3 条）；失败案例按错误签名去重，教训按签名去重并累积独立 run 数 |
+| 图谱沉淀 | `credit_kg_after_run.json`（知识：112 节点含 13 条教训、14 个失败案例）+ `credit_kg_after_run_runs.json`（运行日志 3 条）；失败案例按错误签名去重，教训按签名去重并累积独立 run 数 |
 | 确定性实测 | 三个候选同一子进程内二次 fit，两次输出最大绝对差均为 `0.00e+00` |
 | test 终评 | 最佳候选 `plan.02` 一次性评估：AUC 0.7883、KS 0.4399、F1 0.4590、PSI 0.0681、分组 AUC 差 0.0201；不参与排序与修复 |
 | 代码来源 | 默认 mock 路径全为 `template`（Mock 输出不冒充模型生成）；真实 DeepSeek 下 3 候选有 2 个采用 LLM 代码（`plan.02` AUC 0.78992，可区分于模板 0.78990），采用前均过 AST 静态检查 |
@@ -600,7 +611,7 @@ def build_pipeline(config):
 | 错误签名 | `MetricBelowThreshold` | `KeyError: PAY_1` + `MetricBelowThreshold` |
 | 候选 AUC（降序） | 0.789905 / 0.784337 / 0.720612 | 0.789905 / 0.784337 / 0.720612 |
 
-两组 AUC 完全一致，说明沉淀改变的是过程效率而非指标口径；完整对比见 `outputs/reports/ablation.md` 与 `run_ablation.{with,without}_kg.md`。
+两组 AUC 完全一致，说明沉淀改变的是过程效率而非指标口径；完整对比见 `outputs/reports/shared_ablation.md` 与 `credit_run_ablation_{with,without}_kg.md`。
 
 **知识沉淀实测（三轮，同一份回写图谱）**
 
@@ -615,11 +626,11 @@ def build_pipeline(config):
 ```bash
 for i in 1 2 3; do
   python -m factory run --spec "预测信用卡客户下月违约概率，时间外划分，按 5:1 成本比选阈值，禁止 ID 入模。" \
-    --mock --run-id lesson_demo_$i --kg-out capabilities_lesson_demo.json
+    --mock --run-id lesson_$i --kg-out credit_kg_lesson.json
 done
 ```
 
-产物：`capabilities_lesson_demo.json`（知识，13 条教训）、`capabilities_lesson_demo_runs.json`（日志）、`run_lesson_demo_{1,2,3}.md`。
+产物：`credit_kg_lesson.json`（知识，13 条教训）、`credit_kg_lesson_runs.json`（日志）、`credit_run_lesson_{1,2,3}.md`。
 
 **性能与资源消耗**（`scripts/resource_benchmark.py`，1× = 30,000 行，10× = 300,000 行有放回抽样，均取自子进程沙箱）
 
@@ -629,7 +640,7 @@ done
 | hist_gradient_boosting | 2.45 s | 179.17 MB | 0.032 ms/行 | 7.36 s（3.00×） | 330.95 MB（1.85×） |
 | random_forest | 5.45 s | 178.32 MB | 0.112 ms/行 | 29.69 s（5.44×） | 355.88 MB（2.00×） |
 
-三者都在 60s / 2GB 沙箱上限内；内存约 2× 主要来自 pandas 常驻。完整口径见 `outputs/reports/resources.md`。
+三者都在 60s / 2GB 沙箱上限内；内存约 2× 主要来自 pandas 常驻。完整口径见 `outputs/reports/shared_resources.md`。
 
 **跨场景迁移（`verify_text.yaml`）**：同一套工作流、沙箱与四层验证器，只换一份任务配置就从表格分类切到文本分类。
 
@@ -649,7 +660,7 @@ done
 | plan.01 | hist_gradient_boosting_regressor | 28.53 | 22.02 | 0.9511 | 全 PASS |
 | plan.03 | random_forest_regressor | 37.01 | 28.33 | 0.9177 | 全 PASS |
 
-打分时对 `minimize` 指标取负号，因此 plan.02 排第一；原始值保留在 `metrics` 里未被污染。报告见 `outputs/reports/run_regression_demo.md`。
+打分时对 `minimize` 指标取负号，因此 plan.02 排第一；原始值保留在 `metrics` 里未被污染。报告见 `outputs/reports/regression_run_demo.md`。
 
 ---
 
@@ -712,19 +723,19 @@ done
 
 | # | 题目交付物 | 本仓库对应位置 |
 |---|---|---|
-| 1 | 完整的项目代码库 | 仓库根目录；`factory/` 六层 48 个模块，git 历史按 P0 → P6 分阶段提交（对照见 `AGENTS.md`） |
+| 1 | 完整的项目代码库 | 仓库根目录；`factory/` 六层 49 个模块，git 历史按 P0 → P6 分阶段提交（对照见 `AGENTS.md`） |
 | 2 | 示例行业数据、文档或模拟业务材料 | `assets/data/`、`assets/docs/`（7 份 + `text/` 3 份）、`assets/legacy/`、`assets/repo/scorecardpy/` |
 | 3 | 能力知识图谱 schema 设计说明 | 第 3 节：10 类节点 / 13 类关系 / 六要素映射 / 按场景拆分子图 |
-| 4 | 知识抽取结果文件（JSON / CSV / GraphML / Neo4j 导入文件） | `outputs/kg/{capabilities,text_capabilities,repo_capabilities}.json` + `.csv` + `*.graphml` + `.cypher`（Cypher 导入脚本）；SQLite 表 `*.db`；回写后的知识图谱 `capabilities_after_run.json`（能力 + 失败案例 + 教训）与运行日志 `capabilities_after_run_runs.json`；教训演进示例 `capabilities_lesson_demo.json` |
+| 4 | 知识抽取结果文件（JSON / CSV / GraphML / Neo4j 导入文件） | `outputs/kg/{credit,text,repo}_kg.{json,csv,graphml,cypher}`（同一份图的四种格式）+ `*.db`（SQLite 表）；回写后的知识图谱 `credit_kg_after_run.json`（能力 + 失败案例 + 教训）与运行日志 `credit_kg_after_run_runs.json`；教训演进示例 `credit_kg_lesson.json` |
 | 5 | Agent 工作流代码或流程配置 | `factory/workflow/pipeline.py`（LangGraph `StateGraph`）+ `factory/agents/roles.py`（8 角色）；流程图见第 4 节 |
-| 6 | 至少 1 个从能力描述到代码生成的完整示例 | `outputs/reports/run_demo.md`（描述 → 检索证据 → 3 候选 → 代码 → 修复 diff）+ `outputs/generated/candidate_plan.0*.py` |
+| 6 | 至少 1 个从能力描述到代码生成的完整示例 | `outputs/reports/credit_run_demo.md`（描述 → 检索证据 → 3 候选 → 代码 → 修复 diff）+ `outputs/generated/credit/candidate_plan.0*.py` |
 | 7 | 自动验证脚本 | `python -m factory run`；`scripts/verify_baseline.py`；CI（lint + 179 用例 + 3 条端到端） |
-| 8 | 验证报告样例 | `outputs/reports/`：`run_demo.md`、`run_text_demo.md`、`run_regression_demo.md`、`run_lesson_demo_{1,2,3}.md`（知识沉淀三轮）、`validation_sample.md`、`ablation.md`、`resources.md`、`openapi.json` |
+| 8 | 验证报告样例 | `outputs/reports/`：`credit_run_demo.md`、`text_run_demo.md`、`regression_run_demo.md`、`credit_run_lesson_{1,2,3}.md`（知识沉淀三轮）、`shared_validation_sample.md`、`shared_ablation.md`、`shared_resources.md`、`shared_openapi.json` |
 | 9 | 项目文档 README.md | 本文件（十节 + 附录 A/B/C） |
 | 10 | 环境依赖文件 | `requirements.txt`（23 个直接依赖；含传递依赖共 106 个安装包） |
 | 11 | 使用示例和测试用例 | 第 5 节命令清单 + `tests/`（17 个测试文件 / 179 个用例） |
 
-**进阶 8 项**：CLI/API（第 5 节，`factory/api/app.py` 与 `outputs/reports/openapi.json`）、多轮修复与多候选比较（第 4 节）、图谱可视化（`outputs/kg/kg.html`）、自动验证报告（第 8 节）、结果回写（第 4、8 节）、不同任务类型配置（三份 `verify_*.yaml`）、插件式接入（指标插件 + 算法模板装饰器注册）、入口输入引导（第 4 节，`factory/intake/`）。
+**进阶 8 项**：CLI/API（第 5 节，`factory/api/app.py` 与 `outputs/reports/shared_openapi.json`）、多轮修复与多候选比较（第 4 节）、图谱可视化（`outputs/kg/kg.html`）、自动验证报告（第 8 节）、结果回写（第 4、8 节）、不同任务类型配置（三份 `verify_*.yaml`）、插件式接入（指标插件 + 算法模板装饰器注册）、入口输入引导（第 4 节，`factory/intake/`）。
 **加分 10 项**：Beam Search、8 角色多智能体、真实仓库 AST 抽取（第 3 节）、沙箱与 AST 安全检查（第 4、9 节）、失败案例复用与教训沉淀（第 3、4、8 节）、能力版本递增、设计依据生成、跨场景迁移（第 8 节）、OpenAPI 自动生成、资源消耗分析（第 8 节）。
 
 ## 附录 C · 数据与引用

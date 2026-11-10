@@ -175,7 +175,7 @@ def main() -> int:
     parser.add_argument("--task-config", default="configs/verify_credit.yaml")
     parser.add_argument("--families", nargs="+",
                         default=list(FAMILY_HYPERPARAMS))
-    parser.add_argument("--out", default="outputs/reports/resources.md")
+    parser.add_argument("--out", default="outputs/reports/shared_resources.md")
     args = parser.parse_args()
     if len(args.repeats) != len(args.scales):
         parser.error("--repeats 与 --scales 数量必须一致")

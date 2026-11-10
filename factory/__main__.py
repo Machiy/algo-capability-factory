@@ -61,14 +61,17 @@ def run(
         "configs/verify_credit.yaml", "--task-config",
         help="任务级验证配置；换场景只换 yaml，不改代码",
     ),
-    run_id: str = typer.Option("demo", "--run-id", help="运行标识，决定报告与轨迹文件名"),
+    run_id: str = typer.Option(
+        "demo", "--run-id",
+        help="运行变体名（如 demo / lesson_1）；报告与轨迹会带上场景前缀",
+    ),
     kg_filename: str = typer.Option(
-        "capabilities_after_run.json", "--kg-out",
-        help="回写图谱文件名；不同场景各用一份，避免指标互相污染",
+        "", "--kg-out",
+        help="覆盖回写图谱文件名；默认按场景自动取 <scope>_kg_after_run.json",
     ),
     gen_dir: str = typer.Option(
         "", "--gen-dir",
-        help="生成代码子目录；不同场景分开存放，避免互相覆盖",
+        help="覆盖生成代码子目录；默认按场景自动取 generated/<scope>/",
     ),
     force: bool = typer.Option(
         False, "--force",
@@ -117,6 +120,7 @@ def guide(
 
 def _build_guide(task_config: str):
     """构造入口引导器：规则来自 default.yaml 与任务 yaml 的 intake 段。"""
+    from factory.artifacts import kg_stem, scene_of
     from factory.config import load_settings, load_task_settings
     from factory.intake import IntakeGuide
 
@@ -126,7 +130,8 @@ def _build_guide(task_config: str):
         settings.intake, task.intake,
         configs_dir=ROOT / "configs",
         task_config=task_config,
-        graph_path=ROOT / settings.paths.kg / "capabilities_after_run.json",
+        graph_path=(ROOT / settings.paths.kg
+                    / f"{kg_stem(scene_of(task_config), 'after_run')}.json"),
     )
 
 
@@ -170,7 +175,7 @@ def api(
     if export_openapi:
         from factory.config import load_settings
         settings = load_settings(ROOT / "configs/default.yaml")
-        target = ROOT / settings.paths.reports / "openapi.json"
+        target = ROOT / settings.paths.reports / "shared_openapi.json"
         path = write_openapi(target, ROOT)
         print(f"[API] OpenAPI 已导出：{path.relative_to(ROOT).as_posix()}")
         raise typer.Exit()

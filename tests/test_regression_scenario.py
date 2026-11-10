@@ -112,7 +112,6 @@ class RegressionWorkflowTests(unittest.TestCase):
             task = load_task_settings(root / "configs/verify_regression.yaml")
             workflow = Workflow(
                 settings, task, root, task_config="configs/verify_regression.yaml",
-                kg_filename="capabilities_regression_after_run.json",
             )
             trace = workflow.run("预测日需求量，最小化 RMSE", "unit_regression")
             self.assertTrue(trace.passed, trace.report_path)

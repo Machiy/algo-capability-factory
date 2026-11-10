@@ -58,7 +58,7 @@ class RunEndpointTests(unittest.TestCase):
                 ),
             ],
             repairs=[],
-            report_path="outputs/reports/run_api.unit.md",
+            report_path="outputs/reports/credit_run_api_unit.md",
         )
         with patch("factory.workflow.Workflow") as workflow_cls:
             workflow_cls.return_value.metric_name = "auc"
@@ -76,7 +76,7 @@ class RunEndpointTests(unittest.TestCase):
         self.assertEqual(body["candidates"][0]["metrics"]["auc"], 0.7843)
         self.assertEqual(body["candidates"][0]["primary_metric"], "auc")
         self.assertEqual(body["test_metrics"], {})
-        self.assertEqual(body["report_path"], "outputs/reports/run_api.unit.md")
+        self.assertEqual(body["report_path"], "outputs/reports/credit_run_api_unit.md")
 
     def test_run_rejects_missing_spec(self) -> None:
         client = TestClient(create_app(ROOT))

@@ -15,7 +15,6 @@ from typing import Any
 
 import networkx as nx
 
-from factory.config import Settings
 from factory.contracts.knowledge import KnowledgeGraph
 
 logger = logging.getLogger(__name__)
@@ -32,11 +31,6 @@ def _graphml_value(value: Any) -> str | int | float | bool:
     if isinstance(value, (str, int, float, bool)):
         return value
     return _json_text(value)
-
-
-def _resolve(root: Path, configured: str) -> Path:
-    path = Path(configured)
-    return path if path.is_absolute() else root / path
 
 
 def load_graph(path: Path) -> KnowledgeGraph | None:
@@ -147,21 +141,5 @@ class KnowledgeGraphStore:
                 ],
             )
         return path
-
-    def export_all(self, settings: Settings, root: Path) -> dict[str, Path]:
-        """按配置导出全部交付物，返回 ``产物名 -> 路径``。"""
-        exported: dict[str, Path] = {
-            "graphml": self.export_graphml(_resolve(root, settings.knowledge.graph_path)),
-            "sqlite": self.persist_sqlite(_resolve(root, settings.knowledge.sqlite_path)),
-        }
-        for configured in settings.knowledge.extraction_results:
-            path = _resolve(root, configured)
-            if path.suffix == ".json":
-                exported["json"] = self.export_json(path)
-            elif path.suffix == ".csv":
-                exported["csv"] = self.export_csv(path)
-        logger.info("导出 %d 类知识图谱产物", len(exported))
-        return exported
-
 
 __all__ = ["KnowledgeGraphStore"]

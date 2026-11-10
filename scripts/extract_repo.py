@@ -18,9 +18,12 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from factory.artifacts import kg_paths
 from factory.contracts.knowledge import NodeType
+from factory.knowledge.cypher import graph_to_cypher
 from factory.knowledge.graph import KnowledgeGraphStore
 from factory.knowledge.repo_extractor import RepoExtractor
+from factory.knowledge.visualize import render_html
 from factory.logging_setup import configure_logging
 
 
@@ -36,10 +39,13 @@ def main() -> int:
     scan = RepoExtractor().scan(repo_dir, args.name)
     graph = RepoExtractor().to_graph(scan)
     kg_dir = ROOT / args.kg_dir
+    paths = kg_paths(kg_dir, "repo")
     store = KnowledgeGraphStore(graph)
-    json_path = store.export_json(kg_dir / "repo_capabilities.json")
-    csv_path = store.export_csv(kg_dir / "repo_capabilities.csv")
-    graphml_path = store.export_graphml(kg_dir / "repo_graph.graphml")
+    json_path = store.export_json(paths["json"])
+    csv_path = store.export_csv(paths["csv"])
+    graphml_path = store.export_graphml(paths["graphml"])
+    paths["cypher"].write_text(graph_to_cypher(graph), encoding="utf-8")
+    render_html(graph, paths["html"])
 
     capabilities = graph.by_type(NodeType.CAPABILITY)
     print(f"[P6-2] 仓库 {args.name}：{len(scan.functions)} 个函数 / "

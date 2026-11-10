@@ -38,7 +38,7 @@ def build_guide(task_config: str = "configs/verify_credit.yaml") -> IntakeGuide:
         settings.intake, task.intake,
         configs_dir=ROOT / "configs",
         task_config=task_config,
-        graph_path=ROOT / "outputs/kg/capabilities_after_run.json",
+        graph_path=ROOT / "outputs/kg/credit_kg_after_run.json",
     )
 
 

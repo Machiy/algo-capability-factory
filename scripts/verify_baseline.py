@@ -123,7 +123,7 @@ def main() -> int:
     if args.publish:
         published_path = render_report(
             report, metrics, task,
-            ROOT / settings.paths.reports / "validation_sample.md",
+            ROOT / settings.paths.reports / "shared_validation_sample.md",
         )
     write_trace(ROOT / settings.paths.runs / "trace_baseline.json", {
         "run_id": report.run_id,

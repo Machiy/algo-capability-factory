@@ -35,13 +35,13 @@ def main() -> int:
         settings, ROOT,
         docs_dir=task.knowledge.docs,
         legacy_dir=task.knowledge.legacy,
-        prefix="text_",
+        scene="text",
         dataset_profile=task.dataset_profile,
     )
     counts = {kind.value: len(graph.by_type(kind)) for kind in NodeType}
     print(f"[text-kg] 节点 {len(graph.nodes)} / 边 {len(graph.edges)}")
     print("[text-kg] 节点类型：" + "，".join(f"{k}={v}" for k, v in counts.items() if v))
-    print("[text-kg] 产物：outputs/kg/text_capabilities.json|.csv、text_graph.graphml、text_kg.html")
+    print("[text-kg] 产物：outputs/kg/text_kg.{json,csv,graphml,db,html}")
     return 0
 
 

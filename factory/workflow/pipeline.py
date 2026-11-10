@@ -27,6 +27,7 @@ from factory.agents import (
     Reviewer,
     Verifier,
 )
+from factory.artifacts import kg_stem, report_path, scene_of, trace_path
 from factory.config import Settings, TaskSettings, load_settings, load_task_settings
 from factory.contracts.intake import IntakeGuidance, IntakeVerdict
 from factory.contracts.knowledge import RetrievalResult
@@ -249,18 +250,20 @@ class Workflow:
     def __init__(self, settings: Settings, task: TaskSettings, root: Path,
                  use_knowledge: bool = True,
                  task_config: str = "configs/verify_credit.yaml",
-                 kg_filename: str = "capabilities_after_run.json",
+                 kg_filename: str = "",
                  generated_subdir: str = "") -> None:
         self.settings = settings
         self.task = task
         self.root = root
         self.use_knowledge = use_knowledge
         self.task_config = task_config
+        # 场景取自 verify_<scope>.yaml；所有产物命名统一走 factory.artifacts
+        self.scope = scene_of(task_config)
         # 不同场景各自沉淀到独立图谱文件，避免跨场景指标混进同一份统计
-        self.kg_filename = kg_filename
+        self.kg_filename = kg_filename or f"{kg_stem(self.scope, 'after_run')}.json"
         # 不同场景的生成代码分目录存放，避免后跑的覆盖先跑的
-        self.generated_subdir = generated_subdir
-        after_run = root / settings.paths.kg / kg_filename
+        self.generated_subdir = generated_subdir or self.scope
+        after_run = root / settings.paths.kg / self.kg_filename
         loaded = load_graph(after_run) if use_knowledge else None
         # 场景自带能力材料时抽自己的子图，避免把其他领域的约束注入 prompt；
         # 共享材料（工程教训库）无论哪个场景都读，系统级知识不按场景切分
@@ -545,7 +548,7 @@ class Workflow:
         )
         trace.report_path = render_run_report(
             trace, state["reports"], self.curator.explain(trace),
-            self.root / self.settings.paths.reports / f"run_{trace.run_id}.md",
+            report_path(self.root / self.settings.paths.reports, self.scope, trace.run_id),
             metric_name=self.metric_name,
             task_config=Path(self.task_config).name,
             kg_path=f"{self.settings.paths.kg}/{self.kg_filename}",
@@ -553,7 +556,7 @@ class Workflow:
             text_mode=bool(self.text_column),
         ).relative_to(self.root).as_posix()
         write_trace(
-            self.root / self.settings.paths.runs / f"trace_{trace.run_id}.json",
+            trace_path(self.root / self.settings.paths.runs, self.scope, trace.run_id),
             trace.model_dump(mode="json"),
         )
         logger.info("工作流完成：passed=%s 候选=%d 修复=%d",
@@ -595,7 +598,7 @@ def run_from_cli(spec_text: str, mock: bool = False,
                  root: Path | None = None,
                  task_config: str = "configs/verify_credit.yaml",
                  run_id: str = "demo",
-                 kg_filename: str = "capabilities_after_run.json",
+                 kg_filename: str = "",
                  generated_subdir: str = "",
                  force: bool = False) -> int:
     """CLI 入口；默认按配置 provider，--mock 时强制规则模板。

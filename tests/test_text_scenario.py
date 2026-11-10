@@ -149,7 +149,6 @@ class TextWorkflowTests(unittest.TestCase):
             task = load_task_settings(root / "configs/verify_text.yaml")
             workflow = Workflow(
                 settings, task, root, task_config="configs/verify_text.yaml",
-                kg_filename="capabilities_text_after_run.json",
             )
             trace = workflow.run("把短信分类为垃圾短信或正常短信", "unit_text")
             self.assertTrue(trace.passed, trace.report_path)
@@ -165,7 +164,9 @@ class TextWorkflowTests(unittest.TestCase):
             report = root / trace.report_path
             self.assertTrue(report.is_file())
             self.assertIn("verify_text.yaml", report.read_text(encoding="utf-8"))
-            self.assertTrue((root / "outputs/kg/capabilities_text_after_run.json").is_file())
+            self.assertTrue((root / "outputs/kg/text_kg_after_run.json").is_file())
+            self.assertTrue((root / "outputs/reports/text_run_unit_text.md").is_file())
+            self.assertTrue((root / "outputs/generated/text").is_dir())
 
 
 if __name__ == "__main__":

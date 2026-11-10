@@ -1,9 +1,9 @@
 {
   "nodes": [
     {
-      "node_id": "run.kg_refresh.01",
+      "node_id": "run.demo.01",
       "node_type": "ValidationRun",
-      "name": "验证运行 run.kg_refresh.01",
+      "name": "验证运行 run.demo.01",
       "version": "v1",
       "task_type": "tabular_binary_classification",
       "status": "active",
@@ -18,14 +18,14 @@
           "grouped_auc_gap": 0.05875830231396728
         },
         "passed": false,
-        "duration_seconds": 2.203
+        "duration_seconds": 1.859
       },
       "evidence": []
     },
     {
-      "node_id": "run.kg_refresh.02",
+      "node_id": "run.demo.02",
       "node_type": "ValidationRun",
-      "name": "验证运行 run.kg_refresh.02",
+      "name": "验证运行 run.demo.02",
       "version": "v1",
       "task_type": "tabular_binary_classification",
       "status": "active",
@@ -40,14 +40,14 @@
           "grouped_auc_gap": 0.006730880194030342
         },
         "passed": true,
-        "duration_seconds": 12.609
+        "duration_seconds": 12.188
       },
       "evidence": []
     },
     {
-      "node_id": "run.kg_refresh.03",
+      "node_id": "run.demo.03",
       "node_type": "ValidationRun",
-      "name": "验证运行 run.kg_refresh.03",
+      "name": "验证运行 run.demo.03",
       "version": "v1",
       "task_type": "tabular_binary_classification",
       "status": "active",
@@ -62,12 +62,12 @@
           "grouped_auc_gap": 0.004885606390561015
         },
         "passed": true,
-        "duration_seconds": 2.844
+        "duration_seconds": 2.391
       },
       "evidence": []
     }
   ],
   "edges": [],
   "source_files": [],
-  "content_sha256": "31aa29e598c6636a558546b42f7019b338f99766c9468832460ca43138284037"
+  "content_sha256": "88422e0150d1b8a57fc4a0ed4cabadbfdbecf8119193d656c459f6b8a0a9d8c2"
 }

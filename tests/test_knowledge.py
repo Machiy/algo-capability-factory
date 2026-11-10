@@ -145,18 +145,18 @@ class KnowledgeLayerTests(unittest.TestCase):
 
     def test_exported_artifacts(self) -> None:
         kg_dir = ROOT / self.settings.paths.kg
-        payload = json.loads((kg_dir / "capabilities.json").read_text(encoding="utf-8"))
+        payload = json.loads((kg_dir / "credit_kg.json").read_text(encoding="utf-8"))
         self.assertEqual(len(payload["nodes"]), len(self.graph.nodes))
         self.assertEqual(len(payload["edges"]), len(self.graph.edges))
-        with (kg_dir / "capabilities.csv").open(encoding="utf-8", newline="") as handle:
+        with (kg_dir / "credit_kg.csv").open(encoding="utf-8", newline="") as handle:
             rows = list(csv.DictReader(handle))
         self.assertEqual(len(rows), len(self.graph.nodes))
-        graphml = nx.read_graphml(str(kg_dir / "graph.graphml"))
+        graphml = nx.read_graphml(str(kg_dir / "credit_kg.graphml"))
         self.assertEqual(graphml.number_of_nodes(), len(self.graph.nodes))
-        with sqlite3.connect(kg_dir / "capabilities.db") as connection:
+        with sqlite3.connect(kg_dir / "credit_kg.db") as connection:
             count = connection.execute("SELECT COUNT(*) FROM nodes").fetchone()[0]
         self.assertEqual(count, len(self.graph.nodes))
-        self.assertTrue((kg_dir / "kg.html").is_file())
+        self.assertTrue((kg_dir / "credit_kg.html").is_file())
 
     def test_json_export_is_deterministic(self) -> None:
         """重复构建产物字节一致，避免入库后每次跑测试都产生脏工作区。"""

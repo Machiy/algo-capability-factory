@@ -3,6 +3,27 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循
 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本对应一个 annotated tag 与 GitHub Release。
 
+## [1.4.0] - 2026-11-10
+
+产物命名统一：同一个场景的图谱、报告、代码、轨迹一眼可归，不再需要逐个猜文件名。
+
+### 变更
+
+- **新增 `factory/artifacts.py`**：命名规则单点定义 `<scope>_<kind>[_<variant>].<ext>`。`scope` 取 `credit` / `text` / `regression` / `repo`，跨场景实验与文档用 `shared`；`kind` 取 `kg` / `run` / `candidate` / `trace`；`variant` 是 `after_run`、`demo`、`lesson_1` 等。
+- **知识图谱产物**：`capabilities.json` / `graph.graphml` / `kg.html` / `text_capabilities.json` / `text_graph.graphml` / `repo_capabilities.json` 等 → `credit_kg.*` / `text_kg.*` / `repo_kg.*`（每场景 `json` / `csv` / `graphml` / `cypher` / `db` / `html` 六件套）。
+- **回写图谱与日志**：`capabilities_after_run.json` → `credit_kg_after_run.json`，日志 → `credit_kg_after_run_runs.json`；其他场景 → `text_kg_after_run.json` / `regression_kg_after_run.json`。
+- **报告**：`run_demo.md` → `credit_run_demo.md`，`run_text_demo.md` → `text_run_demo.md`，`run_lesson_demo_1.md` → `credit_run_lesson_1.md`；跨场景实验与文档统一 `shared_` 前缀（`shared_ablation.md`、`shared_resources.md`、`shared_validation_sample.md`、`shared_openapi.json`）。
+- **生成代码**：主场景不再平铺在 `generated/` 根下，统一 `generated/<scope>/candidate_plan.0X.py`。
+- **运行轨迹**：`trace_<run_id>.json` → `trace_<scope>_<variant>.json`（仍不入库）。
+- **CLI 简化**：`--kg-out` / `--gen-dir` 默认按场景自动推导，跨场景只需换 `--task-config`；两个参数保留用于覆盖。`--run-id` 现在只表示变体名（`demo`、`lesson_1`），不再承担场景前缀。
+- **`scripts/extract_repo.py`** 补齐 `.cypher` 与 `.html` 产物，三种场景产物结构一致。
+
+### 兼容性
+
+- 这是产物路径的破坏性变更：外部脚本若硬编码旧路径需要改。
+- **配置精简**：删除 `knowledge.graph_path` / `sqlite_path` / `extraction_results` 三项——产物路径统一由 `factory/artifacts.py` 推导，避免「配置写一份、代码拼一份」两个命名来源；`knowledge` 段只剩 `shared_docs`、`retrieval` 与教训阈值。
+- 全量 179 个用例通过，`ruff` 全绿；三场景端到端重跑，报告与图谱均按新命名落盘。
+
 ## [1.3.0] - 2026-11-10
 
 知识沉淀分层：图谱里存的不再是「某次跑出了什么」，而是「系统在什么条件下会怎么坏、为什么、怎么处置」。导师反馈的原话是「你的知识沉淀看起来就是个日志」，这一版把日志与知识在 schema、检索与产物三个层面拆开。

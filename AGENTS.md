@@ -7,7 +7,7 @@
 
 基于 AI Agent 的算法能力工厂原型：从业务材料抽取**能力知识图谱** → 按自然语言描述**规划并生成算法代码** → 四层**验证** → 按错误签名**修复** → 结果**回写图谱**。行业场景为信用卡下月违约预测（UCI，30000 行）。
 
-当前状态：a–g 七步闭环、P4 沉淀闭环、算法模板插件、FastAPI 接入层与 OpenAPI 均已落地，1.1.1 完成了真实 LLM 通路的健壮性修复，1.2.0 补上入口输入引导，1.3.0 把知识沉淀分成「教训」与「运行日志」两层；179 个用例全过、`ruff` 全绿、干净虚拟环境实测可复现。
+当前状态：a–g 七步闭环、P4 沉淀闭环、算法模板插件、FastAPI 接入层与 OpenAPI 均已落地，1.1.1 完成了真实 LLM 通路的健壮性修复，1.2.0 补上入口输入引导，1.3.0 把知识沉淀分成「教训」与「运行日志」两层，1.4.0 统一了产物命名；179 个用例全过、`ruff` 全绿、干净虚拟环境实测可复现。
 
 ## 文档分工
 
@@ -70,6 +70,7 @@ ruff check factory scripts tests
 | 1.1.x 真实性整改 | `1.1.0` / `1.1.1` 两次提交 | 确定性重复 fit、test 终评接线、Coder 采用 LLM 代码、KG 边按文本命中、失败经验跨轮复用、Planner / Coder prompt 补输出契约 |
 | 1.2.0 入口输入引导 | `1.2.0` 一次提交 | 新增 `factory/intake/` 与 `IntakeGuidance` 契约：要素体检（OK / CLARIFY / REJECT）、跑题拦截、场景错配提示、能力 id 引用；`guide` 子命令与交互向导、`/intake/guide` 与 `/intake/review`、`/run` 422 结构化引导；结论写入 `RunTrace.intake` 与报告第 0 节 |
 | 1.3.0 知识沉淀分层 | `1.3.0` 一次提交 | 新增 `Lesson` 节点与 `LessonRecord` 契约、工程教训库 LE1–LE12、`lessons.py` 教训提炼（独立 run 达阈值提升）、`merge.py` 材料与沉淀合并；检索新增系统级教训段并排除运行日志；交付图谱与 `*_runs.json` 运行日志分离；修复「回写图谱老化」与「occurrences 恒为 1」 |
+| 1.4.0 产物命名统一 | `1.4.0` 一次提交 | 新增 `factory/artifacts.py` 单点定义 `<scope>_<kind>[_<variant>]`；图谱 `/ kg`、报告 `/ run`、代码 `/ generated/<scope>/`、轨迹 `/ trace_<scope>_<variant>` 全部改名；`--kg-out` / `--gen-dir` 改为按场景自动推导；`extract_repo` 补齐 cypher 与 html |
 
 完整历史以 `git --no-pager log` 为准，提交时间由 Git 按实际时刻记录，未做调整。
 

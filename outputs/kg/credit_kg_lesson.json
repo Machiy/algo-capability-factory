@@ -2874,7 +2874,7 @@
       ]
     },
     {
-      "node_id": "failure.lesson_demo_1.01",
+      "node_id": "failure.lesson_1.01",
       "node_type": "FailureCase",
       "name": "失败案例 KeyError: PAY_1",
       "version": "v1",
@@ -2884,16 +2884,16 @@
         "error_signature": "KeyError: PAY_1",
         "fix_strategy": "按 Dataset 列名映射把 PAY_1 改为 PAY_0（T1 陷阱）",
         "repair_round": 1,
-        "run_id": "lesson_demo_1",
+        "run_id": "lesson_1",
         "run_ids": [
-          "lesson_demo_1"
+          "lesson_1"
         ],
         "occurrences": 1
       },
       "evidence": []
     },
     {
-      "node_id": "failure.lesson_demo_1.02",
+      "node_id": "failure.lesson_1.02",
       "node_type": "FailureCase",
       "name": "失败案例 MetricBelowThreshold",
       "version": "v1",
@@ -2903,11 +2903,11 @@
         "error_signature": "MetricBelowThreshold",
         "fix_strategy": "检索历史高分方案，切换模型族或按成本比调阈值",
         "repair_round": 2,
-        "run_id": "lesson_demo_1",
+        "run_id": "lesson_1",
         "run_ids": [
-          "lesson_demo_1",
-          "lesson_demo_2",
-          "lesson_demo_3"
+          "lesson_1",
+          "lesson_2",
+          "lesson_3"
         ],
         "occurrences": 3
       },
@@ -2922,7 +2922,7 @@
       "status": "active",
       "attributes": {
         "derived_from": "cap.data_dictionary.T1",
-        "run_id": "lesson_demo_1",
+        "run_id": "lesson_1",
         "repair_rounds": 2,
         "fixed_signatures": [
           "KeyError: PAY_1",
@@ -2951,8 +2951,8 @@
         "applies_to": "跨场景通用",
         "occurrences": 3,
         "run_ids": [
-          "lesson_demo_1",
-          "lesson_demo_2"
+          "lesson_1",
+          "lesson_2"
         ],
         "confidence": 0.8,
         "source": "measured",
@@ -4176,13 +4176,13 @@
     },
     {
       "source": "cap.data_dictionary.T1",
-      "target": "failure.lesson_demo_1.01",
+      "target": "failure.lesson_1.01",
       "edge_type": "RESULTED_IN",
       "attributes": {}
     },
     {
       "source": "cap.data_dictionary.T1",
-      "target": "failure.lesson_demo_1.02",
+      "target": "failure.lesson_1.02",
       "edge_type": "RESULTED_IN",
       "attributes": {}
     },
@@ -4193,14 +4193,14 @@
       "attributes": {}
     },
     {
-      "source": "failure.lesson_demo_1.02",
+      "source": "failure.lesson_1.02",
       "target": "cap.data_dictionary.T1.v2",
       "edge_type": "FIXED_BY",
       "attributes": {}
     },
     {
       "source": "lesson.workflow.metricbelowthreshold",
-      "target": "failure.lesson_demo_1.02",
+      "target": "failure.lesson_1.02",
       "edge_type": "DERIVED_FROM",
       "attributes": {}
     }
@@ -4215,5 +4215,5 @@
     "assets/docs/test_report.md",
     "assets/legacy/legacy_default_model.py"
   ],
-  "content_sha256": "b8a43cbdaed7e9ad987be308659e374539516bf30329f42e2a914070f5cc2f21"
+  "content_sha256": "9b94a90733c95a1cbd71f125df79df1ed103026712d1b53cbfa25df81b917eb7"
 }

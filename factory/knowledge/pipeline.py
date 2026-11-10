@@ -8,6 +8,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
+from factory.artifacts import kg_paths
 from factory.config import Settings
 from factory.contracts.knowledge import KnowledgeGraph
 from factory.knowledge.extractor import MockExtractor, read_sources
@@ -20,12 +21,13 @@ logger = logging.getLogger(__name__)
 def build_knowledge_graph(settings: Settings, root: Path,
                           docs_dir: str | None = None,
                           legacy_dir: str | None = None,
-                          prefix: str = "",
+                          scene: str = "credit",
                           dataset_profile: dict | None = None) -> KnowledgeGraph:
     """构建知识图谱并产出全部交付物，返回图谱契约供检索器消费。
 
     ``docs_dir`` / ``legacy_dir`` 覆盖全局路径，用于为不同场景构建独立子图；
-    ``prefix`` 给产物加前缀，避免第二个场景覆盖主场景的 JSON / CSV / GraphML；
+    ``scene`` 决定产物前缀（``credit`` / ``text`` / ``repo``），命名规则见
+    :mod:`factory.artifacts`，避免第二个场景覆盖主场景的 JSON / CSV / GraphML；
     ``dataset_profile`` 由 ``verify_*.yaml`` 派生的数据集画像，抽取器据此填
     Dataset 节点，不再把标签名与敏感列写死在代码里。
 
@@ -36,17 +38,14 @@ def build_knowledge_graph(settings: Settings, root: Path,
     sources = read_sources(root, docs, legacy, settings.knowledge.shared_docs)
     graph = MockExtractor(dataset_profile).extract(sources)
     store = KnowledgeGraphStore(graph)
-    kg_dir = root / settings.paths.kg
-    if prefix:
-        exported: dict[str, Path] = {
-            "json": store.export_json(kg_dir / f"{prefix}capabilities.json"),
-            "csv": store.export_csv(kg_dir / f"{prefix}capabilities.csv"),
-            "graphml": store.export_graphml(kg_dir / f"{prefix}graph.graphml"),
-            "sqlite": store.persist_sqlite(kg_dir / f"{prefix}kg.db"),
-        }
-    else:
-        exported = store.export_all(settings, root)
-    render_html(graph, kg_dir / f"{prefix}kg.html")
+    paths = kg_paths(root / settings.paths.kg, scene)
+    exported = {
+        "json": store.export_json(paths["json"]),
+        "csv": store.export_csv(paths["csv"]),
+        "graphml": store.export_graphml(paths["graphml"]),
+        "sqlite": store.persist_sqlite(paths["db"]),
+    }
+    render_html(graph, paths["html"])
     for name, path in exported.items():
         logger.info("产物 %s -> %s", name, path.relative_to(root))
     return graph
