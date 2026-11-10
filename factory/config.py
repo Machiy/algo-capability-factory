@@ -157,9 +157,20 @@ class DatasetSettings(_ConfigModel):
 
 
 class CandidateSettings(_ConfigModel):
-    """``verify_*.yaml`` 的 candidates 段：可用算法族，供 Planner 按任务裁剪。"""
+    """``verify_*.yaml`` 的 candidates 段：可用算法族与搜索维度，供 Planner 按任务裁剪。
+
+    ``binnings / samplers / thresholds`` 此前只在 yaml 声明、因 ``extra="ignore"``
+    在加载时被静默丢弃，导致搜索空间只有 ``model_families`` 一个自由度。补声明后
+    进入候选装配：``samplers`` / ``thresholds`` 直接写入 ``CandidatePlan``（替换
+    pipeline 里硬编码的 ``threshold=0.5`` / ``sampler="none"``），``binnings`` 为
+    搜索扩展（A1/A2）预留，本轮不强制应用（模板暂无 WOE 渲染）。
+    """
 
     model_families: list[str] = Field(default_factory=list)
+    binnings: list[str] = Field(default_factory=list)
+    samplers: list[str] = Field(default_factory=list)
+    # 数值阈值（0.30/0.50）与语义值（cost_optimal）并存，语义值由 pipeline 解析
+    thresholds: list[float | str] = Field(default_factory=list)
 
 
 class KnowledgeSourceSettings(_ConfigModel):

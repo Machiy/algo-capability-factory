@@ -15,17 +15,17 @@ RECHECK_USER_PROMPT = ("复测：确认替换现成库后的实时 LLM 链路可
                        "请把这句能力描述解析为结构化 JSON。")
 
 
-def build_demo_request(settings: LLMSettings,
-                       user_prompt: str | None = None) -> LLMRequest:
-    """构造与 ``scripts/record_llm.py`` 一致的请求，供离线回放验收使用。
+def build_role_request(settings: LLMSettings, role: str, system: str,
+                       user: str) -> LLMRequest:
+    """按角色构造录制 / 回放请求，字段口径与 ``build_demo_request`` 完全一致。
 
-    默认使用 ``USER_PROMPT``（首次录制的命中键不变）；传入 ``user_prompt``
-    可生成另一条独立录制，用于替换后的实时链路复测。
+    Interpreter 之外的认知角色（Planner / Coder / Repairer / Curator）由
+    ``scripts/record_llm.py --role`` 调用，为 B1 的多角色 cassette 录制铺路。
     """
     return LLMRequest(
-        role="Interpreter",
-        system=SYSTEM_PROMPT,
-        user=user_prompt or USER_PROMPT,
+        role=role,
+        system=system,
+        user=user,
         model=settings.model,
         temperature=settings.temperature,
         max_tokens=settings.max_tokens,
@@ -35,4 +35,16 @@ def build_demo_request(settings: LLMSettings,
     )
 
 
-__all__ = ["RECHECK_USER_PROMPT", "SYSTEM_PROMPT", "USER_PROMPT", "build_demo_request"]
+def build_demo_request(settings: LLMSettings,
+                       user_prompt: str | None = None) -> LLMRequest:
+    """构造与 ``scripts/record_llm.py`` 一致的请求，供离线回放验收使用。
+
+    默认使用 ``USER_PROMPT``（首次录制的命中键不变）；传入 ``user_prompt``
+    可生成另一条独立录制，用于替换后的实时链路复测。
+    """
+    return build_role_request(settings, "Interpreter", SYSTEM_PROMPT,
+                              user_prompt or USER_PROMPT)
+
+
+__all__ = ["RECHECK_USER_PROMPT", "SYSTEM_PROMPT", "USER_PROMPT",
+           "build_demo_request", "build_role_request"]

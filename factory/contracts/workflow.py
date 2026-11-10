@@ -35,6 +35,9 @@ class CandidateEvaluation(_StrictModel):
     score: float
     metrics: dict[str, float | None] = Field(default_factory=dict)
     repair_rounds: int = 0
+    # 与 CandidatePlan.threshold 同型：数值阈值或 cost_optimal 等语义值，
+    # 语义值由 pipeline 的 _resolve_threshold 在消费时转成数值
+    threshold: float | str = 0.5
 
 
 class TestEvaluation(_StrictModel):

@@ -345,17 +345,25 @@ class Planner:
 
     def plan(self, spec: CapabilitySpec, retrieval: RetrievalResult,
              families: list[str] | None = None,
-             task_type: str = "") -> list[CandidatePlan]:
+             task_type: str = "",
+             samplers: list[str] | None = None,
+             thresholds: list[float] | None = None) -> list[CandidatePlan]:
         """规划候选方案。
 
         当该任务类型注册了专属算法模板（如文本分类的 TF-IDF 管线）时，
         以 ``verify_*.yaml`` 的 ``candidates.model_families`` 为准并去重，
         避免 Planner 提案出该任务无法渲染的模型族；表格场景仍沿用提案。
+
+        ``samplers`` / ``thresholds`` 来自 ``candidates.*`` 维度，按候选序号循环
+        取值写入 ``CandidatePlan``，替换硬编码的 ``sampler="none"`` / ``threshold=0.5``；
+        缺省时退回默认值，保证旧调用（仅传 families）行为不变。
         """
         user = f"能力描述：{spec.description}\n{retrieval.as_prompt_context()}"
         request = LLMRequest(role="Planner", system=SYSTEM_PROMPTS["Planner"], user=user)
         parsed = self.llm.complete(request).parsed
         raw_plans = parsed.get("candidates", [])
+        sampler_cycle = list(samplers or ["none"])
+        threshold_cycle = list(thresholds or [0.5])
         # 模板有两种注册写法：任务专属的 ``<task_type>.<family>``（文本 / 回归）
         # 与通用表格的裸 ``<family>``，两者都算已注册，否则裁剪会静默失效
         templated = set(list_templates())
@@ -380,6 +388,8 @@ class Planner:
                 model_family=family,
                 operators=list(operators),
                 hyperparams=dict(presets[(index - 1) % len(presets)]),
+                sampler=sampler_cycle[(index - 1) % len(sampler_cycle)],
+                threshold=threshold_cycle[(index - 1) % len(threshold_cycle)],
                 rationale=rationale,
                 retrieved_evidence=[hit.node_id for hit in retrieval.hits],
             ))

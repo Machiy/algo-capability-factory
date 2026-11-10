@@ -212,6 +212,45 @@ class PlannerFallbackTests(unittest.TestCase):
         self.assertEqual({plan.model_family for plan in plans}, set(families))
         self.assertIn("兜底", plans[0].rationale)
 
+    def test_planner_writes_search_dimensions(self) -> None:
+        """candidates.samplers / thresholds 维度写入候选，替换硬编码默认值。"""
+        from factory.agents import Interpreter
+
+        class FixedPlannerLLM(BaseLLM):
+            def complete(self, request: LLMRequest) -> LLMResponse:
+                return LLMResponse(
+                    raw="", source="mock",
+                    parsed={"candidates": [
+                        {"model_family": "logistic_regression"},
+                        {"model_family": "random_forest"},
+                    ]},
+                )
+
+        spec = Interpreter(MockLLM()).parse("预测信用卡客户下月违约概率")
+        plans = Planner(FixedPlannerLLM()).plan(
+            spec, _retrieval(), families=["logistic_regression", "random_forest"],
+            task_type="tabular_binary_classification",
+            samplers=["none", "smote"], thresholds=[0.3, 0.5],
+        )
+        self.assertEqual(len(plans), 2)
+        self.assertEqual(plans[0].sampler, "none")
+        self.assertEqual(plans[0].threshold, 0.3)
+        self.assertEqual(plans[1].sampler, "smote")
+        self.assertEqual(plans[1].threshold, 0.5)
+
+    def test_planner_defaults_when_dimensions_absent(self) -> None:
+        """未传维度时退回 sampler="none" / threshold=0.5，旧调用行为不变。"""
+        from factory.agents import Interpreter
+
+        spec = Interpreter(MockLLM()).parse("预测信用卡客户下月违约概率")
+        plans = Planner(MockLLM()).plan(
+            spec, _retrieval(), families=["logistic_regression"],
+            task_type="tabular_binary_classification",
+        )
+        self.assertEqual(len(plans), 1)
+        self.assertEqual(plans[0].sampler, "none")
+        self.assertEqual(plans[0].threshold, 0.5)
+
 
 class CodeSourceLLM(BaseLLM):
     """返回指定源码的假后端，用于验证「采用 LLM 代码 / 回退模板」两条路径。"""
@@ -470,6 +509,34 @@ class WorkflowConfigTests(unittest.TestCase):
             workflow = Workflow(settings, task, ROOT)
         self.assertEqual(workflow.max_rounds, 1)
         self.assertEqual(workflow.planner.beam_width, 1)
+
+    def test_candidate_settings_loads_search_dimensions(self) -> None:
+        """candidates 的 binnings/samplers/thresholds 不再被 extra=ignore 丢弃。"""
+        task = load_task_settings(TASK_CONFIG)
+        self.assertEqual(task.candidates.samplers, ["none", "smote", "class_weight"])
+        self.assertEqual(task.candidates.thresholds, [0.30, 0.50, "cost_optimal"])
+        self.assertEqual(task.candidates.binnings, ["none", "woe"])
+
+    def test_test_gate_wired_into_workflow(self) -> None:
+        """test 段一次性纪律由 TestGate 硬保证：重复消费被拒且不再跑 test 段。"""
+        from factory.contracts.workflow import CandidateEvaluation
+        from factory.workflow import Workflow
+
+        workflow = Workflow(load_settings(CONFIG), load_task_settings(TASK_CONFIG), ROOT)
+        self.assertTrue(workflow._test_gate.enabled)
+        trace = RunTrace(
+            run_id="unit", spec="测试",
+            candidates=[CandidateEvaluation(
+                plan_id="plan.test", model_family="logistic_regression",
+                passed=True, score=0.5)],
+        )
+        workflow._test_gate.consume()  # 预置为已消费
+        with patch.object(Path, "is_file", return_value=True), \
+             patch.object(workflow.sandbox, "run") as mock_run:
+            result = workflow._finalize_on_test(trace)
+        self.assertFalse(result.consumed)
+        self.assertIn("拒绝重复访问", result.note)
+        mock_run.assert_not_called()  # 门禁拦下，未真正跑 test 段
 
     def test_env_overrides_apply_only_when_requested(self) -> None:
         """`.env` 的 LLM_PROVIDER 只在显式要求时生效。

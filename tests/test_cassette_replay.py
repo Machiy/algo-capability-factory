@@ -73,5 +73,39 @@ class RealCassetteTests(unittest.TestCase):
         self.assertIsNone(re.search(r"sk-[A-Za-z0-9_\-]{16,}", text))
 
 
+class RoleRequestTests(unittest.TestCase):
+    """方案 0.3：按角色构造录制请求（不联网、不依赖真实 cassette）。"""
+
+    def test_build_role_request_uses_given_fields(self) -> None:
+        from factory.agents.roles import SYSTEM_PROMPTS
+        from factory.llm.demo import build_role_request
+
+        settings = load_settings(CONFIG)
+        request = build_role_request(
+            settings.llm, "Planner", SYSTEM_PROMPTS["Planner"], "示例输入"
+        )
+        self.assertEqual(request.role, "Planner")
+        self.assertEqual(request.system, SYSTEM_PROMPTS["Planner"])
+        self.assertEqual(request.user, "示例输入")
+        self.assertEqual(request.model, settings.llm.model)
+        self.assertEqual(request.temperature, settings.llm.temperature)
+
+    def test_build_demo_request_delegates_to_role_request(self) -> None:
+        from factory.llm.demo import build_demo_request, build_role_request
+
+        settings = load_settings(CONFIG)
+        demo = build_demo_request(settings.llm)
+        role = build_role_request(settings.llm, "Interpreter", demo.system, demo.user)
+        self.assertEqual(demo.model_dump(), role.model_dump())
+
+    def test_all_known_roles_have_system_prompt(self) -> None:
+        from factory.agents.roles import SYSTEM_PROMPTS
+
+        for role in ("Interpreter", "Planner", "Coder", "Repairer", "Curator"):
+            with self.subTest(role=role):
+                self.assertIn(role, SYSTEM_PROMPTS)
+                self.assertTrue(SYSTEM_PROMPTS[role].strip())
+
+
 if __name__ == "__main__":
     unittest.main()

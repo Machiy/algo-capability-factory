@@ -49,7 +49,7 @@ class TestGate:
     def consumed(self) -> bool:
         return self._consumed
 
-    def consume(self, indices: list[int]) -> list[int]:
+    def consume(self, indices: list[int] | None = None) -> list[int] | None:
         if self.enabled and self._consumed:
             raise PermissionError("test 集已被使用过一次，禁止重复访问")
         self._consumed = True

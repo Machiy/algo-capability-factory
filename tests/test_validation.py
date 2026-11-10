@@ -124,6 +124,19 @@ class SplitTests(unittest.TestCase):
         with self.assertRaises(PermissionError):
             gate.consume([1, 2])
 
+    def test_gate_consumes_without_indices(self) -> None:
+        """无索引调用只做门禁（pipeline 用行号范围而非索引列表）。"""
+        gate = TestGate(True)
+        self.assertIsNone(gate.consume())
+        self.assertTrue(gate.consumed)
+        with self.assertRaises(PermissionError):
+            gate.consume()
+
+    def test_disabled_gate_never_blocks(self) -> None:
+        gate = TestGate(False)
+        self.assertIsNone(gate.consume())
+        self.assertIsNone(gate.consume())  # 关闭时不抛错
+
 
 class FourLayerTests(unittest.TestCase):
     @classmethod

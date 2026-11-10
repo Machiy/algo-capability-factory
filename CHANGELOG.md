@@ -3,6 +3,35 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循
 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本对应一个 annotated tag 与 GitHub Release。
 
+## [1.5.0] - 2026-11-10
+
+方案 0「前置工作」落地：为搜索升级（A1/A2）与多智能体（B1）铺地基，同时加固两处
+既有软约束。对应本地规划 `OPTIMIZATION_PLAN.md`（不入库）。
+
+### 新增
+
+- **TestGate 接入编排器**（0.1）：`Workflow` 创建 `TestGate`，终评前先 `consume()`，
+  test 一次性纪律从「只在一处调用」的结构约定变为硬保证（重复消费抛 `PermissionError`）。
+  `TestGate.consume` 的 `indices` 改为可选，兼容纯门禁调用。
+- **搜索维度接入契约**（0.2）：`CandidateSettings` 补声明 `binnings / samplers /
+  thresholds`（此前被 `extra="ignore"` 静默丢弃）；`Planner` 按候选序号循环取值写入
+  `CandidatePlan.sampler / threshold`，替换 `pipeline` 硬编码的 `threshold=0.5` /
+  `sampler="none"`；`CandidateEvaluation` 增 `threshold` 字段承载终评阈值。
+  `cost_optimal` 语义值由 `_resolve_threshold` 回退默认并记 warning（语义未实现，诚实标注）。
+- **按角色录制**（0.3）：`demo.build_role_request` 泛化请求构造（`build_demo_request`
+  委托之，行为不变）；`scripts/record_llm.py` 增 `--role` 参数，可录 Interpreter /
+  Planner / Coder / Repairer / Curator 五类认知角色，为 B1 多角色 cassette 铺路。
+
+### 测试
+
+- 新增 9 个用例：TestGate 无索引调用 / 关闭不拦截、维度加载、Planner 装配维度 /
+  缺省回退、终评门禁拦截、按角色请求构造。全量 218 个用例通过，`ruff` 全绿。
+
+### 修复
+
+- 补齐上一版本漏改的 `configs/default.yaml` 的 `project.version`，恢复「包版本 /
+  pyproject / default.yaml」三处一致。
+
 ## [1.4.6] - 2026-11-10
 
 修复「一键复现」与「定向修复覆盖面」两处真实缺口。

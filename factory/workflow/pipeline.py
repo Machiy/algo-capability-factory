@@ -43,7 +43,7 @@ from factory.logging_setup import write_trace
 from factory.plugins import load_plugins
 from factory.runtime import StaticChecker
 from factory.runtime.dataset_sandbox import DatasetSandbox
-from factory.validation import FourLayerValidator
+from factory.validation import FourLayerValidator, TestGate
 
 logger = logging.getLogger(__name__)
 
@@ -316,6 +316,9 @@ class Workflow:
         self.metric_name = task.metrics[0].name if task.metrics else "auc"
         self.metric_direction = task.metrics[0].direction if task.metrics else "maximize"
         self.families = list(task.candidates.model_families)
+        # 搜索维度：sampler / threshold 来自 candidates.*，不再硬编码 0.5 / "none"
+        self.samplers = list(task.candidates.samplers)
+        self.thresholds = list(task.candidates.thresholds)
         excluded = set(task.dataset.forbidden_features)
         excluded.update(task.sensitive_features)
         excluded.update({task.dataset.target, task.dataset.id_column})
@@ -354,6 +357,9 @@ class Workflow:
         self.max_rounds = settings.workflow.max_repair_rounds
         self.determinism_repeat = settings.workflow.determinism_repeat
         self.evaluate_on_test = settings.workflow.evaluate_on_test
+        # test 一次性纪律的硬保证：重复消费 test 段即抛 PermissionError，
+        # 不再依赖「只在一处调用 segment="test"」的结构约定
+        self._test_gate = TestGate(enabled=self.evaluate_on_test)
         self._graph = self._build_graph()
 
     def _groups_for(self, segment: str) -> list[int]:
@@ -363,6 +369,18 @@ class Workflow:
         start, end = self.sandbox.segment_bounds(segment)
         frame = pd.read_csv(self.data_path, usecols=[self.group_column])
         return [int(value) for value in frame[self.group_column].iloc[start:end]]
+
+    @staticmethod
+    def _resolve_threshold(threshold: float | str) -> float:
+        """把候选阈值解析为数值；语义值（cost_optimal）暂回退默认 0.5。
+
+        ``cost_optimal`` 的「按成本比选最优阈值」语义未在本轮实现，回退时记
+        warning，不静默吞掉；数值阈值（0.30 / 0.50）直接生效。
+        """
+        if isinstance(threshold, (int, float)):
+            return float(threshold)
+        logger.warning("阈值 %r 语义未实现，回退默认 0.5", threshold)
+        return 0.5
 
     def _build_graph(self):
         builder = StateGraph(_GraphState)
@@ -415,7 +433,8 @@ class Workflow:
 
     def _n_plan(self, state: _GraphState) -> dict:
         plans = self.planner.plan(state["spec"], state["retrieval"],
-                                  families=self.families, task_type=self.task_type)
+                                  families=self.families, task_type=self.task_type,
+                                  samplers=self.samplers, thresholds=self.thresholds)
         trace = state["trace"]
         trace.steps.append(SEVEN_STEPS[2])
         return {"plans": plans, "candidate_index": 0, "reports": [], "trace": trace}
@@ -451,7 +470,8 @@ class Workflow:
         if run_result.sandbox.passed:
             run_result.context["groups"] = self.groups
             run_result.context["cost_ratio"] = self.task.cost_ratio_fn_fp
-            run_result.context["threshold"] = 0.5
+            run_result.context["threshold"] = self._resolve_threshold(
+                state["plan"].threshold)
         report, _ = self.verifier.verify(
             state["run_id"], state["plan"].plan_id, state["static"], run_result
         )
@@ -497,6 +517,7 @@ class Workflow:
             score=_candidate_score(report, self.metric_name, self.metric_direction),
             metrics=report.metric_values,
             repair_rounds=state["repair_rounds"],
+            threshold=plan.threshold,
         ))
         reports = [*state["reports"], report]
         return {"candidate_index": state["candidate_index"] + 1,
@@ -520,6 +541,12 @@ class Workflow:
         if not generated.is_file():
             return TestEvaluation(plan_id=best.plan_id, consumed=False,
                                  note="最佳候选源码缺失，test 段未消费")
+        # test 门禁：真正消费前先过 TestGate，重复访问直接拒绝
+        try:
+            self._test_gate.consume()
+        except PermissionError:
+            return TestEvaluation(plan_id=best.plan_id, consumed=False,
+                                 note="test 段已被消费过，拒绝重复访问")
         result = self.sandbox.run(generated.read_text(encoding="utf-8"), segment="test")
         if not result.sandbox.passed:
             return TestEvaluation(
@@ -529,7 +556,7 @@ class Workflow:
         context = dict(result.context)
         context["groups"] = self._groups_for("test")
         context["cost_ratio"] = self.task.cost_ratio_fn_fp
-        context["threshold"] = 0.5
+        context["threshold"] = self._resolve_threshold(best.threshold)
         metrics = self.verifier.validator.evaluate_metrics(context)
         logger.info("终评（test 段，仅一次）：候选=%s", best.plan_id)
         return TestEvaluation(
