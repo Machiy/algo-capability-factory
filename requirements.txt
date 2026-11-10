@@ -19,6 +19,8 @@ rank-bm25>=0.2.2,<0.3
 
 # ---- Agent 编排（现成框架，不自研状态机）----
 langgraph>=0.2,<0.4
+# langchain-core 是 langgraph 的运行依赖，显式列出仅为锁定版本区间；
+# 本仓库不直接调用其 API（未使用 LangChain 的 Agent / Chain），理由见 README 第 2 节逐项对照
 langchain-core>=0.3,<0.4
 
 # ---- 运行时、日志与报告 ----

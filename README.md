@@ -52,7 +52,7 @@
 | 快速上手 | 三条命令怎么跑出结果？跑完看哪几个文件？报错怎么办？ |
 | 核心闭环 | 从一句话到产物，中间经过哪几步？ |
 | 1. 项目背景和目标 | 为什么要做、做成什么样算成功 |
-| 2. 系统架构和模块设计 | 六层怎么分、为什么这么选、有哪些现成库被替换 |
+| 2. 系统架构和模块设计 | 六层怎么分、为什么这么选、题目点名的工具各自用没用 |
 | 3. 能力知识图谱 schema 和示例 | 10 类节点 / 13 类边、六要素怎么落、知识怎么和日志分开 |
 | 4. Agent 工作流设计 | 8 个角色、状态机、四层验证、修复策略、教训怎么沉淀 |
 | 5. 环境配置和运行方法 | 装环境、跑分阶段脚本、主要产物在哪、真实 LLM 怎么接 |
@@ -210,6 +210,26 @@ python -m factory run --spec "预测信用卡客户下月违约概率，时间�
 | 输入引导 | 自研规则引擎 `factory/intake/` | 判据是项目特定语义（目标 / 数据 / 指标 / 约束是否表达、描述更像哪个场景），结论要同时进终端、API 与报告 | Guardrails / NeMo Guardrails 面向 LLM 输出安全与对话流程，需额外模型与配置；Pydantic 只校验字段类型与字符集，覆盖不到「要素完备度」与「场景错配」 |
 | 知识沉淀 | 自研教训层 `factory/knowledge/lessons.py`（签名规则表 + 提升逻辑） | 需要「错误签名 → 根因 → 处置 → 预防」的项目特定映射、可解释的置信度，且必须离线可复现 | MLflow / W&B 记录的是 run 级指标与参数，正是「日志」，不做知识抽象也不会进 prompt；Neo4j / RDF 推理需要额外服务与 schema，本项目规模用不上；LangGraph 的 checkpoint 只存会话状态，不区分知识与日志 |
 | 算法栈 | pandas + scikit-learn + imbalanced-learn | 全 CPU、秒级、确定性强，`Pipeline` 天然防泄漏 | 算法模板用标准库 `str.format`，不为单文件模板引入 Jinja2（Jinja2 仅用于报告） |
+
+### 题目点名工具：用了哪些、为什么（逐项对照）
+
+题目给出的可选工具清单较长，这里逐项说明「用 / 不用」与理由，避免「到底用了什么」需要读者自己从代码里猜。
+
+| 工具 | 是否采用 | 落在哪里 | 选择理由 |
+|---|---|---|---|
+| **LangChain** | 部分采用：用同一生态的 **LangGraph**（+ `langchain-core` 依赖） | `factory/workflow/pipeline.py` 的 `StateGraph`；`requirements.txt` | 本项目真正需要的是「确定性状态机 + 条件边 + 循环上限」，LangGraph 是 LangChain 官方的图编排层，正好对应；**不用** LangChain 的 Agent / Chain，因为它会把 LLM 调用链与 prompt 拼装藏进框架，破坏「检索证据显式进 Planner / Coder prompt」这一评分点，也让 `MockLLM` 默认路径与单测变复杂 |
+| **LlamaIndex** | 未采用 | — | 强项是文档索引 + 向量检索；本项目要求检索**可解释**（BM25 分值 + 图邻域加权，权重写在 yaml）、**离线**（不依赖 embedding 服务），它的 LLM / retriever 包装又会与 `BaseLLM` 抽象重复 |
+| **AutoGen** | 未采用 | — | 面向「多 Agent 自由对话」；本项目 8 个角色是确定性节点，每个都有输入输出 schema，便于单测与复现。对话式编排难以保证「检索结果必然进入 prompt」 |
+| **CrewAI** | 未采用 | — | 同上。role / goal 配置适合开放式协作，但无法约束「必须先检索再规划」，也无法让同一份 `RunTrace` 逐节点回放 |
+| **OpenAI API** | 采用（OpenAI 兼容协议，默认接 DeepSeek） | `factory/llm/openai_compat.py`；`configs/default.yaml` 的 `llm.base_url` | 只需一次 Chat Completions 调用，`openai` SDK 即标准客户端；用兼容端点便于换供应商（改 `LLM_BASE_URL` 即可），key 只从环境变量读取 |
+| **本地开源模型** | 未采用 | — | CPU 环境跑 7B 级模型单次响应超分钟级，与 60s 沙箱预算冲突；题目允许 API 方式；同时默认 `MockLLM` 保证无模型、断网也能复现全链路 |
+| **Neo4j** | 未采用 | — | 需要 Docker 服务，与「本地一键复现」冲突；本项目图规模为百节点级，NetworkX + SQLite 已经够用，且能直接导出 GraphML / CSV 交付 |
+| **NetworkX** | 采用 | `factory/knowledge/graph.py`（属性图构建、`GraphML` 导出）；`pyvis` 做可视化 | 零部署、纯 Python，属性图与 MultiDiGraph 语义足够表达能力—算子—指标—失败案例；导出 GraphML 可交给任意图工具查看 |
+| **SQLite** | 采用 | `factory/knowledge/graph.py` 的 `persist_sqlite`（`outputs/kg/*.db`） | 标准库自带，用来承载节点 / 边表，供版本谱系与验证记录按 SQL 查询，不引入数据库服务 |
+| **FastAPI** | 采用 | `factory/api/app.py`（`/health`、`/templates`、`/intake/guide`、`/intake/review`、`/run`，并自动导出 OpenAPI） | 题目要求「API 或 Web UI」；FastAPI 自带 OpenAPI 文档与 Pydantic 校验，正好复用项目已有的契约模型，交付物里还能附一份 `openapi.json` |
+| **Streamlit** | 未采用 | — | 题目为「或」，CLI（Typer）+ REST API 已覆盖自动化验收与集成两种用法；再引入一个前端框架只增加依赖，不增加评分点 |
+
+> 库级别的更细理由（为什么换掉自研状态机、为什么用 `rank_bm25` / `markdown-it-py` / `psutil` / `structlog`）见上方选型表；「评估过什么、为何不用」也逐行写在那里。
 
 **仓库结构**
 
@@ -685,7 +705,7 @@ done
 | 9 遇到的挑战和解决方案 | 第 9 节 |
 | 10 后续可扩展方向 | 第 10 节 |
 
-**开发要求 a–g**：a Git 版本控制与清晰提交信息（历史与阶段对照见 `AGENTS.md`）、b 完整文档（本文件）、c 模块化与注释（第 2 节）、d 本地可复现（第 5 节 + 干净环境实测）、e Python 3.11+、f 工具选择理由（第 2 节选型表）、g mock LLM 兜底（`--mock` 与 cassette 回放）。
+**开发要求 a–g**：a Git 版本控制与清晰提交信息（历史与阶段对照见 `AGENTS.md`）、b 完整文档（本文件）、c 模块化与注释（第 2 节）、d 本地可复现（第 5 节 + 干净环境实测）、e Python 3.11+、f 工具选择理由（第 2 节选型表 + 「题目点名工具：用了哪些、为什么」逐项对照）、g mock LLM 兜底（`--mock` 与 cassette 回放）。
 
 ## 附录 B · 交付物对照（题目「交付内容」逐条索引）
 
