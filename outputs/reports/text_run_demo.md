@@ -69,10 +69,17 @@
 - 无失败轮次
 
 ## 设计依据
-- 检索证据条目：21
-- 候选排名：plan.02 > plan.01 > plan.03
-- 修复轨迹：无
-- 依据：检索到的适用条件约束候选方案，历史失败规避项触发列名映射修复。
+
+- 评价口径：主指标 `accuracy`（maximize，门槛 0.95）；候选在 valid 段实测后统一打分排名，test 段只在比较结束后消费一次。
+- 检索证据：命中 5 项（metric.sms_policy.macro_f1、metric.sms_policy.r01、cap.sms_data_dictionary.ST1、cap.sms_data_dictionary.ST2、cap.sms_data_dictionary.ST3），适用条件 5 条、系统级教训 5 条已注入 Planner / Coder 的 prompt。
+- 硬约束：[S1] 文本长度：少于 3 个字符的样本不参与训练，避免噪声主导词表；[S2] 语言范围：当前仅覆盖英文短信；中文短信需要另行分词，不能直接复用本词表；[S3] 类别严重不平衡：spam 约 13.4%，评估必须同时看 macro-F1，禁止只看 accuracy
+- 候选实测比较：
+  - `plan.02`（linear_svc）：accuracy=0.9803 PASS，修复 0 轮
+  - `plan.01`（logistic_regression）：accuracy=0.9785 PASS，修复 0 轮
+  - `plan.03`（complement_nb）：accuracy=0.9731 PASS，修复 0 轮
+- 选择 `plan.02` 的依据：主指标实测 0.9803 排名第一且四层验证通过；全部候选通过门槛，按主指标择优。
+- 本轮未触发失败签名，无需定向修复。
+- 上述依据均可用节点 id 在图谱 / 报告中回溯，不含事后编造的数值。
 
 ## 5. 终评（test 段，仅一次）
 

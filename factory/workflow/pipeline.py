@@ -561,8 +561,14 @@ class Workflow:
             f"检索证据 {len(state['retrieval'].hits)} 项已注入 "
             "Planner 与 Coder prompt。"
         )
+        rationale = self.curator.explain(
+            trace, retrieval=state["retrieval"],
+            metric_name=self.metric_name,
+            direction=self.metric_direction,
+            threshold=self.task.metrics[0].threshold if self.task.metrics else None,
+        )
         trace.report_path = render_run_report(
-            trace, state["reports"], self.curator.explain(trace),
+            trace, state["reports"], rationale,
             report_path(self.root / self.settings.paths.reports, self.scope, trace.run_id),
             metric_name=self.metric_name,
             task_config=Path(self.task_config).name,

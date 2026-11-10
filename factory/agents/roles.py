@@ -644,13 +644,57 @@ class Curator:
                 "lessons_promoted": len(records),
                 "lessons_total": lessons_total}
 
-    def explain(self, trace: RunTrace) -> str:
-        """自然语言解释方案设计依据（加分项）。"""
+    def explain(self, trace: RunTrace, *, retrieval: RetrievalResult | None = None,
+                metric_name: str = "auc", direction: str = "maximize",
+                threshold: float | None = None) -> str:
+        """生成可回溯的设计依据：判据 → 证据 → 候选比较 → 排除原因 → 修复。
+
+        早期版本是四行固定话术，连「为什么排除某个候选」都答不出来。这里把
+        检索命中的节点 id、任务门槛、每个候选的实测指标与失败签名组织成因果链；
+        纯确定性拼接，不调用 LLM，保证离线可复现、每句结论都能按节点 id 回溯。
+        """
         ranked = sorted(trace.candidates, key=lambda item: -item.score)
-        lines = ["## 设计依据", f"- 检索证据条目：{len(trace.retrieval_prompt.splitlines())}"]
-        lines.append(f"- 候选排名：{' > '.join(item.plan_id for item in ranked)}")
-        lines.append(f"- 修复轨迹：{'; '.join(r.fix_strategy for r in trace.repairs) or '无'}")
-        lines.append("- 依据：检索到的适用条件约束候选方案，历史失败规避项触发列名映射修复。")
+        best = ranked[0] if ranked else None
+        hits = retrieval.hits if retrieval else []
+        constraints = retrieval.constraints if retrieval else []
+        lessons = retrieval.lessons if retrieval else []
+        gate = f"门槛 {threshold}" if threshold is not None else "门槛由任务配置给出"
+        lines = [
+            "## 设计依据",
+            "",
+            (f"- 评价口径：主指标 `{metric_name}`（{direction}，{gate}）；"
+             "候选在 valid 段实测后统一打分排名，test 段只在比较结束后消费一次。"),
+        ]
+        evidence = "、".join(hit.node_id for hit in hits[:5]) or "无"
+        lines.append(
+            f"- 检索证据：命中 {len(hits)} 项（{evidence}），适用条件 {len(constraints)} 条、"
+            f"系统级教训 {len(lessons)} 条已注入 Planner / Coder 的 prompt。")
+        if constraints:
+            lines.append("- 硬约束：" + "；".join(str(item)[:70] for item in constraints[:3]))
+        if ranked:
+            lines.append("- 候选实测比较：")
+            for item in ranked:
+                value = item.metrics.get(metric_name)
+                value_text = "N/A" if value is None else f"{value:.4f}"
+                lines.append(
+                    f"  - `{item.plan_id}`（{item.model_family}）：{metric_name}={value_text} "
+                    f"{'PASS' if item.passed else 'FAIL'}，修复 {item.repair_rounds} 轮")
+        failed = [item.plan_id for item in ranked if not item.passed]
+        if best is not None:
+            reason = (f"主指标实测 {best.score:.4f} 排名第一且四层验证通过"
+                      if best.passed else "本轮无候选通过全部四层，如实判 FAIL")
+            excluded = (f"；未选 {', '.join(failed)}，因其未通过指标 / 四层门槛" if failed
+                        else "；全部候选通过门槛，按主指标择优")
+            lines.append(f"- 选择 `{best.plan_id}` 的依据：{reason}{excluded}。")
+        if trace.repairs:
+            lines.append("- 失败与定向修复：" + "；".join(
+                f"`{item.error_signature}` → {item.fix_strategy}（{item.outcome}）"
+                for item in trace.repairs))
+            lines.append("- 这些签名已回写 `FailureCase`；同一签名在独立运行中出现达阈值后"
+                         "提升为 `Lesson`，下一轮由检索注入 prompt。")
+        else:
+            lines.append("- 本轮未触发失败签名，无需定向修复。")
+        lines.append("- 上述依据均可用节点 id 在图谱 / 报告中回溯，不含事后编造的数值。")
         return "\n".join(lines)
 
 

@@ -73,10 +73,17 @@
 - 无失败轮次
 
 ## 设计依据
-- 检索证据条目：24
-- 候选排名：plan.02 > plan.01 > plan.03
-- 修复轨迹：无
-- 依据：检索到的适用条件约束候选方案，历史失败规避项触发列名映射修复。
+
+- 评价口径：主指标 `rmse`（minimize，门槛由任务配置给出）；候选在 valid 段实测后统一打分排名，test 段只在比较结束后消费一次。
+- 检索证据：命中 5 项（run.experiment_log.EXP-03、run.experiment_log.EXP-04、cap.expert_rules.E4、metric.risk_policy.r01、run.experiment_log.EXP-02），适用条件 5 条、系统级教训 5 条已注入 Planner / Coder 的 prompt。
+- 硬约束：[C1] 客群范围：仅适用于持有 ≥6 期账单历史的存量客户；新客无 `PAY_*` / `BILL_AMT*` 序列，不在适用范围内；[C2] 额度区间：`LIMIT_BAL` 在本样本覆盖区间内；超出区间需人工复核；[C3] 时间范围：训练样本观测期为 2005-04 至 2005-09；上线前须做 PSI 群体稳定性检查，PSI > 0.25 触发重训
+- 候选实测比较：
+  - `plan.02`（ridge）：rmse=19.3141 PASS，修复 0 轮
+  - `plan.01`（hist_gradient_boosting_regressor）：rmse=28.5258 PASS，修复 0 轮
+  - `plan.03`（random_forest_regressor）：rmse=37.0089 PASS，修复 0 轮
+- 选择 `plan.02` 的依据：主指标实测 -19.3141 排名第一且四层验证通过；全部候选通过门槛，按主指标择优。
+- 本轮未触发失败签名，无需定向修复。
+- 上述依据均可用节点 id 在图谱 / 报告中回溯，不含事后编造的数值。
 
 ## 5. 终评（test 段，仅一次）
 

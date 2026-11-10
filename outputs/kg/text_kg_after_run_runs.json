@@ -13,7 +13,7 @@
           "macro_f1": 0.9535203634999374
         },
         "passed": true,
-        "duration_seconds": 1.797
+        "duration_seconds": 1.813
       },
       "evidence": []
     },
@@ -30,7 +30,7 @@
           "macro_f1": 0.9563988624244579
         },
         "passed": true,
-        "duration_seconds": 1.782
+        "duration_seconds": 1.734
       },
       "evidence": []
     },
@@ -54,5 +54,5 @@
   ],
   "edges": [],
   "source_files": [],
-  "content_sha256": "880f24cfe1b57378565304a7fb95e0bba2d1e01016abbd43f7754bd5d5618244"
+  "content_sha256": "ddc6a664c60e8a12a2d77de90bd0c3f65beae8430b5b95525de332918068f710"
 }

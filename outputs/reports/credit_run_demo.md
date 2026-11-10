@@ -73,10 +73,18 @@
 - 第 1 轮：`MetricBelowThreshold` → 检索历史高分方案，切换模型族或按成本比调阈值（no_change）
 
 ## 设计依据
-- 检索证据条目：24
-- 候选排名：plan.02 > plan.03 > plan.01
-- 修复轨迹：检索历史高分方案，切换模型族或按成本比调阈值
-- 依据：检索到的适用条件约束候选方案，历史失败规避项触发列名映射修复。
+
+- 评价口径：主指标 `auc`（maximize，门槛 0.78）；候选在 valid 段实测后统一打分排名，test 段只在比较结束后消费一次。
+- 检索证据：命中 5 项（cap.risk_policy.C6、metric.test_report.r04、cap.expert_rules.E1、cap.expert_rules.E4、cap.risk_policy.C5），适用条件 5 条、系统级教训 5 条已注入 Planner / Coder 的 prompt。
+- 硬约束：[C1] 客群范围：仅适用于持有 ≥6 期账单历史的存量客户；新客无 `PAY_*` / `BILL_AMT*` 序列，不在适用范围内；[C2] 额度区间：`LIMIT_BAL` 在本样本覆盖区间内；超出区间需人工复核；[C3] 时间范围：训练样本观测期为 2005-04 至 2005-09；上线前须做 PSI 群体稳定性检查，PSI > 0.25 触发重训
+- 候选实测比较：
+  - `plan.02`（random_forest）：auc=0.7899 PASS，修复 0 轮
+  - `plan.03`（hist_gradient_boosting）：auc=0.7843 PASS，修复 0 轮
+  - `plan.01`（logistic_regression）：auc=0.7206 FAIL，修复 1 轮
+- 选择 `plan.02` 的依据：主指标实测 0.7899 排名第一且四层验证通过；未选 plan.01，因其未通过指标 / 四层门槛。
+- 失败与定向修复：`MetricBelowThreshold` → 检索历史高分方案，切换模型族或按成本比调阈值（no_change）
+- 这些签名已回写 `FailureCase`；同一签名在独立运行中出现达阈值后提升为 `Lesson`，下一轮由检索注入 prompt。
+- 上述依据均可用节点 id 在图谱 / 报告中回溯，不含事后编造的数值。
 
 ## 5. 终评（test 段，仅一次）
 

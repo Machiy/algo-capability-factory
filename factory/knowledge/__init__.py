@@ -6,6 +6,7 @@ from factory.knowledge.merge import merge_graphs
 from factory.knowledge.pipeline import build_knowledge_graph
 from factory.knowledge.repo_extractor import RepoExtractor, RepoScan
 from factory.knowledge.retrieval import HybridRetriever
+from factory.knowledge.versions import list_versions, version_diff
 from factory.knowledge.visualize import render_html
 
 __all__ = [
@@ -16,7 +17,9 @@ __all__ = [
     "RepoExtractor",
     "RepoScan",
     "build_knowledge_graph",
+    "list_versions",
     "merge_graphs",
     "read_sources",
     "render_html",
+    "version_diff",
 ]

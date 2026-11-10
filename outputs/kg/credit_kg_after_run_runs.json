@@ -18,7 +18,7 @@
           "grouped_auc_gap": 0.05875830231396728
         },
         "passed": false,
-        "duration_seconds": 1.859
+        "duration_seconds": 1.828
       },
       "evidence": []
     },
@@ -40,7 +40,7 @@
           "grouped_auc_gap": 0.006730880194030342
         },
         "passed": true,
-        "duration_seconds": 12.188
+        "duration_seconds": 11.39
       },
       "evidence": []
     },
@@ -62,12 +62,12 @@
           "grouped_auc_gap": 0.004885606390561015
         },
         "passed": true,
-        "duration_seconds": 2.391
+        "duration_seconds": 2.313
       },
       "evidence": []
     }
   ],
   "edges": [],
   "source_files": [],
-  "content_sha256": "88422e0150d1b8a57fc4a0ed4cabadbfdbecf8119193d656c459f6b8a0a9d8c2"
+  "content_sha256": "3d4245b43d72e3e60016a94c58ee8c5198098b9574ba6434c79d0e8827713f21"
 }
