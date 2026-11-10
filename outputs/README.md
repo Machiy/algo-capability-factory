@@ -21,13 +21,15 @@
 | `repo_kg.*` | `scorecardpy` 真实仓库抽取的 81 个公开能力 | 是 |
 | `regression_kg_after_run.json` | 回归场景回写图谱（无专属材料，复用通用知识） | 是 |
 | `credit_kg_lesson.json` / `_runs.json` | 知识沉淀三轮演示：第 1 次攒证据 → 第 2 次提升教训 → 第 3 次被检索命中 | 是 |
+| `credit_kg_live.json` / `_runs.json` | 真实 LLM 全链路实测的回写图谱与运行日志 | 是 |
 
 ## generated/ · 生成的算法代码
 
 ```
-generated/credit/candidate_plan.0{1,2,3}.py      主场景三个候选
+generated/credit/candidate_plan.0{1,2,3}.py      主场景三个候选（模板 / cassette 基线）
 generated/text/…                                 短信分类
 generated/regression/…                           需求量回归
+generated/live/…                                 真实 LLM 实时生成的三个候选（页眉会标注来源）
 ```
 
 代码来源看报告「候选方案比较」表的“代码来源”列（`template` / `llm`），不靠文件名猜。
@@ -43,6 +45,7 @@ generated/regression/…                           需求量回归
 | `shared_ablation.md` | 两组对比汇总（方法级，可扩展到更多场景） |
 | `shared_validation_sample.md` | 四层验证报告样例 |
 | `shared_resources.md` | 1× / 10× 资源与性能基准 |
+| `credit_run_live.md` | 真实 LLM 全链路实测报告（8 次实时调用，三个候选代码均为 LLM 生成） |
 | `shared_openapi.json` | 接口文档（`python -m factory api --export-openapi`） |
 
 ## runs/ · 运行轨迹

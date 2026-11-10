@@ -139,17 +139,29 @@ def render_kg_diff(diff: dict[str, int]) -> list[str]:
 def render_run_report(trace: RunTrace, reports: list[ValidationReport],
                       rationale: str, path: Path, metric_name: str = "auc",
                       task_config: str = "verify_credit.yaml",
-                      kg_path: str = "outputs/kg/capabilities_after_run.json",
+                      kg_path: str = "outputs/kg/credit_kg_after_run.json",
                       run_log_path: str = "",
                       text_mode: bool = False) -> Path:
     """生成端到端报告：七步轨迹、候选排名、修复轨迹、四层结论与图谱 diff。"""
-    header = [
-        "> 本报告为真实运行的产物。核心闭环演示走 `MockLLM` 规则模板路径",
-        "> （开发要求 g），生成代码在子进程用真实数据集执行，指标均为实测，未造数值。",
-    ]
-    if not text_mode:
-        header.append("> T1 列名错误由规则模板模拟 LLM 的直觉命名，"
-                      "并在子进程用真实数据集触发 `KeyError` 后定向修复。")
+    live_llm = (trace.interpreter_source == "deepseek_api"
+                or any(source == "llm" for source in trace.code_sources.values()))
+    if live_llm:
+        header = [
+            "> 本报告为真实运行的产物，本次**全链路接入真实 LLM**",
+            "> （DeepSeek OpenAI 兼容接口，Interpreter / Planner / Coder / Repairer / Curator 实时调用）。",
+            "> LLM 生成代码先过 AST 静态检查才采用；指标均为子进程沙箱在真实数据集上的实测，未造数值。",
+        ]
+        if not text_mode:
+            header.append("> T1 列名错误由 LLM 生成代码按直觉写成 `PAY_1`，"
+                          "在子进程用真实数据集触发 `KeyError` 后定向修复。")
+    else:
+        header = [
+            "> 本报告为真实运行的产物。核心闭环演示走 `MockLLM` 规则模板路径",
+            "> （开发要求 g），生成代码在子进程用真实数据集执行，指标均为实测，未造数值。",
+        ]
+        if not text_mode:
+            header.append("> T1 列名错误由规则模板模拟 LLM 的直觉命名，"
+                          "并在子进程用真实数据集触发 `KeyError` 后定向修复。")
     test_eval = trace.test_evaluation
     if test_eval is not None and test_eval.consumed:
         header.append("> test 段仅在候选比较结束后对最佳候选评估一次，"

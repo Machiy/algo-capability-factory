@@ -3,6 +3,24 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循
 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本对应一个 annotated tag 与 GitHub Release。
 
+## [1.4.1] - 2026-11-10
+
+真实 LLM 全链路实测，并修掉这次实测暴露的两个真实性问题。
+
+### 实测
+
+- 清空 `role_providers` 让 Interpreter / Planner / Coder / Repairer / Curator **全部实时调用 DeepSeek**（8 次请求全部 200 OK）；`理解来源=deepseek_api`，三个候选代码来源全部为 `llm`（先过 AST 静态检查才采用）。
+- 修复 2 轮：`KeyError: PAY_1` → 列名映射为 `PAY_0`（LLM 自己按直觉写错，子进程在真实数据上实测触发）；`MetricBelowThreshold` → 换族 / 调阈值（该策略本轮 `no_change`）。
+- 结果：plan.02 random_forest AUC 0.7872 PASS、plan.03 HGB 0.7851 PASS、plan.01 LR 0.7206 FAIL；test 终评 AUC 0.7853 / KS 0.4355 / PSI 0.0158。
+- 产物：`credit_run_live.md`、`outputs/generated/live/candidate_plan.0*.py`、`credit_kg_live.json`。单独落盘，不覆盖离线可复现的样例报告。
+
+### 修复
+
+- **报告页眉说谎**：真实 LLM 运行时，页眉仍写「核心闭环演示走 MockLLM 规则模板路径」。改为按 `interpreter_source` / `code_sources` 动态生成，新增 2 个回归用例。
+- **`ruff check .` 扫到 LLM 生成代码**：新生成的 `outputs/generated/live/*.py` 带未使用 import 等风格瑕疵（不影响功能，已过 AST 检查与沙箱实测）。`pyproject.toml` 排除 `outputs/generated`，ruff 只检查手写源码、脚本与测试。
+
+> 实时 LLM 输出不确定，本次数值不代表基线；离线可复现结果仍以 mock / cassette 报告为准。
+
 ## [1.4.0] - 2026-11-10
 
 产物命名统一：同一个场景的图谱、报告、代码、轨迹一眼可归，不再需要逐个猜文件名。

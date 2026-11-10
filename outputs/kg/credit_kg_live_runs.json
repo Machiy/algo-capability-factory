@@ -1,0 +1,73 @@
+{
+  "nodes": [
+    {
+      "node_id": "run.live.01",
+      "node_type": "ValidationRun",
+      "name": "验证运行 run.live.01",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "metrics": {
+          "auc": 0.7206124391247685,
+          "ks": 0.3925920845051101,
+          "pr_auc": 0.5055017147063443,
+          "f1": 0.3467843631778058,
+          "cost_weighted_loss": 0.8026666666666666,
+          "psi": 0.0489035188420989,
+          "grouped_auc_gap": 0.05875830231396728
+        },
+        "passed": false,
+        "duration_seconds": 1.938
+      },
+      "evidence": []
+    },
+    {
+      "node_id": "run.live.02",
+      "node_type": "ValidationRun",
+      "name": "验证运行 run.live.02",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "metrics": {
+          "auc": 0.7871680156389327,
+          "ks": 0.4489848412099596,
+          "pr_auc": 0.5584393671031599,
+          "f1": 0.4716981132075472,
+          "cost_weighted_loss": 0.6886666666666666,
+          "psi": 0.035888471031420725,
+          "grouped_auc_gap": 0.00712320061446825
+        },
+        "passed": true,
+        "duration_seconds": 5.625
+      },
+      "evidence": []
+    },
+    {
+      "node_id": "run.live.03",
+      "node_type": "ValidationRun",
+      "name": "验证运行 run.live.03",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "metrics": {
+          "auc": 0.7851442142808149,
+          "ks": 0.43648055422182597,
+          "pr_auc": 0.5438707718323641,
+          "f1": 0.4807995791688585,
+          "cost_weighted_loss": 0.6731666666666667,
+          "psi": 0.1077304941839548,
+          "grouped_auc_gap": 0.0023316623600091457
+        },
+        "passed": true,
+        "duration_seconds": 2.859
+      },
+      "evidence": []
+    }
+  ],
+  "edges": [],
+  "source_files": [],
+  "content_sha256": "62938d148dbc57fa692260942a7fd4d19b64cde1dcc41694214116f4f3a9ec8c"
+}

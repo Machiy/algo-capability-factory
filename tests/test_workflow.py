@@ -440,5 +440,31 @@ class TraceContractTests(unittest.TestCase):
             RunTrace(run_id="x", spec="y", typo=1)
 
 
+class LiveReportHeaderTests(unittest.TestCase):
+    """报告页眉必须说明本次是不是真实 LLM，不能把实时调用写成 Mock 路径。"""
+
+    def _render(self, trace: RunTrace) -> str:
+        from factory.workflow.pipeline import render_run_report
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = render_run_report(trace, [], "设计依据", Path(tmp) / "r.md")
+            return path.read_text(encoding="utf-8")
+
+    def test_live_llm_report_header(self) -> None:
+        trace = RunTrace(run_id="live", spec="测试",
+                         interpreter_source="deepseek_api",
+                         code_sources={"plan.01": "llm"})
+        text = self._render(trace)
+        self.assertIn("全链路接入真实 LLM", text)
+        self.assertNotIn("核心闭环演示走 `MockLLM` 规则模板路径", text)
+
+    def test_mock_report_header(self) -> None:
+        trace = RunTrace(run_id="demo", spec="测试",
+                         interpreter_source="mock")
+        text = self._render(trace)
+        self.assertIn("`MockLLM` 规则模板路径", text)
+        self.assertNotIn("全链路接入真实 LLM", text)
+
+
 if __name__ == "__main__":
     unittest.main()
