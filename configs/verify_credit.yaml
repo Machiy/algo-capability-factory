@@ -19,6 +19,9 @@ dataset:
   forbidden_features:
     - ID
     - default.payment.next.month
+  # T1 陷阱：错误列名 → 真实列名。Repairer 据此做定向修复，不在代码里写死。
+  column_aliases:
+    PAY_1: PAY_0
   expected_rows: 30000
   expected_columns:
     - ID

@@ -159,6 +159,9 @@ class DatasetSettings(_ConfigModel):
     id_column: str = "ID"
     text_column: str = ""
     forbidden_features: list[str] = Field(default_factory=list)
+    # 列名别名：错误列名 → 真实列名（如 PAY_1 → PAY_0，T1 陷阱）。Repairer 据此
+    # 做定向修复，换数据集只需改配置，不在代码里写死某个列名。
+    column_aliases: dict[str, str] = Field(default_factory=dict)
 
 
 class CandidateSettings(_ConfigModel):

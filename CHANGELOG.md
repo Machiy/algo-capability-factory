@@ -3,6 +3,28 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循
 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本对应一个 annotated tag 与 GitHub Release。
 
+## [1.9.0] - 2026-11-10
+
+A2 收尾：补齐修复动作表，消除 KeyError 硬编码列名。
+
+### 新增
+
+- **MemoryLimitExceeded 入表**：新增策略与确定性补丁 `_repair_memory`——给接受
+  n_jobs 的估计器（LR / RF / LinearSVC 等）注入 `n_jobs=1` 降低并行内存，已有则不重复；
+  HGB / Ridge 不支持 n_jobs，不注入。
+- **KeyError 泛化修复**：`REPAIR_STRATEGIES` 的 `KeyError: PAY_1` 改为泛化的 `KeyError`，
+  具体列名映射由 `Dataset.column_aliases` 派生（verify_credit.yaml 配 `PAY_1: PAY_0`），
+  换数据集只改 yaml，不在修复逻辑里写死列名。
+
+### 修复
+
+- 策略查找改为按签名前缀归一（`KeyError: <列名>` → `KeyError`），带参数的签名也能命中策略表。
+
+### 测试
+
+- 新增 KeyError 无别名不伪造、MemoryLimitExceeded 注入 n_jobs 两个用例。
+  全量 226 用例通过、ruff 全绿。
+
 ## [1.8.0] - 2026-11-10
 
 方案 B1 落地：认知角色接入 cassette 的键策略与真实录制。

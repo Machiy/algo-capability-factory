@@ -58,13 +58,16 @@ SYSTEM_PROMPTS = {
 }
 
 REPAIR_STRATEGIES = {
-    "KeyError: PAY_1": "按 Dataset 列名映射把 PAY_1 改为 PAY_0（T1 陷阱）",
+    # KeyError 是泛化签名（KeyError: <列名>），具体列名由 Dataset.column_aliases
+    # 派生，不在修复逻辑里写死 PAY_1，换数据集只改配置
+    "KeyError": "按 Dataset.column_aliases 把错误列名映射为真实列名",
     "ForbiddenFeature": "从特征列中剔除 ID 与敏感字段",
     "Timeout": "降低 max_iter 或减少训练样本",
     "MetricBelowThreshold": "检索历史高分方案，切换模型族或按成本比调阈值",
     "ImportError": "改用 import 白名单内的库",
     "Nondeterminism": "注入 random_state",
     "LeakageDetected": "强制 sklearn.Pipeline 并改时间外划分",
+    "MemoryLimitExceeded": "注入 n_jobs=1 降低并行内存，或换轻量模型族",
 }
 
 # 接受 random_state 的 sklearn 随机估计器：确定性修复据此判断该给哪个类注入。
@@ -81,6 +84,21 @@ _RANDOM_STATE_ESTIMATORS = frozenset({
     "GradientBoostingClassifier",
     "GradientBoostingRegressor",
     "Ridge",
+    "SGDClassifier",
+    "SGDRegressor",
+    "MLPClassifier",
+    "MLPRegressor",
+})
+
+# 接受 n_jobs 参数的估计器：内存超限时注入 n_jobs=1 降低并行内存占用。
+# HistGradientBoosting / Ridge 不接受 n_jobs，故不在集合内（注入会 TypeError）。
+_N_JOBS_ESTIMATORS = frozenset({
+    "LogisticRegression",
+    "LinearSVC",
+    "RandomForestClassifier",
+    "RandomForestRegressor",
+    "ExtraTreesClassifier",
+    "ExtraTreesRegressor",
     "SGDClassifier",
     "SGDRegressor",
     "MLPClassifier",
@@ -181,6 +199,53 @@ def _repair_nondeterminism(source: str) -> str:
         source = _replace_range(source, start_line, start_col,
                                 end_line, end_col, text)
     return source
+
+
+def _repair_key_error(source: str, signature: str,
+                      aliases: dict[str, str]) -> str:
+    """KeyError: <列名> 按 Dataset.column_aliases 映射修复，不写死具体列名。
+
+    签名形如 ``KeyError: PAY_1``；列名由配置派生，换数据集只改 yaml。
+    """
+    column = signature.split(":", 1)[1].strip() if ":" in signature else ""
+    target = aliases.get(column)
+    if not target:
+        return source
+    return source.replace(f'"{column}"', f'"{target}"')
+
+
+def _repair_memory(source: str) -> str:
+    """内存超限：给接受 n_jobs 的估计器注入 n_jobs=1，降低并行内存占用。
+
+    已有 n_jobs 的调用不动；不支持 n_jobs 的估计器（HGB / Ridge）不注入。
+    """
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return source
+    edits: list[tuple[int, int, int, int, str]] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        name = node.func.id if isinstance(node.func, ast.Name) else (
+            node.func.attr if isinstance(node.func, ast.Attribute) else "")
+        if name not in _N_JOBS_ESTIMATORS:
+            continue
+        if any(kw.arg == "n_jobs" for kw in node.keywords):
+            continue
+        new_call = ast.Call(
+            func=node.func,
+            args=list(node.args),
+            keywords=[*node.keywords,
+                      ast.keyword(arg="n_jobs", value=ast.Constant(value=1))],
+        )
+        edits.append((node.lineno, node.col_offset, node.end_lineno,
+                      node.end_col_offset, ast.unparse(new_call)))
+    for start_line, start_col, end_line, end_col, text in reversed(edits):
+        source = _replace_range(source, start_line, start_col,
+                                end_line, end_col, text)
+    return source
+
 
 # 各族候选的默认超参；新增模板时在此登记，避免超参散落在单点。
 HYPERPARAM_PRESETS: dict[str, list[dict[str, float]]] = {
@@ -548,21 +613,28 @@ class Repairer:
     修复逻辑里；未提供时退化为不剔除（防御性，不误删）。
     """
 
-    def __init__(self, llm: BaseLLM, forbidden: list[str] | None = None) -> None:
+    def __init__(self, llm: BaseLLM, forbidden: list[str] | None = None,
+                 column_aliases: dict[str, str] | None = None) -> None:
         self.llm = llm
         self.forbidden = set(forbidden or [])
+        self.column_aliases = dict(column_aliases or {})
 
     def repair(self, source: str, signature: str | None,
                round_index: int) -> tuple[str, RepairRecord]:
         key = signature or "Unknown"
-        strategy = REPAIR_STRATEGIES.get(key, "无匹配策略，保留失败记录供人工分析")
+        # KeyError: <列名> 这类带参数的签名归一到策略表的键（KeyError）
+        strategy_key = key.split(":", 1)[0].strip() if ":" in key else key
+        strategy = REPAIR_STRATEGIES.get(strategy_key,
+                                         "无匹配策略，保留失败记录供人工分析")
         fixed = source
-        if key == "KeyError: PAY_1":
-            fixed = source.replace('"PAY_1"', '"PAY_0"')
+        if key.startswith("KeyError"):
+            fixed = _repair_key_error(source, key, self.column_aliases)
         elif key in ("ForbiddenFeature", "LeakageDetected"):
             fixed = _repair_forbidden_feature(source, self.forbidden)
         elif key == "Nondeterminism":
             fixed = _repair_nondeterminism(source)
+        elif key == "MemoryLimitExceeded":
+            fixed = _repair_memory(source)
         request = LLMRequest(role="Repairer", system=SYSTEM_PROMPTS["Repairer"],
                              user=f"错误签名：{key}\n策略：{strategy}")
         self.llm.complete(request)

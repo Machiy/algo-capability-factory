@@ -91,11 +91,39 @@ class RepairTests(unittest.TestCase):
             _plan(), _retrieval(failure_warnings=[]), COLUMNS, induce_t1=True
         )
         self.assertIn('"PAY_1"', source)
-        fixed, record = Repairer(llm).repair(source, "KeyError: PAY_1", 1)
+        # 列名映射由 Dataset.column_aliases 派生，不写死在修复逻辑里
+        fixed, record = Repairer(llm, column_aliases={"PAY_1": "PAY_0"}).repair(
+            source, "KeyError: PAY_1", 1
+        )
         self.assertNotIn('"PAY_1"', fixed)
         self.assertIn('"PAY_0"', fixed)
         self.assertEqual(record.outcome, "repaired")
-        self.assertIn("T1", record.fix_strategy)
+        self.assertIn("column_aliases", record.fix_strategy)
+
+    def test_key_error_without_alias_is_not_faked(self) -> None:
+        """没有配置别名时不硬编码 PAY_1，如实记为 no_change。"""
+        source = 'def build_pipeline(config):\n    return ["PAY_1"]\n'
+        fixed, record = Repairer(MockLLM()).repair(source, "KeyError: PAY_1", 1)
+        self.assertEqual(fixed, source)
+        self.assertEqual(record.outcome, "no_change")
+
+    def test_memory_limit_exceeded_injects_n_jobs(self) -> None:
+        """MemoryLimitExceeded 注入 n_jobs=1 降低并行内存，已有 n_jobs 不动。"""
+        source = (
+            "from sklearn.ensemble import RandomForestClassifier\n"
+            "from sklearn.pipeline import Pipeline\n\n"
+            'FEATURE_COLUMNS = ["LIMIT_BAL", "PAY_0"]\n\n'
+            "def build_pipeline(config):\n"
+            "    return Pipeline([(\"model\", RandomForestClassifier(\n"
+            "        n_estimators=5, random_state=42))])\n"
+        )
+        fixed, record = Repairer(MockLLM()).repair(source, "MemoryLimitExceeded", 1)
+        self.assertIn("n_jobs=1", fixed)
+        self.assertEqual(record.outcome, "repaired")
+        # 已有 n_jobs 的不重复注入
+        again, record2 = Repairer(MockLLM()).repair(fixed, "MemoryLimitExceeded", 1)
+        self.assertEqual(again, fixed)
+        self.assertEqual(record2.outcome, "no_change")
 
     def test_unknown_signature_is_not_silently_faked(self) -> None:
         source = "def build_pipeline(config):\n    return {}\n"

@@ -343,7 +343,8 @@ class Workflow:
         self.coder = Coder(llm, checker)
         self.reviewer = Reviewer(checker)
         self.verifier = Verifier(FourLayerValidator(task))
-        self.repairer = Repairer(llm, sorted(excluded))
+        self.repairer = Repairer(llm, sorted(excluded),
+                                 task.dataset.column_aliases)
         self.curator = Curator(graph, llm,
                                settings.knowledge.lesson_promote_threshold)
         self.sandbox = DatasetSandbox(
