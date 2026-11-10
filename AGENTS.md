@@ -7,7 +7,7 @@
 
 基于 AI Agent 的算法能力工厂原型：从业务材料抽取**能力知识图谱** → 按自然语言描述**规划并生成算法代码** → 四层**验证** → 按错误签名**修复** → 结果**回写图谱**。行业场景为信用卡下月违约预测（UCI，30000 行）。
 
-当前状态：a–g 七步闭环、P4 沉淀闭环、算法模板插件、FastAPI 接入层与 OpenAPI 均已落地，1.1.1 完成了真实 LLM 通路的健壮性修复，1.2.0 补上入口输入引导，1.3.0 把知识沉淀分成「教训」与「运行日志」两层，1.4.0 统一了产物命名，1.4.1 完成真实 LLM 全链路实测并修正报告页眉与 lint 范围；186 个用例全过、`ruff` 全绿、干净虚拟环境实测可复现。
+当前状态：a–g 七步闭环、P4 沉淀闭环、算法模板插件、FastAPI 接入层与 OpenAPI 均已落地，1.1.1 完成了真实 LLM 通路的健壮性修复，1.2.0 补上入口输入引导，1.3.0 把知识沉淀分成「教训」与「运行日志」两层，1.4.0 统一了产物命名，1.4.1 完成真实 LLM 全链路实测并修正报告页眉与 lint 范围；187 个用例全过、`ruff` 全绿、干净虚拟环境实测可复现。
 
 ## 文档分工
 
@@ -46,6 +46,7 @@ ruff check factory scripts tests
 
 - Conventional Commits：`<type>(<scope>): <简述>`，body 说明「为什么」，每个阶段独立提交。
 - 单人开发直接推 `main`；多人协作或需要评审时再启用 feature 分支 + PR（合并用 merge commit，不用 Squash）。
+- **发布动作**：每次 `git push origin main` 成功后必须执行 `python scripts/tag_release.py`，按 `factory.__version__` 创建并推送 annotated tag `v<version>`；禁止 force 覆盖已推送 tag。规则见 `.codebuddy/rules/git-commit.md`。
 - 红线：**禁止 force push `main`**、**禁止改写已推送提交**。
 - 提交前确认 `.env`、`PLAN.md`、`assets/data/raw/`、`_archive/` 均未被跟踪。
 
@@ -72,6 +73,7 @@ ruff check factory scripts tests
 | 1.3.0 知识沉淀分层 | `1.3.0` 一次提交 | 新增 `Lesson` 节点与 `LessonRecord` 契约、工程教训库 LE1–LE12、`lessons.py` 教训提炼（独立 run 达阈值提升）、`merge.py` 材料与沉淀合并；检索新增系统级教训段并排除运行日志；交付图谱与 `*_runs.json` 运行日志分离；修复「回写图谱老化」与「occurrences 恒为 1」 |
 | 1.4.0 产物命名统一 | `1.4.0` 一次提交 | 新增 `factory/artifacts.py` 单点定义 `<scope>_<kind>[_<variant>]`；图谱 `/ kg`、报告 `/ run`、代码 `/ generated/<scope>/`、轨迹 `/ trace_<scope>_<variant>` 全部改名；`--kg-out` / `--gen-dir` 改为按场景自动推导；`extract_repo` 补齐 cypher 与 html |
 | 1.4.1–1.4.2 实测与进阶补齐 | 两次提交 | 真实 DeepSeek 全链路实测（8 次实时调用，3 候选代码全为 LLM 生成）；修报告页眉动态化与 ruff 排除生成代码；新增 `plugins/` 外部插件自动发现与 `POST /run.task_config`，进阶 8 项逐项对照表 |
+| 1.4.3 路径规范与标签固化 | `1.4.3` 一次提交 | 修 `RepoExtractor` 把本机绝对路径写进三类图谱产物的问题；全仓路径核查为相对路径；新增 `scripts/tag_release.py` 与「push 后必须打 tag」规则，补齐历史版本标签 |
 
 完整历史以 `git --no-pager log` 为准，提交时间由 Git 按实际时刻记录，未做调整。
 

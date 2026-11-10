@@ -19,7 +19,7 @@
           "statsmodels"
         ],
         "python_requires": "",
-        "repository": "D:/Users/MACHIYUAN/OneDrive/文档/硕士/27读博/ZJU/LLMagent/assets/repo/scorecardpy"
+        "repository": "assets/repo/scorecardpy"
       },
       "evidence": [
         {
@@ -5601,5 +5601,5 @@
     "scorecardpy.woebin",
     "setup"
   ],
-  "content_sha256": "4606eeffc9c1b2d757b82bbe9755c6894e8bda22aa1c58cbb84779d7e15e04f9"
+  "content_sha256": "a2e3c52c03c9e0837dc13846a39cbf9dbaeafa8f3539ade4e3a8c4a957e6c302"
 }

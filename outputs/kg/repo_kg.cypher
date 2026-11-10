@@ -7,7 +7,7 @@ CREATE CONSTRAINT environment_node_id IF NOT EXISTS FOR (n:Environment) REQUIRE 
 CREATE CONSTRAINT evidence_node_id IF NOT EXISTS FOR (n:Evidence) REQUIRE n.node_id IS UNIQUE;
 
 MERGE (n:Environment {node_id: 'env.repo.scorecardpy'})
-SET n.name = 'scorecardpy 依赖环境', n.version = 'v1', n.task_type = 'tabular_binary_classification', n.status = 'active', n.attributes_json = '{"lib_deps": ["matplotlib", "numpy", "pandas", "patsy", "pkg_resources", "scipy", "setuptools", "statsmodels"], "python_requires": "", "repository": "D:/Users/MACHIYUAN/OneDrive/文档/硕士/27读博/ZJU/LLMagent/assets/repo/scorecardpy"}';
+SET n.name = 'scorecardpy 依赖环境', n.version = 'v1', n.task_type = 'tabular_binary_classification', n.status = 'active', n.attributes_json = '{"lib_deps": ["matplotlib", "numpy", "pandas", "patsy", "pkg_resources", "scipy", "setuptools", "statsmodels"], "python_requires": "", "repository": "assets/repo/scorecardpy"}';
 MERGE (n:Capability {node_id: 'cap.repo.scorecardpy.scorecardpy.condition_fun.lr'})
 SET n.name = 'lr', n.version = 'v1', n.task_type = 'tabular_binary_classification', n.status = 'candidate', n.attributes_json = '{"calls": ["dtx.astype", "dty.astype", "fit", "sm.GLM", "sm.add_constant", "sm.families.Binomial"], "decorators": [], "docstring": "", "lineno": 10, "module": "scorecardpy.condition_fun", "parameters": [], "qualname": "lr", "repository": "scorecardpy", "returns": "", "signature": "def lr(dt, y, x)", "source_path": "scorecardpy/condition_fun.py"}';
 MERGE (n:Capability {node_id: 'cap.repo.scorecardpy.scorecardpy.condition_fun.str_to_list'})

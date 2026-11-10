@@ -3,6 +3,24 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循
 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本对应一个 annotated tag 与 GitHub Release。
 
+## [1.4.3] - 2026-11-10
+
+路径规范化与发布标签固化。
+
+### 路径核查
+
+- 全仓扫描已跟踪文件中的绝对路径 / 盘符 / 本机用户目录，发现一处真实泄漏：`RepoExtractor.scan()` 把 `repo_dir.resolve()` 写进 `RepoScan.root`，于是 `repo_kg.{json,graphml,cypher}` 的 `repository` 属性带了本机盘符开头的绝对路径。
+- 改为 `_relative_repo_label()`：优先取相对当前工作区 / 项目根的路径，取不到就退回目录名；产物现在是 `assets/repo/scorecardpy`。新增 `tests/test_repo_extractor.py` 的回归用例，禁止绝对路径再次进入交付物，三份产物已重建。
+- 其余核查结论：配置（`default.yaml` / `verify_*.yaml`）、代码（`ROOT / ...`）、报告与图谱产物里的路径均为相对路径；`Path(__file__).resolve().parents[n]` 只用于定位项目根，不是写死绝对路径；`ROOT` 只参与拼接，不落盘为字符串。
+
+### 发布标签固化为动作
+
+- 新增 `scripts/tag_release.py`：读取 `factory.__version__`，校验工作区干净、`HEAD` 已在 `origin/main`、同名 tag 不存在，然后创建 annotated tag `v<version>` 并推送；支持 `--dry-run`、`--version` / `--target` 补历史标签，重复执行幂等，绝不 force 覆盖。
+- `.codebuddy/rules/git-commit.md` 新增「版本标签（发布动作，必须执行）」一节：每次 `git push origin main` 成功后立即执行该脚本，push 后未打 tag 视为发布流程未完成；`AGENTS.md` 的 Git 规范同步。
+- 补齐 `v1.2.0` / `v1.3.0` / `v1.4.0` / `v1.4.1` / `v1.4.2` 历史标签（均指向对应版本的提交，已核对 `factory/__init__.py`），本次提交推送后由脚本创建 `v1.4.3`。
+
+`ruff` 全绿、187 个用例通过。
+
 ## [1.4.2] - 2026-11-10
 
 按「进阶 8 项」逐项核查后，补齐两处「有机制但不够彻底」的短板，并修正文档与实现不符的表述。

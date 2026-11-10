@@ -182,6 +182,22 @@ def _module_name(path: Path, root: Path) -> str:
     return ".".join(parts) or root.name
 
 
+def _relative_repo_label(repo_dir: Path) -> str:
+    """仓库标识一律用相对路径或目录名，绝不把本机绝对路径写进交付物。
+
+    ``scan()`` 内部可以 ``resolve()`` 来读文件，但 ``RepoScan.root`` 会进入
+    JSON / CSV / GraphML / Cypher 产物；写绝对路径会泄漏本机目录且换台机器
+    就失效。这里优先给出相对当前工作区的路径，给不出就退回目录名。
+    """
+    path = Path(repo_dir)
+    for base in (Path.cwd().resolve(), Path(__file__).resolve().parents[2]):
+        try:
+            return path.resolve().relative_to(base).as_posix()
+        except ValueError:
+            continue
+    return path.name or "repo"
+
+
 def _signature(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
     prefix = "async def" if isinstance(node, ast.AsyncFunctionDef) else "def"
     try:
@@ -224,7 +240,7 @@ class RepoExtractor:
                 self._functions(tree, source, relative, module, imports)
             )
         scan = RepoScan(
-            repo=repo, root=root.as_posix(), functions=functions,
+            repo=repo, root=_relative_repo_label(repo_dir), functions=functions,
             module_imports=module_imports, python_requires=python_requires,
             skipped=skipped,
         )

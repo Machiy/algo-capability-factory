@@ -29,6 +29,15 @@ class RepoScanTests(unittest.TestCase):
         self.assertGreaterEqual(len(self.scan.functions), 60)
         self.assertEqual(self.scan.skipped, [])
 
+    def test_repository_label_is_never_absolute(self) -> None:
+        """产物里的仓库标识必须相对：不泄漏本机目录、换机器仍可复现。"""
+        self.assertFalse(Path(self.scan.root).is_absolute())
+        self.assertNotIn(":", self.scan.root)
+        env = self.graph.by_type(NodeType.ENVIRONMENT)[0]
+        repository = str(env.attributes["repository"])
+        self.assertFalse(Path(repository).is_absolute())
+        self.assertNotIn(":", repository)
+
     def test_dependencies_exclude_stdlib_and_itself(self) -> None:
         dependencies = self.scan.dependencies
         self.assertIn("pandas", dependencies)

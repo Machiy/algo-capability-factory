@@ -63,7 +63,7 @@
 | 10. 后续可扩展方向 | 还能往哪里做 |
 | 附录 A / B / C / D | 十项要求对照、交付物索引、数据引用、术语表 |
 
-> **项目状态**：v1.4.2（变更见 [`CHANGELOG.md`](CHANGELOG.md)，阶段与提交对照见 [`AGENTS.md`](AGENTS.md)）；`ruff` 全绿、186 个用例通过；CI 覆盖 Python 3.11 / 3.12 与三条端到端；最近一次实测最佳候选 `random_forest` 四层全 PASS（valid AUC 0.7899，test AUC 0.7883）。
+> **项目状态**：v1.4.3（变更见 [`CHANGELOG.md`](CHANGELOG.md)，阶段与提交对照见 [`AGENTS.md`](AGENTS.md)）；`ruff` 全绿、187 个用例通过；CI 覆盖 Python 3.11 / 3.12 与三条端到端；最近一次实测最佳候选 `random_forest` 四层全 PASS（valid AUC 0.7899，test AUC 0.7883）。
 
 ---
 
@@ -257,10 +257,10 @@ algo-capability-factory/
 ├── README.md  CHANGELOG.md  AGENTS.md  requirements.txt  .env.example  pyproject.toml  .gitignore
 ├── configs/     default.yaml + verify_{credit,text,regression}.yaml
 ├── factory/     49 个模块：contracts / knowledge / agents / llm / runtime / validation / workflow / intake / api
-├── scripts/     数据准备、图谱构建、Cypher 导出、消融、资源基准、仓库抽取、cassette 录制（11 个）
+├── scripts/     数据准备、图谱构建、Cypher 导出、消融、资源基准、仓库抽取、cassette 录制、发布标签（12 个）
 ├── assets/      data/、docs/(+text/)、legacy/、repo/scorecardpy/、llm_cassettes/
 ├── outputs/     generated/、reports/、kg/（产物地图见 outputs/README.md；runs/ 不入库）
-└── tests/       18 个测试文件 / 186 个用例
+└── tests/       18 个测试文件 / 187 个用例
 ```
 
 内部规划文档（`PLAN.md`）、原始数据包与 `_archive/` 不纳入版本控制。
@@ -456,6 +456,7 @@ python -m factory api --port 8000        # /health、/templates、/intake/guide�
 python -m factory --version
 python -m factory --check
 python -m unittest discover -s tests -v
+python scripts/tag_release.py             # push 后按版本号打 tag（发布动作）
 ```
 
 **产物命名规范**（`factory/artifacts.py` 单点定义）
@@ -483,7 +484,7 @@ python -m unittest discover -s tests -v
 
 **最小依赖**：核心闭环需 `pydantic`、`PyYAML`、`pandas`、`scikit-learn`、`networkx`、`langgraph`、`rank-bm25`、`markdown-it-py`、`psutil`、`structlog`（全部为现成库，`requirements.txt` 已锁版本区间）；`pyvis`、`Jinja2`、`Typer`、`openai` 按入口加载。全量清单 23 个直接依赖，含传递依赖共 106 个安装包。
 
-**干净环境实测（P5 记录）**：空 venv 仅执行一次 `pip install -r requirements.txt`（无冲突），随后跑通 `ruff check`（全绿）、端到端 `factory run`（`四层全通过=True`、退出码 0），未安装任何清单外依赖；P6、1.1.x、1.2.0、1.3.0 与 1.4.0 均未新增第三方依赖（教训提炼、Cypher 导出与命名重构只用标准库 + 现有 pydantic），当前全量测试 186 个。
+**干净环境实测（P5 记录）**：空 venv 仅执行一次 `pip install -r requirements.txt`（无冲突），随后跑通 `ruff check`（全绿）、端到端 `factory run`（`四层全通过=True`、退出码 0），未安装任何清单外依赖；P6、1.1.x、1.2.0、1.3.0 与 1.4.0 均未新增第三方依赖（教训提炼、Cypher 导出与命名重构只用标准库 + 现有 pydantic），当前全量测试 187 个。
 
 **持续集成**：`.github/workflows/ci.yml` 用 matrix 并行 **Python 3.11**（最低版本）与 **3.12**（本地实测版本），各自执行 `ruff check`、全量单元测试与三条端到端（信用卡 / 短信 / 回归），断言 `四层全通过=True`。端到端走默认 provider（Interpreter 用已入库 cassette），CI 不依赖任何 API key。
 
@@ -769,11 +770,11 @@ done
 | 4 | 知识抽取结果文件（JSON / CSV / GraphML / Neo4j 导入文件） | `outputs/kg/{credit,text,repo}_kg.{json,csv,graphml,cypher}`（同一份图的四种格式）+ `*.db`（SQLite 表）；回写后的知识图谱 `credit_kg_after_run.json`（能力 + 失败案例 + 教训）与运行日志 `credit_kg_after_run_runs.json`；教训演进示例 `credit_kg_lesson.json` |
 | 5 | Agent 工作流代码或流程配置 | `factory/workflow/pipeline.py`（LangGraph `StateGraph`）+ `factory/agents/roles.py`（8 角色）；流程图见第 4 节 |
 | 6 | 至少 1 个从能力描述到代码生成的完整示例 | `outputs/reports/credit_run_demo.md`（描述 → 检索证据 → 3 候选 → 代码 → 修复 diff）+ `outputs/generated/credit/candidate_plan.0*.py` |
-| 7 | 自动验证脚本 | `python -m factory run`；`scripts/verify_baseline.py`；CI（lint + 186 用例 + 3 条端到端） |
+| 7 | 自动验证脚本 | `python -m factory run`；`scripts/verify_baseline.py`；CI（lint + 187 用例 + 3 条端到端） |
 | 8 | 验证报告样例 | `outputs/reports/`：`credit_run_demo.md`、`text_run_demo.md`、`regression_run_demo.md`、`credit_run_lesson_{1,2,3}.md`（知识沉淀三轮）、`shared_validation_sample.md`、`shared_ablation.md`、`shared_resources.md`、`shared_openapi.json` |
 | 9 | 项目文档 README.md | 本文件（十节 + 附录 A/B/C/D） |
 | 10 | 环境依赖文件 | `requirements.txt`（23 个直接依赖；含传递依赖共 106 个安装包） |
-| 11 | 使用示例和测试用例 | 第 5 节命令清单 + `tests/`（18 个测试文件 / 186 个用例） |
+| 11 | 使用示例和测试用例 | 第 5 节命令清单 + `tests/`（18 个测试文件 / 187 个用例） |
 
 ### 进阶 8 项逐项对照
 
