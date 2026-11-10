@@ -63,7 +63,7 @@
 | 10. 后续可扩展方向 | 还能往哪里做 |
 | 附录 A / B / C / D | 十项要求对照、交付物索引、数据引用、术语表 |
 
-> **项目状态**：v1.4.1（变更见 [`CHANGELOG.md`](CHANGELOG.md)，阶段与提交对照见 [`AGENTS.md`](AGENTS.md)）；`ruff` 全绿、181 个用例通过；CI 覆盖 Python 3.11 / 3.12 与三条端到端；最近一次实测最佳候选 `random_forest` 四层全 PASS（valid AUC 0.7899，test AUC 0.7883）。
+> **项目状态**：v1.4.2（变更见 [`CHANGELOG.md`](CHANGELOG.md)，阶段与提交对照见 [`AGENTS.md`](AGENTS.md)）；`ruff` 全绿、186 个用例通过；CI 覆盖 Python 3.11 / 3.12 与三条端到端；最近一次实测最佳候选 `random_forest` 四层全 PASS（valid AUC 0.7899，test AUC 0.7883）。
 
 ---
 
@@ -181,7 +181,7 @@ python -m factory run --spec "预测信用卡客户下月违约概率，时间�
 |---|---|---|
 | L0 契约 | `contracts/` | `CapabilitySpec`、`CandidatePlan`、`ValidationReport`（Pydantic），全系统唯一数据协议 |
 | L1 知识 | `knowledge/` | Schema、材料抽取器、真实仓库 AST 抽取器、NetworkX 图 + SQLite、混合检索、教训提炼（`lessons.py`）、图谱合并（`merge.py`）、PyVis 可视化 |
-| L2 Agent | `agents/`、`workflow/` | 8 个角色、LangGraph 状态机、Beam Search、修复策略表 |
+| L2 Agent | `agents/`、`workflow/` | 8 个角色、LangGraph 状态机、Top-3 候选比较（`beam_width` 可配）、修复策略表 |
 | L2 支撑 | `llm/` | `BaseLLM` 抽象与三实现：`MockLLM`（默认）、`OpenAICompatLLM`（DeepSeek）、`RecordedLLM`（cassette 回放） |
 | L3 执行 | `runtime/` | 子进程沙箱、AST 静态检查、超时 / 内存限制、错误分类器 |
 | L4 验证 | `validation/` | 四层检查器、指标插件注册、报告生成 |
@@ -231,6 +231,25 @@ python -m factory run --spec "预测信用卡客户下月违约概率，时间�
 
 > 库级别的更细理由（为什么换掉自研状态机、为什么用 `rank_bm25` / `markdown-it-py` / `psutil` / `structlog`）见上方选型表；「评估过什么、为何不用」也逐行写在那里。
 
+### 插件式接入：新增模板 / 指标不改核心代码
+
+已有 **9 个算法模板**（`factory/agents/templates.py`）与 **12 个指标**（`factory/validation/metrics.py`），都用 `@register` 装饰器 + 注册表；核心验证器 `FourLayerValidator` 只按 `verify_*.yaml` 里的 `plugin` / `name` 调 `compute()`，不写死任何指标名。
+
+新增外部插件只需在 `plugins/` 放一个 `.py`——运行时由 `factory/plugins.py` 用标准库 `importlib` 扫描加载，**不需要改 `factory` 包内任何文件**：
+
+```python
+# plugins/my_metric.py
+from factory.validation.metrics import register
+
+@register("my_metrics", "my_score")
+def my_score(**context):
+    return 0.5
+```
+
+算法模板同理，用 `from factory.agents.templates import register`。`/templates` 端点与 `POST /run` 都会看到新注册项；单个插件出错只记 warning，不阻断服务。新增任务则加一份 `verify_*.yaml`（必要时再放一个插件文件），核心验证器、沙箱与工作流代码不动。
+
+`POST /run` 还提供 `task_config` 字段（默认 `configs/verify_credit.yaml`），等价于 CLI 的 `--task-config`；换场景不再只能通过命令行。
+
 **仓库结构**
 
 ```
@@ -241,7 +260,7 @@ algo-capability-factory/
 ├── scripts/     数据准备、图谱构建、Cypher 导出、消融、资源基准、仓库抽取、cassette 录制（11 个）
 ├── assets/      data/、docs/(+text/)、legacy/、repo/scorecardpy/、llm_cassettes/
 ├── outputs/     generated/、reports/、kg/（产物地图见 outputs/README.md；runs/ 不入库）
-└── tests/       17 个测试文件 / 181 个用例
+└── tests/       18 个测试文件 / 186 个用例
 ```
 
 内部规划文档（`PLAN.md`）、原始数据包与 `_archive/` 不纳入版本控制。
@@ -359,8 +378,12 @@ IntakeGuide（OK / CLARIFY 放行；REJECT 直接返回引导，不进状态机�
   ↓
 Parse → Retrieve → Plan → Generate → StaticCheck → Execute → Validate
                                                        ├─ Pass → Compare → Explain → Sink
-                                                       └─ Fail → Diagnose → Repair → Generate (≤3 轮)
+                                                       └─ Fail → Diagnose → Repair → Execute (≤3 轮)
 ```
+
+修复轮次达到上限或候选全部处理完才进入 Sink；`Generate` 只在切换下一个候选时调用。目前
+**只有 `KeyError: PAY_1` 会真正改写生成的源码**，其余签名由 `Repairer` 给出策略并回到沙箱复验
+（`no_change`），如实记录到报告，不伪造补丁。
 
 **统一验证机制（对应题目四层）**
 
@@ -460,7 +483,7 @@ python -m unittest discover -s tests -v
 
 **最小依赖**：核心闭环需 `pydantic`、`PyYAML`、`pandas`、`scikit-learn`、`networkx`、`langgraph`、`rank-bm25`、`markdown-it-py`、`psutil`、`structlog`（全部为现成库，`requirements.txt` 已锁版本区间）；`pyvis`、`Jinja2`、`Typer`、`openai` 按入口加载。全量清单 23 个直接依赖，含传递依赖共 106 个安装包。
 
-**干净环境实测（P5 记录）**：空 venv 仅执行一次 `pip install -r requirements.txt`（无冲突），随后跑通 `ruff check`（全绿）、端到端 `factory run`（`四层全通过=True`、退出码 0），未安装任何清单外依赖；P6、1.1.x、1.2.0、1.3.0 与 1.4.0 均未新增第三方依赖（教训提炼、Cypher 导出与命名重构只用标准库 + 现有 pydantic），当前全量测试 181 个。
+**干净环境实测（P5 记录）**：空 venv 仅执行一次 `pip install -r requirements.txt`（无冲突），随后跑通 `ruff check`（全绿）、端到端 `factory run`（`四层全通过=True`、退出码 0），未安装任何清单外依赖；P6、1.1.x、1.2.0、1.3.0 与 1.4.0 均未新增第三方依赖（教训提炼、Cypher 导出与命名重构只用标准库 + 现有 pydantic），当前全量测试 186 个。
 
 **持续集成**：`.github/workflows/ci.yml` 用 matrix 并行 **Python 3.11**（最低版本）与 **3.12**（本地实测版本），各自执行 `ruff check`、全量单元测试与三条端到端（信用卡 / 短信 / 回归），断言 `四层全通过=True`。端到端走默认 provider（Interpreter 用已入库 cassette），CI 不依赖任何 API key。
 
@@ -711,7 +734,7 @@ done
 > 本节回答：如果继续做，优先补哪几块。
 
 1. 以真实向量检索替换 BM25，保留可解释打分作为对照；
-2. 用 MCTS 替代 Beam Search，比较方案搜索效率与最终指标；
+2. 用 MCTS 替代当前的「一次生成 N 候选后排序」，比较方案搜索效率与最终指标；
 3. 增加 PSI 漂移监控与能力自动降级策略；
 4. 从真实业务仓库持续增量抽取，形成能力版本谱系与血缘追踪；
 5. 扩展多标签、时序任务的验证插件，并接入在线评分服务的部署配置（OpenAPI 已自动生成）；
@@ -746,14 +769,25 @@ done
 | 4 | 知识抽取结果文件（JSON / CSV / GraphML / Neo4j 导入文件） | `outputs/kg/{credit,text,repo}_kg.{json,csv,graphml,cypher}`（同一份图的四种格式）+ `*.db`（SQLite 表）；回写后的知识图谱 `credit_kg_after_run.json`（能力 + 失败案例 + 教训）与运行日志 `credit_kg_after_run_runs.json`；教训演进示例 `credit_kg_lesson.json` |
 | 5 | Agent 工作流代码或流程配置 | `factory/workflow/pipeline.py`（LangGraph `StateGraph`）+ `factory/agents/roles.py`（8 角色）；流程图见第 4 节 |
 | 6 | 至少 1 个从能力描述到代码生成的完整示例 | `outputs/reports/credit_run_demo.md`（描述 → 检索证据 → 3 候选 → 代码 → 修复 diff）+ `outputs/generated/credit/candidate_plan.0*.py` |
-| 7 | 自动验证脚本 | `python -m factory run`；`scripts/verify_baseline.py`；CI（lint + 181 用例 + 3 条端到端） |
+| 7 | 自动验证脚本 | `python -m factory run`；`scripts/verify_baseline.py`；CI（lint + 186 用例 + 3 条端到端） |
 | 8 | 验证报告样例 | `outputs/reports/`：`credit_run_demo.md`、`text_run_demo.md`、`regression_run_demo.md`、`credit_run_lesson_{1,2,3}.md`（知识沉淀三轮）、`shared_validation_sample.md`、`shared_ablation.md`、`shared_resources.md`、`shared_openapi.json` |
-| 9 | 项目文档 README.md | 本文件（十节 + 附录 A/B/C） |
+| 9 | 项目文档 README.md | 本文件（十节 + 附录 A/B/C/D） |
 | 10 | 环境依赖文件 | `requirements.txt`（23 个直接依赖；含传递依赖共 106 个安装包） |
-| 11 | 使用示例和测试用例 | 第 5 节命令清单 + `tests/`（17 个测试文件 / 181 个用例） |
+| 11 | 使用示例和测试用例 | 第 5 节命令清单 + `tests/`（18 个测试文件 / 186 个用例） |
 
-**进阶 8 项**：CLI/API（第 5 节，`factory/api/app.py` 与 `outputs/reports/shared_openapi.json`）、多轮修复与多候选比较（第 4 节）、图谱可视化（`outputs/kg/kg.html`）、自动验证报告（第 8 节）、结果回写（第 4、8 节）、不同任务类型配置（三份 `verify_*.yaml`）、插件式接入（指标插件 + 算法模板装饰器注册）、入口输入引导（第 4 节，`factory/intake/`）。
-**加分 10 项**：Beam Search、8 角色多智能体、真实仓库 AST 抽取（第 3 节）、沙箱与 AST 安全检查（第 4、9 节）、失败案例复用与教训沉淀（第 3、4、8 节）、能力版本递增、设计依据生成、跨场景迁移（第 8 节）、OpenAPI 自动生成、资源消耗分析（第 8 节）。
+### 进阶 8 项逐项对照
+
+| 进阶要求 | 落地位置 | 自检方式 |
+|---|---|---|
+| Web 界面 / CLI / API | CLI `python -m factory`（`run` / `guide` / `api`）；FastAPI 5 端点 + `shared_openapi.json`；Web UI 按「或」语义未做 | `python -m factory api --export-openapi`、`/health`、`/templates` |
+| 多轮代码修复 | `max_repair_rounds: 3` + LangGraph 条件边 `Repair → Execute` + 错误签名策略表 | `credit_run_live.md` 第 4 节两轮修复轨迹；注意目前仅 `KeyError: PAY_1` 有真实源码补丁，其余策略为 `no_change` 并如实记录 |
+| 多候选自动比较 | `beam_width: 3`、按主指标（`maximize` / `minimize`）统一打分排序 | 报告第 2 节；`regression_run_demo.md` 的 RMSE 升序 |
+| 知识图谱可视化 | `outputs/kg/{credit,text,repo}_kg.html`（PyVis 内联，断网可开）+ `.graphml` | 浏览器打开；`tests/test_knowledge.py` 校验 graphml 可回读 |
+| 自动生成验证报告 | `render_run_report()`（0–7 节）、`scripts/verify_baseline.py` | `outputs/reports/` 样例清单、`shared_validation_sample.md` |
+| 结果回写知识图谱 | `Curator.sink()`：FailureCase / Lesson / 能力版本；运行日志另存 `*_runs.json` | `credit_kg_after_run.json`、`credit_run_lesson_*.md` |
+| 不同任务类型配置 | 三份 `verify_*.yaml` + `POST /run.task_config` / CLI `--task-config` | 三场景端到端测试与对应报告 |
+| 插件式接入模板或指标 | `plugins/*.py` 自动发现 + `@register`（9 模板 / 12 指标），核心验证器按配置调 `compute()` | `tests/test_plugins.py`、`tests/test_templates.py`、`/templates` |
+**加分 10 项**：Top-3 多候选比较（Beam 宽度可配，非迭代剪枝）、8 角色多智能体、真实仓库 AST 抽取（第 3 节）、沙箱与 AST 安全检查（第 4、9 节）、失败案例复用与教训沉淀（第 3、4、8 节）、能力版本递增、设计依据生成、跨场景迁移（第 8 节）、OpenAPI 自动生成、资源消耗分析（第 8 节）。
 
 ## 附录 C · 数据与引用
 
@@ -772,7 +806,7 @@ License: CC BY 4.0 (UCI) / CC0 Public Domain (OpenML d/43435)
 | 能力（`Capability`） | 一条可复用的算法能力：输入输出、适用条件、指标、依赖、证据 |
 | `CapabilitySpec` | 把「那句中文需求」解析成的结构化契约，后续所有角色都读它 |
 | 候选（`CandidatePlan`） | 一个待验证的方案：算法族 + 超参 + 特征处理方式 |
-| Beam Top-3 | 同时保留 3 个候选比较，而不是只赌一个方案 |
+| Beam Top-3 | 一次生成 N 个候选后按主指标排序比较（当前实现无迭代扩展 / 剪枝），而不是只赌一个方案 |
 | 四层验证 | 接口规范 / 功能正确性 / 指标表现 / 运行稳定性，缺一不可 |
 | 知识图谱（KG） | 能力 + 约束 + 指标 + 失败案例 + 教训组成的图，检索结果会进 prompt |
 | 回写（Sink） | 把本轮结果写回图谱，供下一轮检索；对应流程的 g 步 |

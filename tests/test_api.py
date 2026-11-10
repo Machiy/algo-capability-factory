@@ -78,6 +78,33 @@ class RunEndpointTests(unittest.TestCase):
         self.assertEqual(body["test_metrics"], {})
         self.assertEqual(body["report_path"], "outputs/reports/credit_run_api_unit.md")
 
+    def test_run_accepts_other_task_config(self) -> None:
+        """换场景不只 CLI 能做到：/run 传 task_config 后应交给 Workflow。"""
+        fake_trace = SimpleNamespace(
+            run_id="api.text", passed=True, interpreter_source="mock",
+            kg_mode="with_kg", candidates=[], repairs=[],
+            report_path="outputs/reports/text_run_api_text.md",
+        )
+        with patch("factory.workflow.Workflow") as workflow_cls:
+            workflow_cls.return_value.metric_name = "accuracy"
+            workflow_cls.return_value.run.return_value = fake_trace
+            client = TestClient(create_app(ROOT))
+            response = client.post("/run", json={
+                "spec": "把短信分类为垃圾短信或正常短信",
+                "task_config": "configs/verify_text.yaml",
+                "mock": True,
+            })
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(workflow_cls.call_args.kwargs["task_config"],
+                         "configs/verify_text.yaml")
+
+    def test_run_rejects_invalid_task_config(self) -> None:
+        client = TestClient(create_app(ROOT))
+        response = client.post("/run", json={
+            "spec": "测试", "task_config": "../../etc/passwd",
+        })
+        self.assertEqual(response.status_code, 422)
+
     def test_run_rejects_missing_spec(self) -> None:
         client = TestClient(create_app(ROOT))
         self.assertEqual(client.post("/run", json={}).status_code, 422)

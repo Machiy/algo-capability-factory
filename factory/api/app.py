@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from factory.artifacts import kg_stem, scene_of
 from factory.contracts.intake import IntakeGuidance
+from factory.plugins import load_plugins
 
 logger = logging.getLogger(__name__)
 
@@ -41,12 +42,23 @@ class RunRequest(BaseModel):
         pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$",
         description="运行标识，用于产物命名（字母/数字/./_/-，1–64 位，禁止 ..）",
     )
+    task_config: str = Field(
+        default="configs/verify_credit.yaml",
+        description="任务级验证配置；换场景只改这个字段，核心验证器不变",
+    )
 
     @field_validator("run_id")
     @classmethod
     def _reject_traversal(cls, value: str) -> str:
         if ".." in value:
             raise ValueError("run_id 不能包含 ..")
+        return value
+
+    @field_validator("task_config")
+    @classmethod
+    def _check_task_config(cls, value: str) -> str:
+        if not _TASK_CONFIG_PATTERN.match(value):
+            raise ValueError("task_config 只能是 configs/verify_*.yaml")
         return value
 
 
@@ -123,6 +135,8 @@ def create_app(root: Path | None = None) -> Any:
     from factory import __version__
 
     base = Path(root) if root is not None else ROOT
+    # /templates 不经 Workflow，也要能看到外部插件注册的模板
+    load_plugins(base)
     app = FastAPI(
         title="AlgoCap Factory API",
         version=__version__,
@@ -165,13 +179,14 @@ def create_app(root: Path | None = None) -> Any:
 
         settings = load_settings(base / "configs/default.yaml",
                                  apply_env=not payload.mock)
-        task = load_task_settings(base / "configs/verify_credit.yaml")
+        task = load_task_settings(base / payload.task_config)
         if payload.mock:
             settings.llm = settings.llm.model_copy(
                 update={"provider": "mock", "role_providers": {}}
             )
         try:
-            workflow = Workflow(settings, task, base)
+            workflow = Workflow(settings, task, base,
+                                task_config=payload.task_config)
             trace = workflow.run(payload.spec, payload.run_id, force=payload.force)
         except SpecRejected as exc:
             # 描述不可执行：422 返回结构化引导，调用方据此提示用户改写

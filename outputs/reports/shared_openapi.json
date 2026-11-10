@@ -237,6 +237,12 @@
             "description": "自然语言能力描述",
             "title": "Spec",
             "type": "string"
+          },
+          "task_config": {
+            "default": "configs/verify_credit.yaml",
+            "description": "任务级验证配置；换场景只改这个字段，核心验证器不变",
+            "title": "Task Config",
+            "type": "string"
           }
         },
         "required": [
@@ -359,7 +365,7 @@
   "info": {
     "description": "基于 AI Agent 的算法能力工厂：提交自然语言能力描述，返回生成代码、四层验证结论与图谱沉淀。",
     "title": "AlgoCap Factory API",
-    "version": "1.4.1"
+    "version": "1.4.2"
   },
   "openapi": "3.1.0",
   "paths": {

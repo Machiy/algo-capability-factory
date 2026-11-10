@@ -40,6 +40,7 @@ from factory.knowledge.graph import load_graph
 from factory.knowledge.merge import merge_graphs
 from factory.llm import build_llm
 from factory.logging_setup import write_trace
+from factory.plugins import load_plugins
 from factory.runtime import StaticChecker
 from factory.runtime.dataset_sandbox import DatasetSandbox
 from factory.validation import FourLayerValidator
@@ -269,6 +270,8 @@ class Workflow:
         self.root = root
         self.use_knowledge = use_knowledge
         self.task_config = task_config
+        # 外部插件目录扫描：新增模板 / 指标只需放一个 .py，不改包内文件
+        load_plugins(root)
         # 场景取自 verify_<scope>.yaml；所有产物命名统一走 factory.artifacts
         self.scope = scene_of(task_config)
         # 不同场景各自沉淀到独立图谱文件，避免跨场景指标混进同一份统计

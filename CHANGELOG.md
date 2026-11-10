@@ -3,6 +3,24 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循
 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本对应一个 annotated tag 与 GitHub Release。
 
+## [1.4.2] - 2026-11-10
+
+按「进阶 8 项」逐项核查后，补齐两处「有机制但不够彻底」的短板，并修正文档与实现不符的表述。
+
+### 补齐
+
+- **插件式接入改为真正不改核心代码**：新增 `factory/plugins.py` 与 `plugins/` 目录，运行时用标准库 `importlib` 扫描 `plugins/*.py`，外部文件里的 `@register` 自动生效；`Workflow` 与 `create_app` 启动时加载，`/templates` 和 `POST /run` 都能看到。此前新增插件仍需在包内显式 import。单个插件失败只记 warning、按路径去重、重复加载幂等。新增 `tests/test_plugins.py` 3 个用例。
+- **API 也能换场景**：`POST /run` 新增 `task_config` 字段（默认 `configs/verify_credit.yaml`，白名单校验防路径穿越），传给 `Workflow`；此前换任务只能走 CLI `--task-config`。新增 2 个接口用例。
+
+### 文档校正
+
+- 状态机图原写 `Repair → Generate (≤3 轮)`，实际是 `Repair → Execute`（修复补丁回到沙箱复验），`Generate` 只用于切换下一候选。
+- 明确写出：目前只有 `KeyError: PAY_1` 会真正改写源码，其余签名给出策略并复验（`no_change`），不伪造补丁。
+- `Beam Search` 改为准确表述「一次生成 N 候选后按主指标排序（无迭代扩展 / 剪枝）」。
+- 修正遗留的 `outputs/kg/kg.html` 路径笔误（现为 `credit_kg.html`），并把「进阶 8 项」从一句话改成逐项对照表（含落地位置与自检方式）。
+
+`ruff` 全绿、186 个用例通过。
+
 ## [1.4.1] - 2026-11-10
 
 真实 LLM 全链路实测，并修掉这次实测暴露的两个真实性问题。
