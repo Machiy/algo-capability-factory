@@ -36,6 +36,9 @@ outputs/runs/
 # 可由 scripts/build_kg.py 重建的二进制运行产物，不入库
 outputs/kg/*.db
 
+# pyvis 若回退到本地资源模式会在根目录生成 lib/（当前用内联模式，防止误提交）
+/lib/
+
 # 编辑器与系统
 .idea/
 .vscode/

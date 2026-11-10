@@ -240,7 +240,7 @@ algo-capability-factory/
 ├── factory/     48 个模块：contracts / knowledge / agents / llm / runtime / validation / workflow / intake / api
 ├── scripts/     数据准备、图谱构建、Cypher 导出、消融、资源基准、仓库抽取、cassette 录制（11 个）
 ├── assets/      data/、docs/(+text/)、legacy/、repo/scorecardpy/、llm_cassettes/
-├── outputs/     generated/、reports/、kg/（runs/ 为临时轨迹，不入库）
+├── outputs/     generated/、reports/、kg/（产物地图见 outputs/README.md；runs/ 不入库）
 └── tests/       17 个测试文件 / 179 个用例
 ```
 
