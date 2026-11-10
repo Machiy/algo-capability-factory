@@ -3,6 +3,28 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循
 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本对应一个 annotated tag 与 GitHub Release。
 
+## [1.9.1] - 2026-11-10
+
+补充 A1 搜索消融对比（5.1 通用验收）：关闭 vs 开启 Successive Halving。
+
+### 新增
+
+- **`scripts/run_search_ablation.py`**：同一 spec 在「关闭 / 开启 Successive Halving」下
+  跑两次离线 run（`provider=mock`，确定性），对比最终 Top-1 主指标、完整评估候选数、
+  run 总耗时，产出 `outputs/reports/shared_search_ablation.md`。
+
+### 消融结果（credit 场景）
+
+| 指标 | 关闭搜索 | 开启搜索 |
+|---|---|---|
+| 完整评估候选数 | 3 | 3 |
+| Top-1 主指标 | 0.788149 | 0.789905 |
+| run 总耗时 | 30.0s | 86.0s |
+
+结论：搜索在 12 个组合里按粗评淘汰，选出了更适合的 family 变体（Top-1 +0.0018），
+未出现「多跑几次就把指标刷高」的虚高；代价是耗时 +187%（粗评阶段的额外沙箱执行）。
+两组 test 段均只消费一次。
+
 ## [1.9.0] - 2026-11-10
 
 A2 收尾：补齐修复动作表，消除 KeyError 硬编码列名。
