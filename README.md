@@ -63,7 +63,7 @@
 | 10. 后续可扩展方向 | 还能往哪里做 |
 | 附录 A / B / C / D | 十项要求对照、交付物索引、数据引用、术语表 |
 
-> **项目状态**：v1.11.0（变更见 [`CHANGELOG.md`](CHANGELOG.md)，阶段与提交对照见 [`AGENTS.md`](AGENTS.md)）；`ruff` 全绿、245 个用例通过；CI 覆盖 Python 3.11 / 3.12 与三条端到端；最近一次实测最佳候选 `random_forest` 四层全 PASS（valid AUC 0.7899，test AUC 0.7883，成本最优阈值 0.201）。
+> **项目状态**：v1.12.0（变更见 [`CHANGELOG.md`](CHANGELOG.md)，阶段与提交对照见 [`AGENTS.md`](AGENTS.md)）；`ruff` 全绿、249 个用例通过；CI 覆盖 Python 3.11 / 3.12 与三条端到端；最近一次实测最佳候选 `random_forest` 四层全 PASS（valid AUC 0.7899，test AUC 0.7883，成本最优阈值 0.201）。
 
 ---
 
@@ -339,6 +339,8 @@ algo-capability-factory/
 
 **仓库抽取细节**：函数 / 方法 → `Capability`（id `cap.repo.scorecardpy.<module>.<func>`）；docstring `Params` / `Returns` 段 → 结构化参数（21 个函数有，其余用签名兜底）；module 级 import → `Environment`（实测 8 个第三方依赖）；签名行 + docstring 首行 → `Evidence`（`sha256` 可重算）；函数体内点号调用 → `USES`。抽取器只做 `ast.parse`，**不 import、不执行**被抽取代码。复现：`python scripts/extract_repo.py`。
 
+**抽取规则本身也在 yaml 里**：`knowledge.extraction` 声明「文件名 → 材料类型」与「章节 → 节点类型」两张映射，`extractor.py` 只按规则执行。新增一份材料（如「催收记录.md」）是加两行配置，不是改代码；`tests/test_knowledge.py` 用一份虚构材料验证这条路径真的走得通，并锁定 yaml 配置与代码内置兜底值一致，避免两处漂移。
+
 ---
 
 ## 4. Agent 工作流设计
@@ -496,7 +498,7 @@ python scripts/tag_release.py             # push 后按版本号打 tag 并创�
 
 **最小依赖**：核心闭环需 `pydantic`、`PyYAML`、`pandas`、`scikit-learn`、`networkx`、`langgraph`、`rank-bm25`、`markdown-it-py`、`psutil`、`structlog`（全部为现成库，`requirements.txt` 已锁版本区间）；`pyvis`、`Jinja2`、`Typer`、`openai` 按入口加载。全量清单 23 个直接依赖，含传递依赖共 106 个安装包。
 
-**干净环境实测（P5 记录）**：空 venv 仅执行一次 `pip install -r requirements.txt`（无冲突），随后跑通 `ruff check`（全绿）、端到端 `factory run`（`四层全通过=True`、退出码 0），未安装任何清单外依赖；P6、1.1.x、1.2.0、1.3.0 与 1.4.0 均未新增第三方依赖（教训提炼、Cypher 导出与命名重构只用标准库 + 现有 pydantic），当前全量测试 203 个。
+**干净环境实测（P5 记录）**：空 venv 仅执行一次 `pip install -r requirements.txt`（无冲突），随后跑通 `ruff check`（全绿）、端到端 `factory run`（`四层全通过=True`、退出码 0），未安装任何清单外依赖；P6、1.1.x、1.2.0、1.3.0 与 1.4.0 均未新增第三方依赖（教训提炼、Cypher 导出与命名重构只用标准库 + 现有 pydantic），当前全量测试 245 个。
 
 **持续集成**：`.github/workflows/ci.yml` 用 matrix 并行 **Python 3.11**（最低版本）与 **3.12**（本地实测版本），各自执行 `ruff check`、全量单元测试与三条端到端（信用卡 / 短信 / 回归），断言 `四层全通过=True`。端到端走默认 provider（Interpreter 用已入库 cassette），CI 不依赖任何 API key。
 
@@ -505,6 +507,86 @@ python scripts/tag_release.py             # push 后按版本号打 tag 并创�
 **凭据与录制回放**：`LLM_API_KEY` 只从环境变量 / `.env` 读取，`.gitignore` 已排除 `.env` 与 `.env.*`；key、token、Authorization header 不会写入仓库文件、日志或 cassette。真实响应脱敏后落盘 `assets/llm_cassettes/`（当前 2 条 Interpreter 录制，回放一致性由 `tests/test_cassette_replay.py` 离线校验）；1.1.1 另做过一次全链路实时复测，真实出站调用 7 次（Planner 1、Coder 3、Repairer 2、Curator 1），结论见 `CHANGELOG.md`。回放未命中按 `cassette.on_miss` 显式报错或回退 `MockLLM`，不静默造假；引用回放结果的报告段落均标注「离线回放」。
 
 **配置说明**：三份 `verify_*.yaml` 均为 `status: active`，全部端到端跑通——`verify_credit.yaml`（表格二分类，主指标 AUC）、`verify_text.yaml`（文本分类，accuracy）、`verify_regression.yaml`（回归，RMSE，`direction: minimize`）。切换任务只换 `--task-config`，核心验证器、沙箱与工作流代码不改。
+
+**抽取画像为什么在 yaml 里**：`knowledge.extraction` 段声明「文件名 → 材料类型」与「章节 → 节点类型」两张映射。新增一种材料（例如加一份「催收记录.md」）只需要登记两行，抽取器、验证器与工作流代码一行都不改；`tests/test_knowledge.py` 用一份虚构材料证明这条路径真的走得通，同时锁定 yaml 与代码内置兜底值一致，避免两处漂移。
+
+**接入层调用示例（真实响应，`mock: true` 离线路径）**
+
+```bash
+python -m factory api --port 8000
+# 等价写法（便于接进程管理器 / 容器）：
+# uvicorn factory.api.app:create_app --factory --host 0.0.0.0 --port 8000
+```
+
+```bash
+curl -s localhost:8000/health
+# {"status":"ok"}
+
+curl -s localhost:8000/templates
+# {"templates":["hist_gradient_boosting","logistic_regression","random_forest",
+#   "tabular_regression.hist_gradient_boosting_regressor",
+#   "tabular_regression.random_forest_regressor","tabular_regression.ridge",
+#   "text_classification.complement_nb","text_classification.linear_svc",
+#   "text_classification.logistic_regression"]}
+
+curl -s -X POST localhost:8000/run -H "Content-Type: application/json" -d '{
+  "spec": "预测信用卡客户下月违约概率，时间外划分，按 5:1 成本比选阈值，禁止 ID 入模。",
+  "mock": true,
+  "run_id": "demo"
+}'
+```
+
+响应（节选，真实输出）：
+
+```json
+{
+  "run_id": "demo",
+  "passed": true,
+  "interpreter_source": "mock",
+  "kg_mode": "with_kg",
+  "candidate_count": 3,
+  "repair_count": 1,
+  "report_path": "outputs/reports/credit_run_demo.md",
+  "candidates": [{
+    "plan_id": "plan.01",
+    "model_family": "random_forest",
+    "passed": true,
+    "metrics": {"auc": 0.7899, "ks": 0.4459, "pr_auc": 0.5585, "f1": 0.5268,
+                "cost_weighted_loss": 0.5155, "psi": 0.0333,
+                "grouped_auc_gap": 0.0067},
+    "primary_metric": "auc",
+    "repair_rounds": 0
+  }],
+  "test_metrics": {"auc": 0.7883, "ks": 0.4399, "f1": 0.5275,
+                   "pr_auc": 0.5679, "cost_weighted_loss": 0.5367,
+                   "psi": 0.0681, "grouped_auc_gap": 0.0201}
+}
+```
+
+**不可执行的描述返回 422 + 结构化引导**，而不是 500 或静默跑一遍：
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" -X POST localhost:8000/run \
+  -H "Content-Type: application/json" -d '{"spec":"帮我写一首诗","mock":true}'
+# 422，且 detail.guidance.verdict = "reject"
+```
+
+`run_id` 会拼进报告与轨迹文件名，接口层（pydantic pattern + 拒绝 `..`）与工作流（`_RUN_ID_PATTERN`）双层校验，非法标识返回 422 / 400，不会写出产物目录。换场景只需在请求体加 `"task_config": "configs/verify_text.yaml"`。
+
+**在服务器上运行（uvicorn 入口已实测）**
+
+| 事项 | 建议 | 原因 |
+|---|---|---|
+| 启动 | `uvicorn factory.api.app:create_app --factory --host 0.0.0.0 --port 8000` | 应用是工厂函数，没有模块级 `app`，必须带 `--factory`；`python -m factory api` 是同一入口的包装 |
+| worker 数 | **1** | 产物目录与图谱回写是文件级的，多进程并发写会互相覆盖 |
+| 反向代理超时 | `proxy_read_timeout 300s` 起 | `/run` 单次请求内含沙箱执行，实测 30–90s，Nginx 默认 60s 会 504 |
+| 目录权限 | `configs/`、`assets/`、`outputs/` 与工作目录同级且可写 | 数据与 cassette 从 `assets/` 读，报告与图谱写 `outputs/` |
+| 无 key 部署 | 保持 `provider: mock`（默认） | 全链路离线，`/run` 仍走真实数据与真实沙箱 |
+| 接真实 LLM | 只注入 `LLM_API_KEY` 环境变量 | 不写进配置文件或镜像；`role_providers` 决定哪些角色走真实后端 |
+| 健康检查 | `GET /health` → `{"status":"ok"}` | 可直接作为存活探针 |
+| 清理 | 定期清理 `outputs/runs/`（不入库） | 轨迹文件随运行累积，只用于追溯 |
+
+> 未提供 Dockerfile / compose：题目该项为「接口文档**或**部署配置」，OpenAPI 已覆盖；容器化未在本机做过真实 build 验证，因此不写成「已支持」。同上，`--workers > 1` 未做并发写验证，按单 worker 部署。
 
 ---
 
@@ -818,7 +900,7 @@ done
 | 算法能力版本管理 | 完整 | v1→v2 增量节点 + `DERIVED_FROM` 版本链（图谱里有实物）；`scripts/capability_versions.py --list / --show / --diff` 可查询与对比 | 回滚（切换检索证据源）未做 |
 | 设计依据自然语言解释 | 完整 | `Curator.explain()` 按「判据 → 证据节点 id → 候选实测 → 排除原因 → 修复轨迹」生成，见任一报告的「设计依据」节 | 确定性拼接，不调用 LLM |
 | 跨场景迁移 | 完整 | 三份 `verify_*.yaml` + 三场景报告 + CI 三条端到端；核心验证器、沙箱、工作流不改 | — |
-| 接口文档 / 部署配置 | 完整（题目为「或」） | FastAPI 自动生成 `shared_openapi.json`，`python -m factory api --export-openapi` | 无 Dockerfile / compose，部署配置列为后续方向 |
+| 接口文档 / 部署配置 | 完整（题目为「或」） | FastAPI 5 端点 + 自动生成 `shared_openapi.json`；第 5 节给出 curl 调用示例（含 422 引导）与 uvicorn 部署要点（单 worker、代理超时、健康探针） | 无 Dockerfile / compose：未在本机做真实 build 验证，不写成「已支持」 |
 | 性能优化与资源消耗分析 | 部分 | `scripts/resource_benchmark.py` 实测 1× / 10× 的耗时中位数、峰值内存、推理 P95 → `shared_resources.md` | 只做测量分析，未做调参 / 降采样 / 缓存 / 并行等优化动作与 A/B 收益 |
 
 **结论：10 项全部涉及，完整 8 项、部分 2 项**（方案搜索、性能优化）。

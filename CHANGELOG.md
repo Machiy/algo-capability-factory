@@ -3,6 +3,36 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循
 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本对应一个 annotated tag 与 GitHub Release。
 
+## [1.12.0] - 2026-11-10
+
+把「换任务只改 yaml」这句话从宣称补成事实：抽取规则与部署用法都落到了配置与文档里。
+
+### 变更
+
+- **抽取画像配置化**：新增 `knowledge.extraction`（文件名 → 材料类型、章节 → 节点类型）；
+  `extractor.py` 删掉 `_row_node_type()` 的 if-else 与硬编码文件名表，改为按
+  `ExtractionProfile` 执行。新增一种材料从「改代码」变成「加两行配置」。
+- **契约新增 `ExtractionProfile` / `SectionRule`**：抽取规则成为可测试的数据，
+  不再散落在函数分支里；`DOC_TYPE_BY_FILENAME` 只保留为配置缺段时的兜底常量。
+
+### 文档
+
+- 第 5 节补接入层调用示例：curl 调 `/health`、`/templates`、`/run`，附真实响应
+  （候选指标与 test 终评）与 422 结构化引导的调用方式。
+- 第 5 节补「在服务器上运行」：`uvicorn factory.api.app:create_app --factory`
+  （实测 `/health` 200）、单 worker 的原因、代理超时、目录权限、无 key 部署与健康探针。
+- 第 3 节说明抽取规则来自 yaml；加分表「接口文档 / 部署配置」同步。
+
+### 测试
+
+- 新增 4 个用例：yaml 与内置兜底一致、新材料类型零代码改动可抽取、
+  未登记章节不产节点、文件名带扩展名也能命中。全量 249 用例通过、ruff 全绿。
+
+### 兼容性
+
+- 抽取结果与 1.11.0 完全一致：`read_sources` / `MockExtractor` 的 `profile` 参数可选，
+  不传时用内置默认；产物与既有断言不变。
+
 ## [1.11.0] - 2026-11-10
 
 把「配置里有、实际没生效」的三处补齐，并堵住一个真实性漏洞。
