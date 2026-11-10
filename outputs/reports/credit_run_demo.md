@@ -7,11 +7,12 @@
 
 - 能力描述：预测信用卡客户下月违约概率，时间外划分，按 5:1 成本比选阈值，禁止 ID 入模。
 - 能力理解来源：mock
+- LLM 后端分布：Coder=规则模板、Curator=规则模板、Interpreter=规则模板、Planner=规则模板、Repairer=规则模板
 - 知识图谱：with_kg（图谱来源 sources+after_run）
 - 历史失败经验命中：是
 - 七步流程：执行完成（a.Parse → b.Retrieve → c.Plan → d.Generate → e.Execute+Validate → f.Diagnose+Repair → g.Sink 均有产物）
 - 四层全通过：**PASS**
-- 七步轨迹：a.Parse → b.Retrieve → c.Plan → d.Generate → e.Execute+Validate → f.Diagnose+Repair → d.Generate → e.Execute+Validate → d.Generate → e.Execute+Validate → g.Sink
+- 七步轨迹：a.Parse → b.Retrieve → c.Plan → d.Generate → e.Execute+Validate → d.Generate → e.Execute+Validate → d.Generate → e.Execute+Validate → f.Diagnose+Repair → g.Sink
 
 > 说明：四层全通过为 FAIL 时，通常是「指标表现」层未达 `verify_credit.yaml`
 > 的业务门槛；接口 / 功能 / 稳定性结论见第 3 节，失败记录已回写 FailureCase。
@@ -52,25 +53,28 @@
 - LeakageDetected → 改时间外划分；强制 `sklearn.Pipeline` 且所有预处理器仅 on train fit；按 `PRECEDES` 约束检查期次
 ```
 
-## 2. 候选方案比较（Beam Top-3，主指标 auc）
+## 2. 候选方案比较（主指标 auc 优先，成本损失收口）
 
-| 方案 | 模型族 | auc | 通过 | 代码来源 | 修复轮次 |
-|---|---|---|---|---|---|
-| plan.02 | random_forest | 0.7899 | PASS | template | 0 |
-| plan.03 | hist_gradient_boosting | 0.7843 | PASS | template | 0 |
-| plan.01 | logistic_regression | 0.7206 | FAIL | template | 1 |
+> 阈值列：配置写策略名（如 `cost_optimal`），实际取值是评估段解析出的数值；两者并列，避免把策略名当成本次生效的阈值。
+
+| 方案 | 模型族 | auc | 阈值（配置 → 实际） | 通过 | 代码来源 | 修复轮次 |
+|---|---|---|---|---|---|---|
+| plan.01 | random_forest | 0.7899 | cost_optimal → 0.201 | PASS | template | 0 |
+| plan.02 | hist_gradient_boosting | 0.7881 | cost_optimal → 0.158 | PASS | template | 0 |
+| plan.03 | logistic_regression | 0.7216 | 0.30 → 0.300 | FAIL | template | 1 |
 
 ## 3. 四层验证结论
 
 | 运行 | 接口 | 功能 | 指标 | 稳定性 | 确定性 Δ | 错误签名 |
 |---|---|---|---|---|---|---|
-| plan.01 | PASS | PASS | FAIL | PASS | 0.00e+00 | MetricBelowThreshold |
+| plan.01 | PASS | PASS | PASS | PASS | 0.00e+00 | 无 |
 | plan.02 | PASS | PASS | PASS | PASS | 0.00e+00 | 无 |
-| plan.03 | PASS | PASS | PASS | PASS | 0.00e+00 | 无 |
+| plan.03 | PASS | PASS | FAIL | PASS | 0.00e+00 | MetricBelowThreshold |
 
 ## 4. 修复轨迹
 
-- 第 1 轮：`MetricBelowThreshold` → 检索历史高分方案，切换模型族或按成本比调阈值（no_change）
+- 第 1 轮：`MetricBelowThreshold` → 检索历史高分方案，切换模型族或按成本比调阈值（no_change；补丁来源 none）
+  - LLM 根因推理：按错误签名查表定向修复
 
 ## 设计依据
 
@@ -78,25 +82,25 @@
 - 检索证据：命中 5 项（cap.risk_policy.C6、metric.test_report.r04、cap.expert_rules.E1、cap.expert_rules.E4、cap.risk_policy.C5），适用条件 5 条、系统级教训 5 条已注入 Planner / Coder 的 prompt。
 - 硬约束：[C1] 客群范围：仅适用于持有 ≥6 期账单历史的存量客户；新客无 `PAY_*` / `BILL_AMT*` 序列，不在适用范围内；[C2] 额度区间：`LIMIT_BAL` 在本样本覆盖区间内；超出区间需人工复核；[C3] 时间范围：训练样本观测期为 2005-04 至 2005-09；上线前须做 PSI 群体稳定性检查，PSI > 0.25 触发重训
 - 候选实测比较：
-  - `plan.02`（random_forest）：auc=0.7899 PASS，修复 0 轮
-  - `plan.03`（hist_gradient_boosting）：auc=0.7843 PASS，修复 0 轮
-  - `plan.01`（logistic_regression）：auc=0.7206 FAIL，修复 1 轮
-- 选择 `plan.02` 的依据：主指标实测 0.7899 排名第一且四层验证通过；未选 plan.01，因其未通过指标 / 四层门槛。
+  - `plan.01`（random_forest）：auc=0.7899 PASS，修复 0 轮
+  - `plan.02`（hist_gradient_boosting）：auc=0.7881 PASS，修复 0 轮
+  - `plan.03`（logistic_regression）：auc=0.7216 FAIL，修复 1 轮
+- 选择 `plan.01` 的依据：主指标实测 0.7899 排名第一且四层验证通过；未选 plan.03，因其未通过指标 / 四层门槛。
 - 失败与定向修复：`MetricBelowThreshold` → 检索历史高分方案，切换模型族或按成本比调阈值（no_change）
 - 这些签名已回写 `FailureCase`；同一签名在独立运行中出现达阈值后提升为 `Lesson`，下一轮由检索注入 prompt。
 - 上述依据均可用节点 id 在图谱 / 报告中回溯，不含事后编造的数值。
 
 ## 5. 终评（test 段，仅一次）
 
-- 终评候选：`plan.02`；test 段本次一次性消费，未参与候选排序与修复决策
+- 终评候选：`plan.01`；test 段本次一次性消费，未参与候选排序与修复决策
 
 | 指标 | test 实测 |
 |---|---|
 | auc | 0.7883 |
 | ks | 0.4399 |
 | pr_auc | 0.5679 |
-| f1 | 0.4590 |
-| cost_weighted_loss | 0.7260 |
+| f1 | 0.5275 |
+| cost_weighted_loss | 0.5367 |
 | psi | 0.0681 |
 | grouped_auc_gap | 0.0201 |
 
@@ -120,4 +124,4 @@
 - `outputs/generated/credit/candidate_plan.03.py`
 - 回写图谱（知识）：`outputs/kg/credit_kg_after_run.json`
 
-模式 with_kg（图谱来源 sources+after_run）；候选 3 个；修复 1 轮；历史失败经验命中 是；检索证据 5 项已注入 Planner 与 Coder prompt。
+模式 with_kg（图谱来源 sources+after_run）；候选 3 个；修复 1 轮；评审协作 0 次；历史失败经验命中 是；检索证据 5 项已注入 Planner 与 Coder prompt。

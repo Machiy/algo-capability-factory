@@ -1,31 +1,9 @@
 {
   "nodes": [
     {
-      "node_id": "run.demo.01",
+      "node_id": "run.search_on.01",
       "node_type": "ValidationRun",
-      "name": "验证运行 run.demo.01",
-      "version": "v1",
-      "task_type": "tabular_binary_classification",
-      "status": "active",
-      "attributes": {
-        "metrics": {
-          "auc": 0.7206124391247685,
-          "ks": 0.3925920845051101,
-          "pr_auc": 0.5055017147063443,
-          "f1": 0.3467843631778058,
-          "cost_weighted_loss": 0.8026666666666666,
-          "psi": 0.0489035188420989,
-          "grouped_auc_gap": 0.05875830231396728
-        },
-        "passed": false,
-        "duration_seconds": 1.828
-      },
-      "evidence": []
-    },
-    {
-      "node_id": "run.demo.02",
-      "node_type": "ValidationRun",
-      "name": "验证运行 run.demo.02",
+      "name": "验证运行 run.search_on.01",
       "version": "v1",
       "task_type": "tabular_binary_classification",
       "status": "active",
@@ -34,40 +12,62 @@
           "auc": 0.7899049146031963,
           "ks": 0.4458879209822348,
           "pr_auc": 0.5585265737164163,
-          "f1": 0.4737417943107221,
-          "cost_weighted_loss": 0.685,
+          "f1": 0.5267944137707048,
+          "cost_weighted_loss": 0.5155,
           "psi": 0.033255863484548585,
           "grouped_auc_gap": 0.006730880194030342
         },
         "passed": true,
-        "duration_seconds": 11.39
+        "duration_seconds": 14.813
       },
       "evidence": []
     },
     {
-      "node_id": "run.demo.03",
+      "node_id": "run.search_on.02",
       "node_type": "ValidationRun",
-      "name": "验证运行 run.demo.03",
+      "name": "验证运行 run.search_on.02",
       "version": "v1",
       "task_type": "tabular_binary_classification",
       "status": "active",
       "attributes": {
         "metrics": {
-          "auc": 0.784336717195967,
-          "ks": 0.43995472940530905,
-          "pr_auc": 0.5542701926276595,
-          "f1": 0.48986125933831376,
-          "cost_weighted_loss": 0.6666666666666666,
-          "psi": 0.045279533232217034,
-          "grouped_auc_gap": 0.004885606390561015
+          "auc": 0.788149478702243,
+          "ks": 0.4348583579120653,
+          "pr_auc": 0.5562053858557281,
+          "f1": 0.48794858061060525,
+          "cost_weighted_loss": 0.5246666666666666,
+          "psi": 0.023203599762199992,
+          "grouped_auc_gap": 0.009296354350979863
         },
         "passed": true,
-        "duration_seconds": 2.313
+        "duration_seconds": 2.141
+      },
+      "evidence": []
+    },
+    {
+      "node_id": "run.search_on.03",
+      "node_type": "ValidationRun",
+      "name": "验证运行 run.search_on.03",
+      "version": "v1",
+      "task_type": "tabular_binary_classification",
+      "status": "active",
+      "attributes": {
+        "metrics": {
+          "auc": 0.7215855854310995,
+          "ks": 0.3929521915083339,
+          "pr_auc": 0.5035453205958532,
+          "f1": 0.36140470508012273,
+          "cost_weighted_loss": 0.731,
+          "psi": 0.04066252035650155,
+          "grouped_auc_gap": 0.0573244041549843
+        },
+        "passed": false,
+        "duration_seconds": 2.141
       },
       "evidence": []
     }
   ],
   "edges": [],
   "source_files": [],
-  "content_sha256": "3d4245b43d72e3e60016a94c58ee8c5198098b9574ba6434c79d0e8827713f21"
+  "content_sha256": "30f20d66e3d5aafeba3f44e82164e6f632e2f473a0b3f05f045712e711aae43b"
 }

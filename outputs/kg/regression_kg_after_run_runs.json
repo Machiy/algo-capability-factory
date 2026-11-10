@@ -9,12 +9,12 @@
       "status": "active",
       "attributes": {
         "metrics": {
-          "rmse": 28.525799595649218,
-          "mae": 22.02084797309101,
-          "r2": 0.9511169495436053
+          "rmse": 19.314104948770773,
+          "mae": 15.583249761770585,
+          "r2": 0.9775905179039528
         },
         "passed": true,
-        "duration_seconds": 2.609
+        "duration_seconds": 1.562
       },
       "evidence": []
     },
@@ -27,12 +27,12 @@
       "status": "active",
       "attributes": {
         "metrics": {
-          "rmse": 19.314104948770773,
-          "mae": 15.583249761770585,
-          "r2": 0.9775905179039528
+          "rmse": 28.828775530225496,
+          "mae": 21.999748635889265,
+          "r2": 0.950073049666301
         },
         "passed": true,
-        "duration_seconds": 1.625
+        "duration_seconds": 2.796
       },
       "evidence": []
     },
@@ -45,17 +45,17 @@
       "status": "active",
       "attributes": {
         "metrics": {
-          "rmse": 37.00887372266449,
-          "mae": 28.32603712095488,
-          "r2": 0.9177199810646829
+          "rmse": 37.00811887475056,
+          "mae": 28.32592955095488,
+          "r2": 0.917723337463352
         },
         "passed": true,
-        "duration_seconds": 3.203
+        "duration_seconds": 4.719
       },
       "evidence": []
     }
   ],
   "edges": [],
   "source_files": [],
-  "content_sha256": "102fac43e57c92fd85f1cdaadb6da0101c225cd1e2c6a016bac74faf5f828d1d"
+  "content_sha256": "5a6405cac0a4ccc445ba8a0e39f9e1c2a74dbd86bcab894c68142c472d009d9a"
 }

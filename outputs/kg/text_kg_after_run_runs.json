@@ -9,11 +9,11 @@
       "status": "active",
       "attributes": {
         "metrics": {
-          "accuracy": 0.97847533632287,
-          "macro_f1": 0.9535203634999374
+          "accuracy": 0.9802690582959641,
+          "macro_f1": 0.9563988624244579
         },
         "passed": true,
-        "duration_seconds": 1.813
+        "duration_seconds": 1.594
       },
       "evidence": []
     },
@@ -26,11 +26,11 @@
       "status": "active",
       "attributes": {
         "metrics": {
-          "accuracy": 0.9802690582959641,
-          "macro_f1": 0.9563988624244579
+          "accuracy": 0.97847533632287,
+          "macro_f1": 0.9535203634999374
         },
         "passed": true,
-        "duration_seconds": 1.734
+        "duration_seconds": 1.719
       },
       "evidence": []
     },
@@ -47,12 +47,12 @@
           "macro_f1": 0.944694654974009
         },
         "passed": true,
-        "duration_seconds": 1.656
+        "duration_seconds": 1.547
       },
       "evidence": []
     }
   ],
   "edges": [],
   "source_files": [],
-  "content_sha256": "ddc6a664c60e8a12a2d77de90bd0c3f65beae8430b5b95525de332918068f710"
+  "content_sha256": "026b51f5df3d06e26fa74fe4439143b6536488af4d26f8cf68709ed936ae4731"
 }

@@ -7,6 +7,7 @@
 
 - 能力描述：根据多期特征预测日需求量，最小化RMSE，输出RMSE/MAE/R2
 - 能力理解来源：mock
+- LLM 后端分布：Coder=规则模板、Curator=规则模板、Interpreter=规则模板、Planner=规则模板
 - 知识图谱：with_kg（图谱来源 sources+after_run）
 - 历史失败经验命中：否
 - 七步流程：执行完成（a.Parse → b.Retrieve → c.Plan → d.Generate → e.Execute+Validate → f.Diagnose+Repair → g.Sink 均有产物）
@@ -30,8 +31,8 @@
 - [0.455] [EXP-03] LogisticRegression (run.experiment_log.EXP-03)
 - [0.455] [EXP-04] LogisticRegression (run.experiment_log.EXP-04)
 - [0.435] [E4] 所有预处理器置于 sklearn.Pipeline 内并仅在训练集 fit (cap.expert_rules.E4)
-- [0.409] [r01] 越大越好 (metric.risk_policy.r01)
-- [0.395] [EXP-02] LogisticRegression (run.experiment_log.EXP-02)
+- [0.425] [K1] WOE 分箱对逻辑回归的 KS 提升明显（0.318 → 0.361） (cap.experiment_log.K1)
+- [0.425] [K2] 按成本比调阈值比换模型更能降低业务损失 (cap.experiment_log.K2)
 ## 适用条件
 - [C1] 客群范围：仅适用于持有 ≥6 期账单历史的存量客户；新客无 `PAY_*` / `BILL_AMT*` 序列，不在适用范围内
 - [C2] 额度区间：`LIMIT_BAL` 在本样本覆盖区间内；超出区间需人工复核
@@ -52,13 +53,15 @@
 - LeakageDetected → 采样仅在训练集内、且在 Pipeline 内执行
 ```
 
-## 2. 候选方案比较（Beam Top-3，主指标 rmse）
+## 2. 候选方案比较（主指标 rmse 优先，成本损失收口）
 
-| 方案 | 模型族 | rmse | 通过 | 代码来源 | 修复轮次 |
-|---|---|---|---|---|---|
-| plan.02 | ridge | 19.3141 | PASS | template | 0 |
-| plan.01 | hist_gradient_boosting_regressor | 28.5258 | PASS | template | 0 |
-| plan.03 | random_forest_regressor | 37.0089 | PASS | template | 0 |
+> 阈值列：配置写策略名（如 `cost_optimal`），实际取值是评估段解析出的数值；两者并列，避免把策略名当成本次生效的阈值。
+
+| 方案 | 模型族 | rmse | 阈值（配置 → 实际） | 通过 | 代码来源 | 修复轮次 |
+|---|---|---|---|---|---|---|
+| plan.01 | ridge | 19.3141 | 0.50 → 0.500 | PASS | template | 0 |
+| plan.02 | hist_gradient_boosting_regressor | 28.8288 | 0.50 → 0.500 | PASS | template | 0 |
+| plan.03 | random_forest_regressor | 37.0081 | 0.50 → 0.500 | PASS | template | 0 |
 
 ## 3. 四层验证结论
 
@@ -75,19 +78,19 @@
 ## 设计依据
 
 - 评价口径：主指标 `rmse`（minimize，门槛由任务配置给出）；候选在 valid 段实测后统一打分排名，test 段只在比较结束后消费一次。
-- 检索证据：命中 5 项（run.experiment_log.EXP-03、run.experiment_log.EXP-04、cap.expert_rules.E4、metric.risk_policy.r01、run.experiment_log.EXP-02），适用条件 5 条、系统级教训 5 条已注入 Planner / Coder 的 prompt。
+- 检索证据：命中 5 项（run.experiment_log.EXP-03、run.experiment_log.EXP-04、cap.expert_rules.E4、cap.experiment_log.K1、cap.experiment_log.K2），适用条件 5 条、系统级教训 5 条已注入 Planner / Coder 的 prompt。
 - 硬约束：[C1] 客群范围：仅适用于持有 ≥6 期账单历史的存量客户；新客无 `PAY_*` / `BILL_AMT*` 序列，不在适用范围内；[C2] 额度区间：`LIMIT_BAL` 在本样本覆盖区间内；超出区间需人工复核；[C3] 时间范围：训练样本观测期为 2005-04 至 2005-09；上线前须做 PSI 群体稳定性检查，PSI > 0.25 触发重训
 - 候选实测比较：
-  - `plan.02`（ridge）：rmse=19.3141 PASS，修复 0 轮
-  - `plan.01`（hist_gradient_boosting_regressor）：rmse=28.5258 PASS，修复 0 轮
-  - `plan.03`（random_forest_regressor）：rmse=37.0089 PASS，修复 0 轮
-- 选择 `plan.02` 的依据：主指标实测 -19.3141 排名第一且四层验证通过；全部候选通过门槛，按主指标择优。
+  - `plan.01`（ridge）：rmse=19.3141 PASS，修复 0 轮
+  - `plan.02`（hist_gradient_boosting_regressor）：rmse=28.8288 PASS，修复 0 轮
+  - `plan.03`（random_forest_regressor）：rmse=37.0081 PASS，修复 0 轮
+- 选择 `plan.01` 的依据：主指标实测 -19.3141 排名第一且四层验证通过；全部候选通过门槛，按主指标择优。
 - 本轮未触发失败签名，无需定向修复。
 - 上述依据均可用节点 id 在图谱 / 报告中回溯，不含事后编造的数值。
 
 ## 5. 终评（test 段，仅一次）
 
-- 终评候选：`plan.02`；test 段本次一次性消费，未参与候选排序与修复决策
+- 终评候选：`plan.01`；test 段本次一次性消费，未参与候选排序与修复决策
 
 | 指标 | test 实测 |
 |---|---|
@@ -115,4 +118,4 @@
 - `outputs/generated/regression/candidate_plan.03.py`
 - 回写图谱（知识）：`outputs/kg/regression_kg_after_run.json`
 
-模式 with_kg（图谱来源 sources+after_run）；候选 3 个；修复 0 轮；历史失败经验命中 否；检索证据 5 项已注入 Planner 与 Coder prompt。
+模式 with_kg（图谱来源 sources+after_run）；候选 3 个；修复 0 轮；评审协作 0 次；历史失败经验命中 否；检索证据 5 项已注入 Planner 与 Coder prompt。

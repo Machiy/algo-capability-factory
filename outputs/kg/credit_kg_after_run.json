@@ -2904,9 +2904,11 @@
         "occurrence": 1,
         "run_ids": [
           "demo",
-          "kg_refresh"
+          "kg_refresh",
+          "search_off",
+          "search_on"
         ],
-        "occurrences": 2
+        "occurrences": 4
       },
       "evidence": []
     },
@@ -2941,12 +2943,12 @@
           "MetricBelowThreshold"
         ],
         "applies_to": "跨场景通用",
-        "occurrences": 2,
+        "occurrences": 4,
         "run_ids": [
           "demo",
           "kg_refresh"
         ],
-        "confidence": 0.65,
+        "confidence": 0.95,
         "source": "measured",
         "record_kind": "knowledge"
       },
@@ -4207,5 +4209,5 @@
     "assets/docs/test_report.md",
     "assets/legacy/legacy_default_model.py"
   ],
-  "content_sha256": "360685ed1107f8b4010ff70693bc5ab100ac3a6ff339c747ac29316611ce8e14"
+  "content_sha256": "bbf7844ed48ae0855afe10ea6a71324b5c43a7e86de9bf7345fa94bc4045fd1a"
 }

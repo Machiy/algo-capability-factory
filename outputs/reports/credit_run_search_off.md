@@ -7,6 +7,7 @@
 
 - 能力描述：预测信用卡客户下月违约概率，时间外划分，按5:1成本比选阈值，禁止ID入模
 - 能力理解来源：mock
+- LLM 后端分布：Coder=规则模板、Curator=规则模板、Interpreter=规则模板、Planner=规则模板、Repairer=规则模板
 - 知识图谱：with_kg（图谱来源 sources+after_run）
 - 历史失败经验命中：是
 - 七步流程：执行完成（a.Parse → b.Retrieve → c.Plan → d.Generate → e.Execute+Validate → f.Diagnose+Repair → g.Sink 均有产物）
@@ -39,7 +40,7 @@
 - [C4] 划分方式：必须时间外划分，禁止随机打乱；所有预处理在训练集内 fit
 - [C5] 敏感字段：`SEX` / `AGE` / `EDUCATION` / `MARRIAGE` 不得进入模型特征，仅用于分组公平性审计
 ## 系统级教训（跨运行成立，生成代码必须遵守）
-- [workflow] MetricBelowThreshold → 根因：单一模型族在既有特征下达不到门槛，继续调参的边际收益低于换族或换阈值口径 → 处置：切换模型族或按成本比重选阈值，而不是在同一个族上反复调参（出现 4 次，置信度 0.95）
+- [workflow] MetricBelowThreshold → 根因：单一模型族在既有特征下达不到门槛，继续调参的边际收益低于换族或换阈值口径 → 处置：切换模型族或按成本比重选阈值，而不是在同一个族上反复调参（出现 2 次，置信度 0.65）
 - [runtime] 内存看门狗永不触发，占用早已超过 2GB 仍判定通过 → 根因：Windows 虚拟环境里的 `python.exe` 是重定向器，读父进程 RSS 只有约 4MB，按单进程计量完全失真 → 处置：改为 `psutil.Process.children(recursive=True)` 对整棵进程树求和，超限即终止子进程（出现 1 次，置信度 0.90）
 - [platform] 本地跑通的 CLI 断言在 CI 上随机失败 → 根因：Typer 检测到终端后自动着色，输出里混入 ANSI 转义序列，按纯文本匹配必然失配 → 处置：子进程设 `NO_COLOR=1`、`TERM=dumb`，断言前统一剥离 ANSI（出现 1 次，置信度 0.90）
 - [platform] 证据 SHA-256 在 Windows 上校验失败，Linux 正常 → 根因：Git 检出的换行是 CRLF，与原文 LF 不同，同一内容算出不同哈希 → 处置：`read_sources` 读入后归一化换行再计算哈希（出现 1 次，置信度 0.90）
@@ -52,13 +53,15 @@
 - LeakageDetected → 改时间外划分；强制 `sklearn.Pipeline` 且所有预处理器仅 on train fit；按 `PRECEDES` 约束检查期次
 ```
 
-## 2. 候选方案比较（Beam Top-3，主指标 auc）
+## 2. 候选方案比较（主指标 auc 优先，成本损失收口）
 
-| 方案 | 模型族 | auc | 通过 | 代码来源 | 修复轮次 |
-|---|---|---|---|---|---|
-| plan.03 | hist_gradient_boosting | 0.7881 | PASS | template | 0 |
-| plan.02 | random_forest | 0.7857 | PASS | template | 0 |
-| plan.01 | logistic_regression | 0.7206 | FAIL | template | 1 |
+> 阈值列：配置写策略名（如 `cost_optimal`），实际取值是评估段解析出的数值；两者并列，避免把策略名当成本次生效的阈值。
+
+| 方案 | 模型族 | auc | 阈值（配置 → 实际） | 通过 | 代码来源 | 修复轮次 |
+|---|---|---|---|---|---|---|
+| plan.03 | hist_gradient_boosting | 0.7881 | cost_optimal → 0.158 | PASS | template | 0 |
+| plan.02 | random_forest | 0.7857 | 0.50 → 0.500 | PASS | template | 0 |
+| plan.01 | logistic_regression | 0.7206 | 0.30 → 0.300 | FAIL | template | 1 |
 
 ## 3. 四层验证结论
 
@@ -70,7 +73,8 @@
 
 ## 4. 修复轨迹
 
-- 第 1 轮：`MetricBelowThreshold` → 检索历史高分方案，切换模型族或按成本比调阈值（no_change）
+- 第 1 轮：`MetricBelowThreshold` → 检索历史高分方案，切换模型族或按成本比调阈值（no_change；补丁来源 none）
+  - LLM 根因推理：按错误签名查表定向修复
 
 ## 设计依据
 
@@ -95,8 +99,8 @@
 | auc | 0.7866 |
 | ks | 0.4348 |
 | pr_auc | 0.5589 |
-| f1 | 0.4653 |
-| cost_weighted_loss | 0.7183 |
+| f1 | 0.4832 |
+| cost_weighted_loss | 0.5568 |
 | psi | 0.0202 |
 | grouped_auc_gap | 0.0121 |
 
@@ -107,7 +111,7 @@
 - 新增节点：3
 - 新增边：3
 - 运行记录 ValidationRun（本次留痕，可随重跑覆盖）：3
-- 失败案例证据合并（独立 run 数累加）：0
+- 失败案例证据合并（独立 run 数累加）：1
 - 本次提升为教训（跨运行知识）：0
 - 图谱内教训总数：13
 
@@ -120,4 +124,4 @@
 - `outputs/generated/credit/candidate_plan.03.py`
 - 回写图谱（知识）：`outputs/kg/credit_kg_after_run.json`
 
-模式 with_kg（图谱来源 sources+after_run）；候选 3 个；修复 1 轮；历史失败经验命中 是；检索证据 5 项已注入 Planner 与 Coder prompt。
+模式 with_kg（图谱来源 sources+after_run）；候选 3 个；修复 1 轮；评审协作 0 次；历史失败经验命中 是；检索证据 5 项已注入 Planner 与 Coder prompt。

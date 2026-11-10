@@ -6,6 +6,7 @@
 
 - 能力描述：把短信分类为垃圾短信或正常短信，输出准确率与宏平均F1
 - 能力理解来源：mock
+- LLM 后端分布：Coder=规则模板、Curator=规则模板、Interpreter=规则模板、Planner=规则模板
 - 知识图谱：with_kg（图谱来源 sources+after_run）
 - 历史失败经验命中：否
 - 七步流程：执行完成（a.Parse → b.Retrieve → c.Plan → d.Generate → e.Execute+Validate → f.Diagnose+Repair → g.Sink 均有产物）
@@ -28,9 +29,9 @@
 # 检索证据（query=把短信分类为垃圾短信或正常短信，输出准确率与宏平均F1）
 - [0.475] [macro_f1] 0.90 (metric.sms_policy.macro_f1)
 - [0.460] [r01] 0.95 (metric.sms_policy.r01)
-- [0.375] [ST1] 大小写与标点不统一 (cap.sms_data_dictionary.ST1)
-- [0.375] [ST2] 正文含电话号码与短链接 (cap.sms_data_dictionary.ST2)
-- [0.375] [ST3] 极短文本与重复文本 (cap.sms_data_dictionary.ST3)
+- [0.425] [S2] 语言范围 (cap.sms_policy.S2)
+- [0.425] [S3] 类别严重不平衡 (cap.sms_policy.S3)
+- [0.425] [S4] 词表边界 (cap.sms_policy.S4)
 ## 适用条件
 - [S1] 文本长度：少于 3 个字符的样本不参与训练，避免噪声主导词表
 - [S2] 语言范围：当前仅覆盖英文短信；中文短信需要另行分词，不能直接复用本词表
@@ -48,13 +49,15 @@
 - MetricBelowThreshold → 主指标改为 macro-F1 与 spam 召回，配合 `class_weight="balanced"`
 ```
 
-## 2. 候选方案比较（Beam Top-3，主指标 accuracy）
+## 2. 候选方案比较（主指标 accuracy 优先，成本损失收口）
 
-| 方案 | 模型族 | accuracy | 通过 | 代码来源 | 修复轮次 |
-|---|---|---|---|---|---|
-| plan.02 | linear_svc | 0.9803 | PASS | template | 0 |
-| plan.01 | logistic_regression | 0.9785 | PASS | template | 0 |
-| plan.03 | complement_nb | 0.9731 | PASS | template | 0 |
+> 阈值列：配置写策略名（如 `cost_optimal`），实际取值是评估段解析出的数值；两者并列，避免把策略名当成本次生效的阈值。
+
+| 方案 | 模型族 | accuracy | 阈值（配置 → 实际） | 通过 | 代码来源 | 修复轮次 |
+|---|---|---|---|---|---|---|
+| plan.01 | linear_svc | 0.9803 | 0.50 → 0.500 | PASS | template | 0 |
+| plan.02 | logistic_regression | 0.9785 | 0.50 → 0.500 | PASS | template | 0 |
+| plan.03 | complement_nb | 0.9731 | 0.50 → 0.500 | PASS | template | 0 |
 
 ## 3. 四层验证结论
 
@@ -71,19 +74,19 @@
 ## 设计依据
 
 - 评价口径：主指标 `accuracy`（maximize，门槛 0.95）；候选在 valid 段实测后统一打分排名，test 段只在比较结束后消费一次。
-- 检索证据：命中 5 项（metric.sms_policy.macro_f1、metric.sms_policy.r01、cap.sms_data_dictionary.ST1、cap.sms_data_dictionary.ST2、cap.sms_data_dictionary.ST3），适用条件 5 条、系统级教训 5 条已注入 Planner / Coder 的 prompt。
+- 检索证据：命中 5 项（metric.sms_policy.macro_f1、metric.sms_policy.r01、cap.sms_policy.S2、cap.sms_policy.S3、cap.sms_policy.S4），适用条件 5 条、系统级教训 5 条已注入 Planner / Coder 的 prompt。
 - 硬约束：[S1] 文本长度：少于 3 个字符的样本不参与训练，避免噪声主导词表；[S2] 语言范围：当前仅覆盖英文短信；中文短信需要另行分词，不能直接复用本词表；[S3] 类别严重不平衡：spam 约 13.4%，评估必须同时看 macro-F1，禁止只看 accuracy
 - 候选实测比较：
-  - `plan.02`（linear_svc）：accuracy=0.9803 PASS，修复 0 轮
-  - `plan.01`（logistic_regression）：accuracy=0.9785 PASS，修复 0 轮
+  - `plan.01`（linear_svc）：accuracy=0.9803 PASS，修复 0 轮
+  - `plan.02`（logistic_regression）：accuracy=0.9785 PASS，修复 0 轮
   - `plan.03`（complement_nb）：accuracy=0.9731 PASS，修复 0 轮
-- 选择 `plan.02` 的依据：主指标实测 0.9803 排名第一且四层验证通过；全部候选通过门槛，按主指标择优。
+- 选择 `plan.01` 的依据：主指标实测 0.9803 排名第一且四层验证通过；全部候选通过门槛，按主指标择优。
 - 本轮未触发失败签名，无需定向修复。
 - 上述依据均可用节点 id 在图谱 / 报告中回溯，不含事后编造的数值。
 
 ## 5. 终评（test 段，仅一次）
 
-- 终评候选：`plan.02`；test 段本次一次性消费，未参与候选排序与修复决策
+- 终评候选：`plan.01`；test 段本次一次性消费，未参与候选排序与修复决策
 
 | 指标 | test 实测 |
 |---|---|
@@ -110,4 +113,4 @@
 - `outputs/generated/text/candidate_plan.03.py`
 - 回写图谱（知识）：`outputs/kg/text_kg_after_run.json`
 
-模式 with_kg（图谱来源 sources+after_run）；候选 3 个；修复 0 轮；历史失败经验命中 否；检索证据 5 项已注入 Planner 与 Coder prompt。
+模式 with_kg（图谱来源 sources+after_run）；候选 3 个；修复 0 轮；评审协作 0 次；历史失败经验命中 否；检索证据 5 项已注入 Planner 与 Coder prompt。
