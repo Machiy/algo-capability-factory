@@ -107,7 +107,7 @@ class RoleRequestTests(unittest.TestCase):
                 self.assertTrue(SYSTEM_PROMPTS[role].strip())
 
     def test_role_key_fields_stabilize_cognitive_roles(self) -> None:
-        """认知角色键含静态字段，不同 user 命中同一条目；Planner/Coder 按 scene 区分。"""
+        """Planner/Coder 按键退化为「角色 + 场景」，Repairer 必须绑当前失败。"""
         from factory.contracts.llm import LLMRequest
         from factory.llm.cassette import compute_key
 
@@ -115,9 +115,6 @@ class RoleRequestTests(unittest.TestCase):
         fields = settings.llm.cassette.role_key_fields.get("Planner")
         self.assertEqual(fields, ["role", "system", "scene"])  # Planner/Coder 含 scene
         self.assertNotIn("user", fields)
-        # Repairer/Curator 的响应被确定性逻辑忽略，不需按 scene 区分
-        self.assertEqual(settings.llm.cassette.role_key_fields.get("Repairer"),
-                         ["role", "system"])
         request_a = LLMRequest(role="Planner", system="SYS", user="动态A")
         request_b = LLMRequest(role="Planner", system="SYS", user="动态B")
         self.assertEqual(compute_key(request_a, fields), compute_key(request_b, fields))
@@ -125,6 +122,21 @@ class RoleRequestTests(unittest.TestCase):
         request_c = LLMRequest(role="Planner", system="SYS", user="x",
                                scene="text_classification")
         self.assertNotEqual(compute_key(request_a, fields), compute_key(request_c, fields))
+
+    def test_repairer_key_binds_error_signature(self) -> None:
+        """修复补丁会改源码：键必须含 user，避免把别的错误签名的补丁回放到本次失败上。"""
+        from factory.contracts.llm import LLMRequest
+        from factory.llm.cassette import compute_key
+
+        settings = load_settings(CONFIG)
+        fields = settings.llm.cassette.role_key_fields.get("Repairer")
+        self.assertEqual(fields, ["role", "system", "user"])
+        key_error = LLMRequest(role="Repairer", system="SYS",
+                               user="错误签名：KeyError: PAY_1")
+        metric_error = LLMRequest(role="Repairer", system="SYS",
+                                  user="错误签名：MetricBelowThreshold")
+        self.assertNotEqual(compute_key(key_error, fields),
+                            compute_key(metric_error, fields))
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 ﻿# 全局默认配置；任务级配置见 verify_*.yaml
 project:
   name: algocap-factory
-  version: 1.12.0
+  version: 1.13.0
   seed: 42
   log_level: INFO
 
@@ -52,12 +52,14 @@ llm:
     # 只保留 role/system/scene 是因为运行时认知角色构造 LLMRequest 时不传
     # model/temperature 等（用默认值），含它们会导致录制键与回放键不一致。
     # Planner / Coder 的响应依赖场景（回归/文本会生成不同代码），故加 scene 区分；
-    # Repairer / Curator 的响应被确定性逻辑忽略（仅留证），不需按场景区分。
-    # 代价是回放时不随输入变化——这是 cassette 静态快照的固有边界，报告如实标注。
+    # Curator 的响应只用于解释文本（确定性逻辑不依赖它），保留 role+system 即可。
+    # Repairer 的补丁会真正改源码：必须按完整 prompt（含错误签名与当前源码）命中，
+    # 否则会把「针对 KeyError 录制的那份补丁」套到 MetricBelowThreshold 上——
+    # 源码能跑、静态检查也过，但改的根本不是当前失败，属于错误复用。
     role_key_fields:
       Planner: [role, system, scene]
       Coder: [role, system, scene]
-      Repairer: [role, system]
+      Repairer: [role, system, user]
       Curator: [role, system]
     strip: [authorization, api_key, base_url, cookies, set-cookie]
     # 落盘：request 正文、response 原始文本与解析结果、usage、model、时间戳
@@ -76,6 +78,12 @@ knowledge:
       historical_metric: 0.30
       evidence_freshness: 0.15
       failure_penalty: 0.15
+    # 历史实验记录里的主指标列名：打分只认这一列。历史记录同时带耗时、样本量、
+    # 编号等数值，若对所有数值取最大，几乎所有节点都会拿满分，该分项失去区分度。
+    historical_metric_key: 验证集 AUC
+    # 命中这些标记的历史记录不进「历史高分方案」推荐：随机划分造成的虚高指标
+    # （EXP-08，AUC 0.912）不能被当成可复用经验
+    invalid_markers: [判定无效, 作废, 随机划分]
   # 知识沉淀口径：同一错误签名在 >= 该数量的独立 run 中出现，才提升为教训。
   # ValidationRun 属于运行日志（可丢弃），Lesson 才是跨运行可复用的知识。
   lesson_promote_threshold: 2

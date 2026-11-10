@@ -413,11 +413,19 @@ class Interpreter:
 
 
 class Retriever:
-    """b. 从能力图谱检索证据。"""
+    """b. 从能力图谱检索证据（含历史高分族推荐，供指标层修复换族）。"""
 
     def __init__(self, graph: KnowledgeGraph, top_k: int,
-                 weights: dict[str, float], lesson_limit: int = 5) -> None:
-        self._retriever = HybridRetriever(graph, top_k, weights, lesson_limit)
+                 weights: dict[str, float], lesson_limit: int = 5,
+                 historical_metric_key: str = "验证集 AUC",
+                 invalid_markers: list[str] | None = None,
+                 family_aliases: dict[str, list[str]] | None = None) -> None:
+        self._retriever = HybridRetriever(
+            graph, top_k, weights, lesson_limit,
+            historical_metric_key=historical_metric_key,
+            invalid_markers=invalid_markers,
+            family_aliases=family_aliases,
+        )
 
     def retrieve(self, description: str) -> RetrievalResult:
         return self._retriever.retrieve(description)
@@ -553,16 +561,12 @@ class Coder:
         return ""
 
     def generate(self, plan: CandidatePlan, retrieval: RetrievalResult,
-                 columns: list[str], induce_t1: bool = False,
-                 respect_failures: bool = True, task_type: str = "",
+                 columns: list[str], task_type: str = "",
                  text_column: str = "", review_comment: str = "") -> str:
-        avoided = (induce_t1 and respect_failures
-                   and any("PAY_1" in warning for warning in retrieval.failure_warnings))
-        if avoided:
-            # 图谱已沉淀 T1 失败经验，首轮即避开直觉命名，不再重复踩坑
-            induce_t1 = False
-        rendered = [name.replace("PAY_0", "PAY_1") for name in columns] if induce_t1 \
-            else list(columns)
+        # 特征列一律来自数据集实际列名（pipeline 已按配置剔除禁入模字段）。
+        # 不在这里制造「直觉命名」错误：失败必须由真实数据 / 真实门槛产生，
+        # 否则修复轨迹只是脚本演示。
+        rendered = list(columns)
         prompt_inputs = (f"文本列：{text_column}" if text_column
                          else f"特征列：{json.dumps(rendered, ensure_ascii=False)}")
         review_note = (f"# Reviewer 评审意见（必须修正）\n{review_comment}\n"

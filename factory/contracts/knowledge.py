@@ -2,7 +2,7 @@
 
 知识层、Agent 层、验证层只通过本文件的数据类交互；NetworkX / SQLite 的
 序列化细节不属于契约，见 ``factory/knowledge/graph.py``。节点采用属性图
-模型：``node_type`` 区分 9 类节点，``attributes`` 承载各类专有属性。
+模型：``node_type`` 区分 10 类节点，``attributes`` 承载各类专有属性。
 """
 
 from __future__ import annotations
@@ -283,6 +283,9 @@ class RetrievalResult(_StrictModel):
     failure_warnings: list[str] = Field(default_factory=list)
     # 系统级教训：与「某次失败的处置」不同，这里是跨运行稳定成立的知识
     lessons: list[str] = Field(default_factory=list)
+    # 历史实验记录里主指标更高的算法族（按实测指标降序、作废记录已剔除）。
+    # 指标层不达标时，方案级修复据此换族重生成，而不是在同一个族上反复调参。
+    recommended_families: list[str] = Field(default_factory=list)
 
     def as_prompt_context(self) -> str:
         """渲染为可直接注入 prompt 的证据文本。"""
@@ -294,6 +297,9 @@ class RetrievalResult(_StrictModel):
         if self.lessons:
             lines.append("## 系统级教训（跨运行成立，生成代码必须遵守）")
             lines.extend(f"- {item}" for item in self.lessons)
+        if self.recommended_families:
+            lines.append("## 历史高分方案（按图谱实测指标降序，指标不达标时优先换族复验）")
+            lines.extend(f"- {item}" for item in self.recommended_families)
         if self.failure_warnings:
             lines.append("## 历史失败规避项")
             lines.extend(f"- {item}" for item in self.failure_warnings)

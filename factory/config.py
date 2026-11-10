@@ -62,10 +62,16 @@ class _ConfigModel(BaseModel):
 
 
 class RetrievalSettings(_ConfigModel):
-    """``knowledge.retrieval`` 段：Top-K 与可解释打分权重。"""
+    """``knowledge.retrieval`` 段：Top-K、打分权重与历史证据口径。"""
 
     top_k: int = 5
     weights: dict[str, float] = Field(default_factory=dict)
+    # 历史实验记录里的主指标列名：打分只取这一列，不再把所有数值（耗时、编号、
+    # 样本量）混在一起取最大值——否则任何带数字的节点都拿到满分，信号退化。
+    historical_metric_key: str = "验证集 AUC"
+    # 历史记录的作废标记：命中即不进入「历史高分方案」推荐，避免把随机划分
+    # 造成的虚高指标（如 EXP-08）当成可复用经验
+    invalid_markers: list[str] = Field(default_factory=list)
 
 
 class KnowledgeSettings(_ConfigModel):
@@ -183,6 +189,10 @@ class CandidateSettings(_ConfigModel):
     samplers: list[str] = Field(default_factory=list)
     # 数值阈值（0.30/0.50）与语义值（cost_optimal）并存，语义值由 pipeline 解析
     thresholds: list[float | str] = Field(default_factory=list)
+    # 历史实验记录里的模型名 → 本任务的算法族（如 ``histgb`` → hist_gradient_boosting）。
+    # 图谱里的记录写的是人类可读模型名，检索要把它映射回可渲染的族；
+    # 映射放在任务配置里，换数据集 / 换命名习惯只改 yaml，不在检索器写死。
+    family_aliases: dict[str, list[str]] = Field(default_factory=dict)
 
 
 class KnowledgeSourceSettings(_ConfigModel):
@@ -301,15 +311,19 @@ class WorkflowSettings(_ConfigModel):
 class SearchSettings(_ConfigModel):
     """``configs/default.yaml`` 的 search 段：方案 A1 的 Successive Halving 参数。
 
-    关闭时（``halving_enabled=False``）保持既有「一次生成 beam_width 个候选」行为；
-    开启时按候选预算扩空间（model_family × sampler × threshold），先粗评淘汰、
-    再对存活候选完整评估。粗评不降样本量、只降 ``determinism_repeat``，避免
-    类别不平衡下采样导致指标口径漂移。
+    关闭时（``halving_enabled=False``）保持「一次生成 beam_width 个候选」；
+    开启时按候选预算扩空间（model_family × sampler × threshold），逐轮加预算淘汰：
+    第 1 轮用 ``smoke_train_ratio`` 比例的训练行粗评全部候选，之后每轮把训练预算
+    抬到全量、候选数减半，因此「进下一轮」本身是一次资源递增，而不只是重复测量。
     """
 
     halving_enabled: bool = False
     candidate_budget: int = Field(default=12, ge=2, le=64)
     smoke_determinism_repeat: int = Field(default=1, ge=1, le=3)
+    # 粗评轮数：1 表示只有低预算粗评（旧行为），2 表示低预算→全量预算两轮淘汰
+    halving_rounds: int = Field(default=2, ge=1, le=3)
+    # 第 1 轮使用的训练行比例；后续轮次固定升到 1.0（全量）
+    smoke_train_ratio: float = Field(default=0.4, gt=0.05, le=1.0)
 
 
 class Settings(_ConfigModel):

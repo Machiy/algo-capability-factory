@@ -58,6 +58,16 @@ def _plan() -> CandidatePlan:
                          model_family="logistic_regression", hyperparams={"C": 1.0})
 
 
+def _source_with_wrong_column() -> str:
+    """把最近一期列名写成 ``PAY_1`` 的源码，仅用于测试「错误签名 → 定向修复」。
+
+    生产代码不再注入这类错误（失败必须由真实数据或真实门槛产生）；这里显式
+    构造错误源码，锁定「真实数据集上触发 KeyError → 按配置别名映射修复」链路。
+    """
+    source = Coder(MockLLM()).generate(_plan(), _retrieval(failure_warnings=[]), COLUMNS)
+    return source.replace("PAY_0", "PAY_1")
+
+
 class PromptInjectionTests(unittest.TestCase):
     def test_planner_receives_retrieval_evidence(self) -> None:
         from factory.agents import Interpreter
@@ -87,9 +97,7 @@ class PromptInjectionTests(unittest.TestCase):
 class RepairTests(unittest.TestCase):
     def test_key_error_is_repaired_by_column_mapping(self) -> None:
         llm = RecordingLLM()
-        source = Coder(MockLLM()).generate(
-            _plan(), _retrieval(failure_warnings=[]), COLUMNS, induce_t1=True
-        )
+        source = _source_with_wrong_column()
         self.assertIn('"PAY_1"', source)
         # 列名映射由 Dataset.column_aliases 派生，不写死在修复逻辑里
         fixed, record = Repairer(llm, column_aliases={"PAY_1": "PAY_0"}).repair(
@@ -359,9 +367,7 @@ class DatasetSandboxTests(unittest.TestCase):
         )
 
     def test_t1_trap_raises_real_key_error(self) -> None:
-        source = Coder(MockLLM()).generate(
-            _plan(), _retrieval(failure_warnings=[]), COLUMNS, induce_t1=True
-        )
+        source = _source_with_wrong_column()
         result = self.sandbox.run(source)
         self.assertFalse(result.sandbox.passed)
         self.assertEqual(result.sandbox.error_signature, "KeyError: PAY_1")
@@ -459,12 +465,28 @@ class CuratorTests(unittest.TestCase):
 
 
 class PersistenceTests(unittest.TestCase):
-    """P4：回写图谱能被下一轮读取，历史失败经验改变首轮行为。"""
+    """P4：回写图谱能被下一轮读取，历史经验改变本轮执行路径。"""
 
-    def test_coder_avoids_t1_when_history_present(self) -> None:
-        source = Coder(MockLLM()).generate(_plan(), _retrieval(), COLUMNS, induce_t1=True)
+    def test_coder_never_invents_column_names(self) -> None:
+        """Coder 不做「直觉命名」：特征列严格来自数据集实际列名。"""
+        source = Coder(MockLLM()).generate(_plan(), _retrieval(), COLUMNS)
         self.assertNotIn('"PAY_1"', source)
         self.assertIn('"PAY_0"', source)
+
+    def test_retrieval_recommends_families_from_history(self) -> None:
+        """图谱里的历史实验记录 → 可渲染算法族的推荐顺序（作废记录被剔除）。"""
+        settings = load_settings(CONFIG)
+        sources = read_sources(ROOT, settings.paths.docs, settings.paths.legacy)
+        graph = MockExtractor().extract(sources)
+        result = HybridRetriever(
+            graph, top_k=5,
+            family_aliases={"hist_gradient_boosting": ["histgb"],
+                            "random_forest": ["randomforest"],
+                            "logistic_regression": ["logisticregression"]},
+        ).retrieve("预测信用卡客户下月违约概率")
+        self.assertEqual(result.recommended_families[0], "hist_gradient_boosting")
+        self.assertIn("random_forest", result.recommended_families)
+        self.assertIn("历史高分方案", result.as_prompt_context())
 
     def test_retrieval_prefers_measured_failure_cases(self) -> None:
         settings = load_settings(CONFIG)

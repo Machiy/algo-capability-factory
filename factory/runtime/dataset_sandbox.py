@@ -46,6 +46,7 @@ import traceback
 candidate, data_path, target, train_end, eval_start, eval_end, repeat, forbidden_json = sys.argv[1:9]
 mode = sys.argv[9] if len(sys.argv) > 9 else "tabular"
 text_column = sys.argv[10] if len(sys.argv) > 10 else ""
+train_ratio = float(sys.argv[11]) if len(sys.argv) > 11 else 1.0
 train_end = int(train_end)
 eval_start = int(eval_start)
 eval_end = int(eval_end)
@@ -115,6 +116,12 @@ try:
         x_train = features.iloc[:train_end]
         x_eval = features.iloc[eval_start:eval_end]
         feature_count = len(columns)
+    # 粗评预算：只截取部分训练行（Successive Halving 的低预算轮），评估段始终
+    # 用完整 valid，保证不同预算下的比较口径一致、只变「训练资源」
+    if 0 < train_ratio < 1:
+        cap = max(50, int(len(x_train) * train_ratio))
+        x_train = x_train.iloc[:cap]
+        y_train = y_train.iloc[:cap]
     pipeline = _build(namespace, x_train, y_train)
     y_score = _score_vector(pipeline, x_eval)
     train_score = _score_vector(pipeline, x_train)
@@ -203,8 +210,11 @@ class DatasetSandbox:
         return self.train_end, self.valid_end
 
     def run(self, source: str, segment: str = "valid",
-            repeat: int = 1) -> DatasetRunResult:
-        """执行生成代码；``segment`` 选评估段，``repeat>=2`` 时额外测确定性。"""
+            repeat: int = 1, train_ratio: float = 1.0) -> DatasetRunResult:
+        """执行生成代码；``segment`` 选评估段，``repeat>=2`` 时额外测确定性。
+
+        ``train_ratio`` 只截取部分训练行，用于方案搜索的低预算轮；评估段不变。
+        """
         eval_start, eval_end = self.segment_bounds(segment)
         state: dict[str, Any] = {"peak": 0, "exceeded": False}
         with tempfile.TemporaryDirectory(prefix="factory_dataset_sandbox_") as tmp:
@@ -218,6 +228,7 @@ class DatasetSandbox:
                 sys.executable, str(runner), str(candidate), str(self.data_path),
                 self.target, str(self.train_end), str(eval_start), str(eval_end),
                 str(repeat), json.dumps(self.forbidden), self.mode, self.text_column,
+                str(train_ratio),
             ]
             started = time.monotonic()
             proc = subprocess.Popen(

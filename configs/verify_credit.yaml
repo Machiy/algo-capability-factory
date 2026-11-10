@@ -95,3 +95,10 @@ candidates:
   binnings: [none, woe]
   samplers: [none, smote, class_weight]
   thresholds: [0.30, 0.50, cost_optimal]
+  # 图谱里的实验记录写的是人类可读模型名（LogisticRegression / HistGB(200)），
+  # 检索要把它映射回可渲染的算法族；映射放任务配置，换数据集只改这里。
+  # 指标层修复（MetricBelowThreshold）据此从历史高分记录里挑下一个族。
+  family_aliases:
+    logistic_regression: [logisticregression, 逻辑回归, 评分卡]
+    random_forest: [randomforest, 随机森林]
+    hist_gradient_boosting: [histgb, histgradientboosting, 梯度提升]

@@ -58,13 +58,24 @@ def _bm25_scores(query_tokens: set[str], texts: list[str]) -> list[float]:
     return [min(1.0, max(0.0, float(score) / peak)) for score in raw]
 
 
-def _historical_metric(node: KGNode) -> float:
-    """历史验证数值越高越值得复用；无指标的节点记 0。"""
+def _historical_metric(node: KGNode, key: str) -> float:
+    """只取配置指定的主指标列，避免把耗时 / 样本量当成绩效信号。
+
+    材料里的实验记录同时带头指标、KS、成本损失与耗时（还有「编号」这类
+    负数），若对所有数值取最大值，任何带数字的节点都会拿到同一个满分，
+    该分项就退化成常数。这里只认 ``historical_metric_key`` 那一列。
+    """
     metrics = node.attributes.get("metrics")
-    if not isinstance(metrics, dict) or not metrics:
+    if not isinstance(metrics, dict):
         return 0.0
-    numbers = [value for value in metrics.values() if isinstance(value, (int, float))]
-    return min(1.0, max(numbers)) if numbers else 0.0
+    value = metrics.get(key)
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return 0.0
+    return min(1.0, max(0.0, float(value)))
+
+
+def _normalized(text: str) -> str:
+    return re.sub(r"[^a-z0-9\u4e00-\u9fff]", "", text.lower())
 
 
 def _failure_flag(node: KGNode) -> float:
@@ -88,11 +99,18 @@ class HybridRetriever:
 
     def __init__(self, graph: KnowledgeGraph, top_k: int = 5,
                  weights: dict[str, float] | None = None,
-                 lesson_limit: int = 5) -> None:
+                 lesson_limit: int = 5,
+                 historical_metric_key: str = "验证集 AUC",
+                 invalid_markers: list[str] | None = None,
+                 family_aliases: dict[str, list[str]] | None = None) -> None:
         self.graph = graph
         self.top_k = top_k
         self.weights = {**DEFAULT_WEIGHTS, **(weights or {})}
         self.lesson_limit = lesson_limit
+        # 历史证据口径与「作废记录」标记都来自配置：换场景 / 换指标列名不改代码
+        self.historical_metric_key = historical_metric_key
+        self.invalid_markers = list(invalid_markers or [])
+        self.family_aliases = dict(family_aliases or {})
 
     def retrieve(self, query: str, top_k: int | None = None) -> RetrievalResult:
         limit = top_k if top_k is not None else self.top_k
@@ -107,7 +125,7 @@ class HybridRetriever:
         for node, constraint in zip(nodes, relevance):
             reasons: dict[str, float] = {
                 "constraint_match": constraint,
-                "historical_metric": _historical_metric(node),
+                "historical_metric": _historical_metric(node, self.historical_metric_key),
                 "evidence_freshness": min(1.0, len(node.evidence) / 2),
                 "failure_penalty": _failure_flag(node),
             }
@@ -157,6 +175,7 @@ class HybridRetriever:
             constraints=self._constraints(limit),
             failure_warnings=self._failure_warnings(limit),
             lessons=self._lessons(self.lesson_limit),
+            recommended_families=self._recommended_families(limit),
         )
         logger.info("检索 query=%r 命中 %d 项", query, len(result.hits))
         return result
@@ -269,6 +288,45 @@ class HybridRetriever:
             if text not in merged:
                 merged.append(text)
         return merged[:limit]
+
+    def _recommended_families(self, limit: int) -> list[str]:
+        """从历史实验记录里提炼「值得优先复用的算法族」。
+
+        只认配置指定的主指标列（``historical_metric_key``），并剔除结论里
+        带作废标记的记录（如随机划分造成的虚高指标）。模型名 → 算法族的映射
+        来自任务配置的 ``candidates.family_aliases``，检索器不认识具体业务命名。
+        """
+        scored: list[tuple[float, str]] = []
+        for node in self.graph.nodes:
+            if node.node_type not in (NodeType.VALIDATION_RUN, NodeType.CAPABILITY):
+                continue
+            value = _historical_metric(node, self.historical_metric_key)
+            if value <= 0:
+                continue
+            text = f"{node.name} {node.attributes.get('结论', '')}"
+            if any(marker and marker in text for marker in self.invalid_markers):
+                continue
+            model_name = str(node.attributes.get("模型") or node.name)
+            family = self._match_family(model_name)
+            if family:
+                scored.append((value, family))
+        scored.sort(key=lambda item: (-item[0], item[1]))
+        ordered: list[str] = []
+        for _, family in scored:
+            if family not in ordered:
+                ordered.append(family)
+        return ordered[:limit]
+
+    def _match_family(self, model_name: str) -> str:
+        """把人类可读的模型名映射回可渲染的算法族；无法映射返回空串。"""
+        normalized = _normalized(model_name)
+        if not normalized:
+            return ""
+        for family, aliases in self.family_aliases.items():
+            tokens = [family, *aliases]
+            if any(token and _normalized(str(token)) in normalized for token in tokens):
+                return family
+        return ""
 
 
 __all__ = ["HybridRetriever"]

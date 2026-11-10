@@ -26,6 +26,7 @@ from factory.agents import (
     Retriever,
     Reviewer,
     Verifier,
+    list_templates,
 )
 from factory.artifacts import kg_stem, report_path, scene_of, trace_path
 from factory.config import Settings, TaskSettings, load_settings, load_task_settings
@@ -96,6 +97,8 @@ class _GraphState(TypedDict, total=False):
     # Reviewer 语义评审：否决时带意见回 generate 重生成，review_rounds 计数防死循环
     review_comment: str
     review_rounds: int
+    # 指标层修复已尝试过的算法族，防止「换族→仍不达标→再换回原族」空转
+    escalated_families: list[str]
 
 
 def _candidate_score(report: ValidationReport, metric_name: str = "auc",
@@ -159,6 +162,14 @@ SOURCE_LABELS = {
     "mock": "规则模板",
 }
 
+# 实际改动源码的那条轨：三种修复动作在报告里必须区分，不能都说成「LLM 修好了」
+PATCH_SOURCE_LABELS = {
+    "deterministic": "确定性补丁（AST 变换）",
+    "llm": "LLM 补丁（过静态检查与沙箱复验）",
+    "kg_escalation": "图谱方案级修复（按历史高分记录换族重生成）",
+    "none": "未改动源码",
+}
+
 
 def _render_llm_sources(sources: dict[str, str]) -> str:
     """把「角色 → 后端」渲染成一行，让实时 / 回放 / 模板一眼可分。"""
@@ -173,7 +184,7 @@ def _render_llm_sources(sources: dict[str, str]) -> str:
 def render_run_report(trace: RunTrace, reports: list[ValidationReport],
                       rationale: str, path: Path, metric_name: str = "auc",
                       task_config: str = "verify_credit.yaml",
-                      kg_path: str = "outputs/kg/credit_kg_after_run.json",
+                      kg_path: str = "",
                       run_log_path: str = "",
                       text_mode: bool = False) -> Path:
     """生成端到端报告：七步轨迹、候选排名、修复轨迹、四层结论与图谱 diff。"""
@@ -196,16 +207,20 @@ def render_run_report(trace: RunTrace, reports: list[ValidationReport],
                 f"其余角色走 cassette 回放或规则模板（{', '.join(f'{r}={s}' for r, s in sorted(others.items()))}）。"
             )
         if not text_mode:
-            header.append("> T1 列名错误由 LLM 生成代码按直觉写成 `PAY_1`，"
-                          "在子进程用真实数据集触发 `KeyError` 后定向修复。")
+            header.append("> 失败均由真实数据或真实业务门槛产生，未向生成代码人工注入错误。")
+    elif trace.interpreter_source == "cassette":
+        header = [
+            "> 本报告为真实运行的产物。能力理解走 **cassette 离线回放**（真实 DeepSeek 响应），",
+            "> 其余角色走 `MockLLM` 规则模板；生成代码在子进程用真实数据集执行，指标均为实测。",
+        ]
     else:
         header = [
             "> 本报告为真实运行的产物。核心闭环演示走 `MockLLM` 规则模板路径",
             "> （开发要求 g），生成代码在子进程用真实数据集执行，指标均为实测，未造数值。",
         ]
         if not text_mode:
-            header.append("> T1 列名错误由规则模板模拟 LLM 的直觉命名，"
-                          "并在子进程用真实数据集触发 `KeyError` 后定向修复。")
+            header.append("> 失败来自沙箱实测或 `verify_*.yaml` 的真实门槛，"
+                          "不向生成代码注入人工错误；修复动作见第 4 节。")
     test_eval = trace.test_evaluation
     if test_eval is not None and test_eval.consumed:
         header.append("> test 段仅在候选比较结束后对最佳候选评估一次，"
@@ -221,7 +236,7 @@ def render_run_report(trace: RunTrace, reports: list[ValidationReport],
         f"- 能力理解来源：{trace.interpreter_source}",
         f"- LLM 后端分布：{_render_llm_sources(trace.llm_sources)}",
         f"- 知识图谱：{trace.kg_mode}（图谱来源 {trace.graph_source}）",
-        f"- 历史失败经验命中：{'是' if trace.used_historical_warnings else '否'}",
+        f"- 历史经验实际生效：{'是' if trace.used_historical_warnings else '否'}",
         f"- 七步流程：执行完成（{' → '.join(SEVEN_STEPS)} 均有产物）",
         f"- 四层全通过：**{'PASS' if trace.passed else 'FAIL'}**",
         f"- 七步轨迹：{' → '.join(trace.steps)}",
@@ -282,13 +297,16 @@ def render_run_report(trace: RunTrace, reports: list[ValidationReport],
     if trace.repairs:
         for record in trace.repairs:
             lines.append(f"- 第 {record.round} 轮：`{record.error_signature}` → "
-                         f"{record.fix_strategy}（{record.outcome}；"
-                         f"补丁来源 {record.patch_source}）")
+                         f"{record.fix_strategy}（{record.outcome}；补丁来源 "
+                         f"{PATCH_SOURCE_LABELS.get(record.patch_source, record.patch_source)}）")
             if record.llm_patch_note:
-                lines.append(f"  - LLM 补丁准入：{record.llm_patch_note}")
-            # 双轨：确定性补丁改源码，LLM 推理只解释根因，不冒充补丁
+                # 方案级修复不是 LLM 补丁，报告不能共用「LLM 补丁准入」这个标签
+                label = ("方案级修复说明" if record.patch_source == "kg_escalation"
+                         else "LLM 补丁准入")
+                lines.append(f"  - {label}：{record.llm_patch_note}")
+            # 双轨：确定性补丁改源码，推理只解释根因，不冒充补丁
             if record.llm_reasoning:
-                lines.append(f"  - LLM 根因推理：{record.llm_reasoning}")
+                lines.append(f"  - 根因说明：{record.llm_reasoning}")
     else:
         lines.append("- 无失败轮次")
     # 评审协作轨迹与修复轨迹分开留证，证明协作不是单向流水线
@@ -317,7 +335,8 @@ def render_run_report(trace: RunTrace, reports: list[ValidationReport],
         lines.extend(["", f"- 运行日志另存：`{run_log_path}`（仅追溯，不参与检索）"])
     lines.extend(["", "## 7. 产物", ""])
     lines.extend(f"- `{item}`" for item in trace.generated_files)
-    lines.append(f"- 回写图谱（知识）：`{kg_path}`")
+    if kg_path:
+        lines.append(f"- 回写图谱（知识）：`{kg_path}`")
     lines.extend(["", trace.notes, ""])
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n".join(lines), encoding="utf-8")
@@ -410,9 +429,13 @@ class Workflow:
         # 保存引用供 LLM 补丁复验使用：补丁与生成代码走同一套 AST 白名单
         self.checker = checker
         self.interpreter = Interpreter(llm, settings.llm)
-        self.retriever = Retriever(graph, settings.knowledge.top_k,
-                                   settings.knowledge.weights,
-                                   settings.knowledge.lesson_prompt_limit)
+        self.retriever = Retriever(
+            graph, settings.knowledge.top_k, settings.knowledge.weights,
+            settings.knowledge.lesson_prompt_limit,
+            historical_metric_key=settings.knowledge.retrieval.historical_metric_key,
+            invalid_markers=settings.knowledge.retrieval.invalid_markers,
+            family_aliases=task.candidates.family_aliases,
+        )
         self.planner = Planner(llm, settings.workflow.beam_width)
         self.coder = Coder(llm, checker)
         self.reviewer = Reviewer(checker, llm)
@@ -596,27 +619,63 @@ class Workflow:
                 return expanded
         return expanded
 
-    def _n_smoke(self, state: _GraphState) -> dict:
-        """粗评淘汰：对扩展候选逐个生成代码 + 快速验证，按主指标保留 Top-N。
+    def _smoke_one(self, plan: CandidatePlan, retrieval,
+                   train_ratio: float) -> tuple[float, float]:
+        """单个候选的低成本试跑：渲染代码 → 沙箱 → 复合排序键。"""
+        source = self.coder.generate(
+            plan, retrieval, self.columns,
+            task_type=self.task_type, text_column=self.text_column,
+        )
+        result = self.sandbox.run(
+            source, repeat=self.search.smoke_determinism_repeat,
+            train_ratio=train_ratio,
+        )
+        if not result.sandbox.passed:
+            return (float("-inf"), 0.0)
+        self._prepare_metrics_context(result.context, plan.threshold)
+        metrics = {item.name: item.value
+                   for item in self.verifier.validator.evaluate_metrics(result.context)}
+        return self._smoke_score(metrics)
 
-        粗评不降样本量、只降 determinism_repeat（smoke_determinism_repeat=1），
-        避免类别不平衡下采样导致指标口径漂移；代码只用于排序，后续 generate 重新生成。
+    @staticmethod
+    def _stratified_survivors(
+        scored: list[tuple[CandidatePlan, tuple[float, float]]],
+    ) -> list[tuple[CandidatePlan, tuple[float, float]]]:
+        """按算法族分层保留前一半变体，返回仍按综合分降序排列的晋级名单。"""
+        grouped: dict[str, list[tuple[CandidatePlan, tuple[float, float]]]] = {}
+        for plan, score in scored:
+            grouped.setdefault(plan.model_family, []).append((plan, score))
+        promoted: set[str] = set()
+        for items in grouped.values():
+            keep = max(1, (len(items) + 1) // 2)
+            promoted.update(plan.plan_id for plan, _ in items[:keep])
+        return [item for item in scored if item[0].plan_id in promoted]
+
+    def _n_smoke(self, state: _GraphState) -> dict:
+        """Successive Halving：逐轮加预算淘汰，而不是只做一次粗评。
+
+        第 1 轮用 ``smoke_train_ratio`` 比例的训练行跑全部扩展候选；晋级者
+        每轮把训练预算抬到全量、候选数减半。评估段始终是完整 valid，所以
+        不同预算之间只比「用了多少训练资源」，不混入指标口径差异。
+        代码只用于排序，后续 generate 会重新生成。
         """
-        scored: list[tuple[CandidatePlan, tuple[float, float]]] = []
-        for plan in state["plans"]:
-            source = self.coder.generate(
-                plan, state["retrieval"], self.columns, False,
-                task_type=self.task_type, text_column=self.text_column,
-            )
-            result = self.sandbox.run(source, repeat=self.search.smoke_determinism_repeat)
-            score = (float("-inf"), 0.0)
-            if result.sandbox.passed:
-                self._prepare_metrics_context(result.context, plan.threshold)
-                metrics = {item.name: item.value
-                           for item in self.verifier.validator.evaluate_metrics(result.context)}
-                score = self._smoke_score(metrics)
-            scored.append((plan, score))
+        # 只有一轮时不做低预算（否则「粗评轮数=1」会悄悄降成子采样口径）
+        first_ratio = (self.search.smoke_train_ratio
+                       if self.search.halving_rounds > 1 else 1.0)
+        scored = [(plan, self._smoke_one(plan, state["retrieval"], first_ratio))
+                  for plan in state["plans"]]
         scored.sort(key=lambda item: item[1], reverse=True)
+        logger.info("粗评第 1 轮（训练预算 %.0f%%）：%d 个候选",
+                    first_ratio * 100, len(scored))
+        for round_index in range(2, self.search.halving_rounds + 1):
+            # 按族分层淘汰：同族只留表现最好的前一半变体，避免强族把弱族整族
+            # 挤出候选（那样「多候选比较」就退化成同族内部调参）。
+            survivors = self._stratified_survivors(scored)
+            scored = [(plan, self._smoke_one(plan, state["retrieval"], 1.0))
+                      for plan, _ in survivors]
+            scored.sort(key=lambda item: item[1], reverse=True)
+            logger.info("粗评第 %d 轮（训练预算 100%%）：%d 个候选",
+                        round_index, len(scored))
         # 按 family 去重：同族只保留粗评分最高的变体。变体差异是真实的——阈值与
         # 采样器会改变成本加权损失，复合键因此能在同族内选出更合适的阈值档。
         best_by_family: dict[str, tuple[CandidatePlan, tuple[float, float]]] = {}
@@ -630,7 +689,7 @@ class Workflow:
         kept = [plan.model_copy(update={"plan_id": f"plan.{index:02d}"})
                 for index, (plan, _) in enumerate(deduped[:keep], start=1)]
         logger.info("粗评淘汰：%d -> %d 候选（按 family 去重后保留 Top-%d，已重编号）",
-                    len(scored), len(kept), self.planner.beam_width)
+                    len(state["plans"]), len(kept), self.planner.beam_width)
         return {"plans": kept}
 
     def _n_generate(self, state: _GraphState) -> dict:
@@ -641,22 +700,18 @@ class Workflow:
             raise ValueError("Planner 未能产出候选方案；请检查 llm.provider 与 Planner 输出格式")
         plan = plans[index]
         source = self.coder.generate(
-            plan, state["retrieval"], self.columns, index == 0,
+            plan, state["retrieval"], self.columns,
             task_type=self.task_type, text_column=self.text_column,
             review_comment=state.get("review_comment", ""),
         )
         trace = state["trace"]
-        # T1 列名经验只对表格场景有意义，文本场景不据此声称命中历史经验
-        trace.used_historical_warnings = (not self.text_column) and any(
-            "PAY_1" in warning for warning in state["retrieval"].failure_warnings
-        )
         # 记录代码来源：llm 表示 LLM 代码通过静态检查后采用，template 表示回退
         trace.code_sources[plan.plan_id] = self.coder.last_source
         trace.steps.append(SEVEN_STEPS[3])
         return {
             "plan": plan, "source": source, "static": self.reviewer.review(source),
             "round_index": 0, "repair_rounds": 0, "last_repair_no_change": False,
-            "threshold_resolved": 0.5,
+            "threshold_resolved": 0.5, "escalated_families": [],
             # 评审意见已用于本次生成，清空；review_rounds 保持累计（由 review 节点管理）
             "review_comment": "",
             "trace": trace,
@@ -735,12 +790,66 @@ class Workflow:
             return False, f"沙箱复验失败：{result.sandbox.error_signature}"
         return True, f"静态检查与沙箱复验通过（{result.sandbox.duration_seconds:.1f}s）"
 
+    def _kg_escalation_target(self, plan: CandidatePlan,
+                              state: _GraphState) -> str:
+        """指标层不达标时，按图谱历史高分记录挑一个还没试过的算法族。
+
+        候选族必须能渲染（注册了模板），且不在本候选已尝试过的族里，避免
+        「换族 → 仍不达标 → 换回去」的空转。无图谱（消融组）时推荐列表为空，
+        该方法返回空串，修复如实记为 no_change。
+        """
+        templates = set(list_templates())
+        tried = set(state.get("escalated_families") or []) | {plan.model_family}
+        for family in state["retrieval"].recommended_families:
+            if not family or family in tried:
+                continue
+            if family in templates or f"{self.task_type}.{family}" in templates:
+                return family
+        return ""
+
     def _n_repair(self, state: _GraphState) -> dict:
         source, record = self.repairer.repair(
             state["source"], state["report"].error_signature,
             state["round_index"] + 1, verify=self._verify_patch,
         )
         trace = state["trace"]
+        plan = state["plan"]
+        extra: dict[str, Any] = {"escalated_families": state.get("escalated_families", [])}
+        # 指标层的确定性补丁无法改「模型能力」本身，源码改写也就停在 no_change。
+        # 此时用图谱里的历史高分记录做方案级修复：换算法族 + 重新生成源码，
+        # 下一轮 execute 用同一套四层验证复验。无图谱证据时不做这一步。
+        if (record.patch_source == "none"
+                and (record.error_signature or "").startswith("MetricBelowThreshold")):
+            target = self._kg_escalation_target(plan, state)
+            if target:
+                new_plan = plan.model_copy(update={
+                    "model_family": target,
+                    "rationale": (f"{plan.rationale}；指标层失败后按图谱历史高分记录"
+                                  f"从 {plan.model_family} 切换为 {target}"),
+                })
+                source = self.coder.generate(
+                    new_plan, state["retrieval"], self.columns,
+                    task_type=self.task_type, text_column=self.text_column,
+                )
+                record = record.model_copy(update={
+                    "outcome": "repaired",
+                    "patch_source": "kg_escalation",
+                    "fix_strategy": (f"{record.fix_strategy}；按图谱历史分数切换模型族 "
+                                     f"{plan.model_family} → {target}"),
+                    "llm_patch_note": "方案级修复：重新生成源码，下一轮 execute 复验四层",
+                })
+                trace.code_sources[new_plan.plan_id] = self.coder.last_source
+                # 只有图谱证据真正改变了执行路径时，才声称「历史经验生效」
+                trace.used_historical_warnings = True
+                extra.update({
+                    "plan": new_plan,
+                    "static": self.reviewer.review(source),
+                    "escalated_families": [
+                        *state.get("escalated_families", []), target
+                    ],
+                })
+                logger.info("指标层修复：按图谱历史记录切换模型族 %s → %s",
+                            plan.model_family, target)
         trace.repairs.append(record)
         trace.steps.append(SEVEN_STEPS[5])
         return {
@@ -749,6 +858,7 @@ class Workflow:
             "repair_rounds": state["repair_rounds"] + 1,
             "last_repair_no_change": record.outcome == "no_change",
             "trace": trace,
+            **extra,
         }
 
     def _after_repair(self, state: _GraphState) -> str:
@@ -847,7 +957,7 @@ class Workflow:
             f"模式 {trace.kg_mode}（图谱来源 {trace.graph_source}）；"
             f"候选 {len(state['plans'])} 个；修复 {len(trace.repairs)} 轮；"
             f"评审协作 {len(trace.collaborations)} 次；"
-            f"历史失败经验命中 {'是' if trace.used_historical_warnings else '否'}；"
+            f"历史经验实际生效 {'是' if trace.used_historical_warnings else '否'}；"
             f"检索证据 {len(state['retrieval'].hits)} 项已注入 "
             "Planner 与 Coder prompt。"
         )

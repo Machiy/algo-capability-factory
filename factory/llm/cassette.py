@@ -81,8 +81,9 @@ def make_entry(request: LLMRequest, response: LLMResponse,
                recorded_at: str | None = None) -> CassetteEntry:
     """把一次调用转为脱敏后的 cassette 条目，并记录该条的录制时刻。
 
-    键字段与 ``RecordedLLM`` 保持一致：认知角色用 ``role_key_fields``（去掉动态
-    user），否则用全局 ``key_fields``——否则录制键与回放键不一致，永远 miss。
+    键字段与 ``RecordedLLM`` 保持一致：按角色取 ``role_key_fields``（Planner /
+    Coder 只保留角色 + 场景；Repairer 保留完整 prompt，补丁与当前失败强相关），
+    未配置的角色用全局 ``key_fields``——否则录制键与回放键不一致，永远 miss。
     """
     key_fields = settings.role_key_fields.get(request.role) or settings.key_fields
     prompt = f"{request.system}\n{request.user}".encode()

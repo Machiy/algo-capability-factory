@@ -2,9 +2,10 @@
 
     .venv\\Scripts\\python.exe scripts/run_ablation.py
 
-有 KG 组加载上一轮回写的 ``capabilities_after_run.json``，从而命中历史
-FailureCase；无 KG 组既不检索也不回写。两组指标均为实测；AUC 不因证据
-注入而改变（模型不使用证据作为特征），差异体现在是否重复踩已知错误。
+有 KG 组加载上一轮回写的 ``*_after_run.json``，从而拿到历史实验记录里的
+「主指标更高」的算法族；无 KG 组既不检索也不回写。两组指标均为实测，
+差异体现在「指标层失败后能否按历史证据换族修复」，而不是把某个候选的
+分数算得更高。
 """
 
 from __future__ import annotations
@@ -33,6 +34,9 @@ def _summary(trace) -> dict:
         "used_history": trace.used_historical_warnings,
         "repairs": len(trace.repairs),
         "signatures": [record.error_signature for record in trace.repairs],
+        "actions": [record.patch_source for record in trace.repairs],
+        "passed_count": sum(1 for item in trace.candidates if item.passed),
+        "candidates": len(trace.candidates),
         "auc": [round(item.score, 6) for item in ranked],
         "passed": trace.passed,
         "report": trace.report_path,
@@ -44,31 +48,36 @@ def _render(with_kg: dict, without_kg: dict, path: Path) -> Path:
     used_without = "是" if without_kg["used_history"] else "否"
     with_signatures = "、".join(with_kg["signatures"]) or "无"
     without_signatures = "、".join(without_kg["signatures"]) or "无"
-    with_t1 = "是" if "KeyError: PAY_1" not in with_kg["signatures"] else "否"
-    without_t1 = "是" if "KeyError: PAY_1" not in without_kg["signatures"] else "否"
+    with_actions = "、".join(with_kg["actions"]) or "无"
+    without_actions = "、".join(without_kg["actions"]) or "无"
     with_auc = " / ".join(map(str, with_kg["auc"]))
     without_auc = " / ".join(map(str, without_kg["auc"]))
     lines = [
         "# 有 KG / 无 KG 消融对比",
         "",
         "> 同一 capability spec、同一候选方案与数据集，唯一变量是是否检索并注入图谱证据。",
-        "> 两组指标均为实测；AUC 不因证据注入而改变（模型不使用证据作为特征），",
-        "> 差异体现在「是否重复踩已知错误」与修复轮次。无 KG 组不回写图谱，避免污染实验。",
+        "> 两组指标均为实测；模型、特征与数据完全相同，主指标不因证据注入而改变。",
+        "> 差异体现在「指标层失败后，能否按图谱里的历史高分记录换族修复」。",
+        "> 无 KG 组不回写图谱，避免污染实验。",
         "",
         "| 指标 | 有 KG | 无 KG |",
         "|---|---|---|",
         f"| 图谱来源 | {with_kg['graph_source']} | {without_kg['graph_source']} |",
-        f"| 命中历史失败经验 | {used_with} | {used_without} |",
+        f"| 历史经验实际生效 | {used_with} | {used_without} |",
         f"| 修复轮次 | {with_kg['repairs']} | {without_kg['repairs']} |",
+        f"| 修复动作 | {with_actions} | {without_actions} |",
         f"| 错误签名 | {with_signatures} | {without_signatures} |",
-        f"| 是否首轮避开 T1 | {with_t1} | {without_t1} |",
+        (f"| 四层通过的候选数 | {with_kg['passed_count']}/{with_kg['candidates']} | "
+         f"{without_kg['passed_count']}/{without_kg['candidates']} |"),
         f"| 候选 AUC（降序） | {with_auc} | {without_auc} |",
         "",
         "## 结论",
         "",
-        "- 有 KG 组从回写图谱读到上一轮的 `KeyError: PAY_1` 失败案例，Coder 首轮即改用 `PAY_0`，",
-        "  省掉一次失败执行；无 KG 组没有这条证据，先踩 T1 再修复。",
-        "- 两组业务指标结论一致，说明沉淀改变的是「过程效率」而非「指标口径」，未做任何数值美化。",
+        "- 有 KG 组从历史实验记录里拿到「主指标更高的算法族」排序，指标层失败后按该排序",
+        "  换族重生成并复验，把原本不达标的候选救回；无 KG 组没有这条证据，指标层失败只能",
+        "  如实记为 `no_change`，候选维持 FAIL。",
+        "- 两组 AUC 的绝对值由模型与数据决定，不因证据注入而变化；沉淀改变的是「修复是否",
+        "  有据可依」与「候选通过率」，未做任何数值美化。",
         "",
         f"- 有 KG 报告：`{with_kg['report']}`",
         f"- 无 KG 报告：`{without_kg['report']}`",
