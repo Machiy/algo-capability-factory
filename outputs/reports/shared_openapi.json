@@ -365,7 +365,7 @@
   "info": {
     "description": "基于 AI Agent 的算法能力工厂：提交自然语言能力描述，返回生成代码、四层验证结论与图谱沉淀。",
     "title": "AlgoCap Factory API",
-    "version": "1.4.3"
+    "version": "1.4.4"
   },
   "openapi": "3.1.0",
   "paths": {

@@ -3,6 +3,18 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循
 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本对应一个 annotated tag 与 GitHub Release。
 
+## [1.4.4] - 2026-11-10
+
+补齐 **GitHub Release**：1.4.3 只把发布动作固化到 tag，漏了 Release 这一步。
+
+- `scripts/tag_release.py` 扩展为「tag + Release」两步：用标准库 `urllib` 调 GitHub REST API，先查 `/releases/tags/<tag>`，404 才 POST 创建；Release 正文直接取 CHANGELOG 对应版本段落，`draft=false`、`prerelease=false`。tag 与 Release 各自幂等，已存在就跳过、绝不覆盖。
+- token 只从 `GITHUB_TOKEN` / `GH_TOKEN` / `git credential fill` 读取，不打印、不落盘；缺凭据或 API 失败时返回非 0 并如实提示。支持 `--no-release`、`--dry-run`，补历史用 `--version X --target <sha>` 一次补齐 tag 与 Release。
+- `.codebuddy/rules/git-commit.md` 的发布动作改为明确三步：`push → tag → Release`，**缺一视为发布未完成**；`AGENTS.md` 同步。
+- 补齐 `v1.2.0`–`v1.4.3` 的 GitHub Release，并由脚本创建 `v1.4.4` 的 tag 与 Release。
+- 新增 `tests/test_release.py` 5 个用例（CHANGELOG 段落提取、https/SSH remote 解析、Release 已存在跳过、缺失时创建），不联网。
+
+`ruff` 全绿、192 个用例通过。
+
 ## [1.4.3] - 2026-11-10
 
 路径规范化与发布标签固化。
