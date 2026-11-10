@@ -33,7 +33,12 @@ from factory.contracts.intake import IntakeGuidance, IntakeVerdict
 from factory.contracts.knowledge import RetrievalResult
 from factory.contracts.models import CandidatePlan, CapabilitySpec, ValidationReport
 from factory.contracts.validation import StaticCheckResult
-from factory.contracts.workflow import CandidateEvaluation, RunTrace, TestEvaluation
+from factory.contracts.workflow import (
+    CandidateEvaluation,
+    CollaborationRecord,
+    RunTrace,
+    TestEvaluation,
+)
 from factory.intake import IntakeGuide, SpecRejected, render_guidance
 from factory.knowledge import MockExtractor, read_sources
 from factory.knowledge.graph import load_graph
@@ -80,6 +85,9 @@ class _GraphState(TypedDict, total=False):
     report: ValidationReport
     reports: list[ValidationReport]
     last_repair_no_change: bool
+    # Reviewer 语义评审：否决时带意见回 generate 重生成，review_rounds 计数防死循环
+    review_comment: str
+    review_rounds: int
 
 
 def _candidate_score(report: ValidationReport, metric_name: str = "auc",
@@ -233,6 +241,15 @@ def render_run_report(trace: RunTrace, reports: list[ValidationReport],
                          f"{record.fix_strategy}（{record.outcome}）")
     else:
         lines.append("- 无失败轮次")
+    # 评审协作轨迹与修复轨迹分开留证，证明协作不是单向流水线
+    if trace.collaborations:
+        lines.extend(["", "### 评审协作轨迹（Reviewer → Coder/Executor）", ""])
+        for record in trace.collaborations:
+            arrow = f"{record.sender} → {record.receiver}"
+            if record.kind == "review_reject":
+                lines.append(f"- 第 {record.round} 轮：{arrow} 否决——{record.comment}")
+            else:
+                lines.append(f"- 第 {record.round} 轮：{arrow} 通过")
     lines.extend(["", rationale, "", "## 5. 终评（test 段，仅一次）", ""])
     if test_eval is None:
         lines.append("- 本轮未启用终评（`workflow.evaluate_on_test=false`）")
@@ -341,7 +358,7 @@ class Workflow:
                                    settings.knowledge.lesson_prompt_limit)
         self.planner = Planner(llm, settings.workflow.beam_width)
         self.coder = Coder(llm, checker)
-        self.reviewer = Reviewer(checker)
+        self.reviewer = Reviewer(checker, llm)
         self.verifier = Verifier(FourLayerValidator(task))
         self.repairer = Repairer(llm, sorted(excluded),
                                  task.dataset.column_aliases)
@@ -358,6 +375,7 @@ class Workflow:
         self.groups = self._groups_for("valid")
         # 修复轮次、确定性重复次数与终评开关均来自 workflow 配置段
         self.max_rounds = settings.workflow.max_repair_rounds
+        self.max_review_rounds = settings.workflow.max_review_rounds
         self.determinism_repeat = settings.workflow.determinism_repeat
         self.evaluate_on_test = settings.workflow.evaluate_on_test
         # test 一次性纪律的硬保证：重复消费 test 段即抛 PermissionError，
@@ -393,6 +411,7 @@ class Workflow:
             ("plan_step", self._n_plan),
             ("smoke", self._n_smoke),
             ("generate", self._n_generate),
+            ("review", self._n_review),
             ("execute", self._n_execute),
             ("repair", self._n_repair),
             ("finalize", self._n_finalize),
@@ -406,7 +425,10 @@ class Workflow:
         builder.add_conditional_edges("plan_step", self._after_plan,
                                       {"smoke": "smoke", "generate": "generate"})
         builder.add_edge("smoke", "generate")
-        builder.add_edge("generate", "execute")
+        # generate 后先过 Reviewer 语义评审；否决则带意见回 generate，否则执行
+        builder.add_edge("generate", "review")
+        builder.add_conditional_edges("review", self._after_review,
+                                      {"generate": "generate", "execute": "execute"})
         builder.add_conditional_edges("execute", self._after_execute,
                                       {"repair": "repair", "finalize": "finalize"})
         builder.add_conditional_edges("repair", self._after_repair,
@@ -525,6 +547,7 @@ class Workflow:
         source = self.coder.generate(
             plan, state["retrieval"], self.columns, index == 0,
             task_type=self.task_type, text_column=self.text_column,
+            review_comment=state.get("review_comment", ""),
         )
         trace = state["trace"]
         # T1 列名经验只对表格场景有意义，文本场景不据此声称命中历史经验
@@ -537,8 +560,49 @@ class Workflow:
         return {
             "plan": plan, "source": source, "static": self.reviewer.review(source),
             "round_index": 0, "repair_rounds": 0, "last_repair_no_change": False,
+            # 评审意见已用于本次生成，清空；review_rounds 保持累计（由 review 节点管理）
+            "review_comment": "",
             "trace": trace,
         }
+
+    def _n_review(self, state: _GraphState) -> dict:
+        """Reviewer 语义评审：否决则带意见回 generate，上限 max_review_rounds。
+
+        仅对 LLM 生成的代码评审（模板代码是确定性配置，无需语义评审）；评审失败、
+        关闭评审或被上限拦截时接受当前代码，不阻塞主流程。
+        """
+        trace = state["trace"]
+        plan = state["plan"]
+        rounds = state.get("review_rounds", 0)
+        # 关闭语义评审，或代码来自确定性模板：跳过（仍记一轮协作，便于报告展示）
+        if (self.max_review_rounds <= 0
+                or trace.code_sources.get(plan.plan_id) != "llm"):
+            return {"review_rounds": rounds}
+        passed, comment = self.reviewer.review_semantics(
+            state["source"], state["retrieval"])
+        if passed:
+            trace.collaborations.append(CollaborationRecord(
+                round=rounds + 1, sender="Reviewer", receiver="Executor",
+                kind="review_accept",
+            ))
+            return {"review_rounds": rounds + 1}
+        if rounds >= self.max_review_rounds:
+            # 超限：接受当前代码并如实记录「已达上限」，不无限协商
+            trace.collaborations.append(CollaborationRecord(
+                round=rounds + 1, sender="Reviewer", receiver="Coder",
+                kind="review_reject",
+                comment=f"（已达上限，接受当前代码）{comment}"[:300],
+            ))
+            return {"review_rounds": rounds + 1}
+        trace.collaborations.append(CollaborationRecord(
+            round=rounds + 1, sender="Reviewer", receiver="Coder",
+            kind="review_reject", comment=comment[:300],
+        ))
+        return {"review_rounds": rounds + 1, "review_comment": comment}
+
+    def _after_review(self, state: _GraphState) -> str:
+        """语义评审否决且未达上限时回 generate 重生成，否则进入执行。"""
+        return "generate" if state.get("review_comment") else "execute"
 
     def _n_execute(self, state: _GraphState) -> dict:
         # repeat>=2 时子进程内二次 fit，产出 repeat_variance 供确定性检查
@@ -596,8 +660,10 @@ class Workflow:
             threshold=plan.threshold,
         ))
         reports = [*state["reports"], report]
+        # 候选结束：重置语义评审计数，下一个候选从 0 开始
         return {"candidate_index": state["candidate_index"] + 1,
-                "reports": reports, "trace": trace}
+                "reports": reports, "trace": trace,
+                "review_rounds": 0, "review_comment": ""}
 
     def _after_finalize(self, state: _GraphState) -> str:
         return ("generate" if state["candidate_index"] < len(state["plans"])
@@ -660,6 +726,7 @@ class Workflow:
         trace.notes = (
             f"模式 {trace.kg_mode}（图谱来源 {trace.graph_source}）；"
             f"候选 {len(state['plans'])} 个；修复 {len(trace.repairs)} 轮；"
+            f"评审协作 {len(trace.collaborations)} 次；"
             f"历史失败经验命中 {'是' if trace.used_historical_warnings else '否'}；"
             f"检索证据 {len(state['retrieval'].hits)} 项已注入 "
             "Planner 与 Coder prompt。"

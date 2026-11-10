@@ -532,7 +532,7 @@ class Coder:
     def generate(self, plan: CandidatePlan, retrieval: RetrievalResult,
                  columns: list[str], induce_t1: bool = False,
                  respect_failures: bool = True, task_type: str = "",
-                 text_column: str = "") -> str:
+                 text_column: str = "", review_comment: str = "") -> str:
         avoided = (induce_t1 and respect_failures
                    and any("PAY_1" in warning for warning in retrieval.failure_warnings))
         if avoided:
@@ -542,8 +542,11 @@ class Coder:
             else list(columns)
         prompt_inputs = (f"文本列：{text_column}" if text_column
                          else f"特征列：{json.dumps(rendered, ensure_ascii=False)}")
+        review_note = (f"# Reviewer 评审意见（必须修正）\n{review_comment}\n"
+                       if review_comment else "")
         user = (f"方案：{plan.model_dump_json()}\n"
                 f"{prompt_inputs}\n"
+                f"{review_note}"
                 f"{retrieval.as_prompt_context()}")
         request = LLMRequest(role="Coder", system=SYSTEM_PROMPTS["Coder"],
                              user=user, scene=task_type)
@@ -576,14 +579,56 @@ class Coder:
         return candidate
 
 
-class Reviewer:
-    """AST 静态评审：白名单、危险调用、禁入模字段、契约签名。"""
+REVIEW_SEMANTIC_PROMPT = (
+    "你是算法能力工厂的 Reviewer，负责语义评审（不是静态检查）。"
+    "判断生成代码是否违背检索到的约束与教训（禁入模字段、数据泄漏、成本口径、划分策略）。"
+    "只输出 JSON：{\"passed\": true/false, \"comment\": \"不通过的具体原因\"}。"
+)
 
-    def __init__(self, checker: StaticChecker) -> None:
+
+def _parse_semantic_review(parsed: dict, raw: str) -> tuple[bool, str]:
+    """解析 Reviewer 语义评审结论；无法解析时按通过处理（不阻塞主流程）。"""
+    if isinstance(parsed.get("passed"), bool):
+        return bool(parsed["passed"]), str(parsed.get("comment", ""))
+    # 兼容模型只回自然语言：明确说不通过才拒绝，其余按通过
+    if "不通过" in raw or '"passed": false' in raw:
+        return False, raw[:200]
+    return True, ""
+
+
+class Reviewer:
+    """AST 静态评审 + LLM 语义评审双层。
+
+    静态层（确定性，永远执行）：白名单、危险调用、禁入模字段、契约签名。
+    语义层（LLM，可关闭）：代码是否违背检索到的约束 / 教训。LLM 未接入或调用异常时
+    默认通过，不阻塞主流程（评审是增强，不是硬闸门）。
+    """
+
+    def __init__(self, checker: StaticChecker,
+                 llm: BaseLLM | None = None) -> None:
         self.checker = checker
+        self.llm = llm
+        self.last_source = "mock"
 
     def review(self, source: str) -> StaticCheckResult:
         return self.checker.check(source)
+
+    def review_semantics(self, source: str,
+                         retrieval: RetrievalResult) -> tuple[bool, str]:
+        """LLM 语义评审：返回 (是否通过, 具体意见)。"""
+        if self.llm is None:
+            return True, ""
+        request = LLMRequest(
+            role="Reviewer", system=REVIEW_SEMANTIC_PROMPT,
+            user=f"生成代码：\n{source}\n\n{retrieval.as_prompt_context()}",
+        )
+        try:
+            response = self.llm.complete(request)
+        except Exception:  # noqa: BLE001 - 评审失败不阻塞主流程
+            logger.warning("Reviewer 语义评审失败，按通过处理")
+            return True, ""
+        self.last_source = response.source
+        return _parse_semantic_review(response.parsed, response.raw)
 
 
 class Verifier:

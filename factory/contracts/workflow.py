@@ -53,6 +53,21 @@ class TestEvaluation(_StrictModel):
     note: str = ""
 
 
+class CollaborationRecord(_StrictModel):
+    """角色间的一次协作交互：谁 → 谁、类型、意见。
+
+    ``kind`` 取 ``review_reject`` / ``review_accept`` / ``regenerate``；
+    ``comment`` 是 Reviewer 给出的具体意见（拒绝时非空）。用于证明协作不是单向
+    流水线，而是「Reviewer 否决 → Coder 带意见重生成」的反馈环。
+    """
+
+    round: int
+    sender: str
+    receiver: str
+    kind: str
+    comment: str = ""
+
+
 class RunTrace(_StrictModel):
     """一次 a–g 七步运行的可回放轨迹。
 
@@ -71,6 +86,8 @@ class RunTrace(_StrictModel):
     intake: IntakeGuidance | None = None
     candidates: list[CandidateEvaluation] = Field(default_factory=list)
     repairs: list[RepairRecord] = Field(default_factory=list)
+    # 角色间协作轨迹：Reviewer 否决 → Coder 重生成等，与 repairs（修复层）分开留证
+    collaborations: list[CollaborationRecord] = Field(default_factory=list)
     kg_diff: dict[str, int] = Field(default_factory=dict)
     # 每个候选的代码来源：llm（通过静态检查后采用）或 template（回退模板）
     code_sources: dict[str, str] = Field(default_factory=dict)
@@ -87,6 +104,7 @@ class RunTrace(_StrictModel):
 
 __all__ = [
     "CandidateEvaluation",
+    "CollaborationRecord",
     "DatasetRunResult",
     "RepairRecord",
     "RunTrace",

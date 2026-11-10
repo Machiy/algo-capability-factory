@@ -284,6 +284,9 @@ class WorkflowSettings(_ConfigModel):
 
     beam_width: int = Field(default=3, ge=1, le=10)
     max_repair_rounds: int = Field(default=3, ge=0, le=10)
+    # Reviewer 语义评审否决后，Coder 带意见重生成的最大轮次：防「否决→重生成→再否决」
+    # 死循环；超限后接受当前代码继续，不无限协商
+    max_review_rounds: int = Field(default=1, ge=0, le=3)
     # 同一候选在 valid 段重复 fit 的次数：>=2 才有确定性证据，1 表示跳过该项
     determinism_repeat: int = Field(default=2, ge=1, le=3)
     # 是否在全部候选比较完后对最佳候选跑一次 test 终评（只报告，不参与排序）

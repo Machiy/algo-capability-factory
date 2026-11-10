@@ -3,6 +3,32 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循
 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本对应一个 annotated tag 与 GitHub Release。
 
+## [1.10.0] - 2026-11-10
+
+方案 B2 落地：Reviewer 双层评审 + 反馈协作环，让协作从单向流水线变成有反馈的闭环。
+
+### 新增
+
+- **Reviewer 双层评审**：静态层（AST，确定性，永远执行）+ 语义层（LLM，判断代码是否
+  违背检索到的约束 / 教训）。语义评审失败或未接入 LLM 时默认通过，不阻塞主流程。
+- **反馈协作环**：`generate → review → execute`；Reviewer 否决时带具体意见回到 `generate`
+  重生成，由 `max_review_rounds`（默认 1）设上限，超限接受当前代码并如实记录，不无限协商。
+- **协作可观测**：`RunTrace.collaborations` 记录角色间消息（Reviewer → Coder/Executor 的
+  `review_reject` / `review_accept`），与 `repairs`（修复层）分开留证；报告第 4 节新增
+  「评审协作轨迹」，证明这不是单向流水线。
+- **Coder 带意见重生成**：`Coder.generate` 新增 `review_comment` 参数，评审意见以
+  「必须修正」小节注入 prompt。
+
+### 测试
+
+- 新增 5 个用例：语义评审解析 / 无法解析默认通过 / 未接入 LLM 通过 / 路由 /
+  反馈环记录否决意见。全量 231 用例通过、ruff 全绿。
+
+### 边界
+
+- 语义评审只对 LLM 生成的代码生效（模板代码是确定性配置，无需语义评审）；`--mock`
+  路径 Coder 用模板，因此不触发语义评审，反馈环静默跳过，不影响离线基线。
+
 ## [1.9.1] - 2026-11-10
 
 补充 A1 搜索消融对比（5.1 通用验收）：关闭 vs 开启 Successive Halving。

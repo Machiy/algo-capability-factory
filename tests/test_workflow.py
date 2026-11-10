@@ -662,5 +662,87 @@ class LiveReportHeaderTests(unittest.TestCase):
         self.assertNotIn("全链路接入真实 LLM", text)
 
 
+class ReviewCollaborationTests(unittest.TestCase):
+    """B2：Reviewer 语义评审 + 反馈环 + 协作记录。"""
+
+    def test_semantic_review_parses_structured(self) -> None:
+        from factory.agents.roles import _parse_semantic_review
+
+        passed, comment = _parse_semantic_review(
+            {"passed": False, "comment": "违背禁入模约束"}, "")
+        self.assertFalse(passed)
+        self.assertEqual(comment, "违背禁入模约束")
+        ok, _ = _parse_semantic_review({"passed": True}, "")
+        self.assertTrue(ok)
+
+    def test_semantic_review_defaults_to_pass(self) -> None:
+        """无法解析时按通过处理，不阻塞主流程。"""
+        from factory.agents.roles import _parse_semantic_review
+
+        passed, _ = _parse_semantic_review({"role": "Reviewer"}, "")
+        self.assertTrue(passed)
+
+    def test_reviewer_without_llm_passes(self) -> None:
+        from factory.agents.roles import Reviewer
+        from factory.contracts.knowledge import RetrievalResult
+        from factory.runtime import StaticChecker
+
+        settings = load_settings(CONFIG)
+        task = load_task_settings(TASK_CONFIG)
+        reviewer = Reviewer(StaticChecker(settings.runtime, task.dataset))
+        passed, comment = reviewer.review_semantics(
+            "def build_pipeline(config):\n    return {}\n",
+            RetrievalResult(query="测试", top_k=0),
+        )
+        self.assertTrue(passed)
+        self.assertEqual(comment, "")
+
+    def test_after_review_routes(self) -> None:
+        """否决且未达上限时回 generate，否则进入 execute。"""
+        from factory.workflow import Workflow
+
+        workflow = Workflow(load_settings(CONFIG), load_task_settings(TASK_CONFIG), ROOT)
+        self.assertEqual(workflow._after_review({"review_comment": "违规"}), "generate")
+        self.assertEqual(workflow._after_review({"review_comment": ""}), "execute")
+
+    def test_feedback_loop_records_and_routes(self) -> None:
+        """Reviewer 否决时记录协作并带意见回 generate。"""
+        from factory.agents.roles import Reviewer
+        from factory.contracts.knowledge import RetrievalResult
+        from factory.contracts.llm import LLMResponse
+        from factory.contracts.models import CandidatePlan
+        from factory.contracts.workflow import RunTrace
+        from factory.llm.base import BaseLLM
+        from factory.runtime import StaticChecker
+        from factory.workflow import Workflow
+
+        class RejectLLM(BaseLLM):
+            def complete(self, request) -> LLMResponse:
+                parsed = {"passed": False, "comment": "违背禁入模约束"}
+                return LLMResponse(raw=json.dumps(parsed, ensure_ascii=False),
+                                   parsed=parsed, source="mock")
+
+        settings = load_settings(CONFIG)
+        task = load_task_settings(TASK_CONFIG)
+        workflow = Workflow(settings, task, ROOT)
+        workflow.reviewer = Reviewer(StaticChecker(settings.runtime, task.dataset),
+                                     RejectLLM())
+        plan = CandidatePlan(plan_id="plan.01", spec_id="s",
+                             model_family="logistic_regression")
+        trace = RunTrace(run_id="unit", spec="测试")
+        trace.code_sources[plan.plan_id] = "llm"
+        state = {
+            "trace": trace, "plan": plan,
+            "source": "def build_pipeline(config):\n    return {}\n",
+            "retrieval": RetrievalResult(query="测试", top_k=0),
+            "review_rounds": 0,
+        }
+        result = workflow._n_review(state)
+        self.assertEqual(result["review_comment"], "违背禁入模约束")
+        self.assertEqual(trace.collaborations[-1].kind, "review_reject")
+        self.assertEqual(trace.collaborations[-1].sender, "Reviewer")
+        self.assertEqual(workflow._after_review(result), "generate")
+
+
 if __name__ == "__main__":
     unittest.main()
