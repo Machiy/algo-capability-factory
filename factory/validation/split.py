@@ -39,7 +39,13 @@ class TemporalSplitter:
 
 
 class TestGate:
-    """保证 test 集仅在终评使用一次；重复访问直接拒绝。"""
+    """保证 test 集仅在终评使用一次；重复访问直接拒绝。
+
+    ``__test__ = False`` 告诉测试框架「本类不是测试用例」：类名以 Test 开头且
+    有构造函数，pytest 会误收集并报 PytestCollectionWarning。
+    """
+
+    __test__ = False
 
     def __init__(self, enabled: bool = True) -> None:
         self.enabled = enabled

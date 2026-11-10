@@ -12,7 +12,7 @@ from __future__ import annotations
 import logging
 import re
 from pathlib import Path
-from typing import TypedDict
+from typing import Any, TypedDict
 
 import pandas as pd
 from langgraph.graph import END, StateGraph
@@ -43,12 +43,17 @@ from factory.intake import IntakeGuide, SpecRejected, render_guidance
 from factory.knowledge import MockExtractor, read_sources
 from factory.knowledge.graph import load_graph
 from factory.knowledge.merge import merge_graphs
-from factory.llm import build_llm
+from factory.llm import SourceRecorder, build_llm
 from factory.logging_setup import write_trace
 from factory.plugins import load_plugins
 from factory.runtime import StaticChecker
 from factory.runtime.dataset_sandbox import DatasetSandbox
-from factory.validation import FourLayerValidator, TestGate
+from factory.validation import (
+    SUPPORTED_THRESHOLD_STRATEGIES,
+    FourLayerValidator,
+    TestGate,
+    optimal_threshold,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +89,9 @@ class _GraphState(TypedDict, total=False):
     static: StaticCheckResult
     report: ValidationReport
     reports: list[ValidationReport]
+    # 一次 execute 里解析出的实际阈值（cost_optimal 会落在某个样本分数上），
+    # 供 finalize 记录与终评锁定；不同候选各自独立
+    threshold_resolved: float
     last_repair_no_change: bool
     # Reviewer 语义评审：否决时带意见回 generate 重生成，review_rounds 计数防死循环
     review_comment: str
@@ -145,6 +153,23 @@ def render_kg_diff(diff: dict[str, int]) -> list[str]:
     return lines
 
 
+SOURCE_LABELS = {
+    "deepseek_api": "实时调用",
+    "cassette": "离线回放",
+    "mock": "规则模板",
+}
+
+
+def _render_llm_sources(sources: dict[str, str]) -> str:
+    """把「角色 → 后端」渲染成一行，让实时 / 回放 / 模板一眼可分。"""
+    if not sources:
+        return "本轮未调用 LLM"
+    return "、".join(
+        f"{role}={SOURCE_LABELS.get(source, source)}"
+        for role, source in sorted(sources.items())
+    )
+
+
 def render_run_report(trace: RunTrace, reports: list[ValidationReport],
                       rationale: str, path: Path, metric_name: str = "auc",
                       task_config: str = "verify_credit.yaml",
@@ -152,7 +177,9 @@ def render_run_report(trace: RunTrace, reports: list[ValidationReport],
                       run_log_path: str = "",
                       text_mode: bool = False) -> Path:
     """生成端到端报告：七步轨迹、候选排名、修复轨迹、四层结论与图谱 diff。"""
-    live_llm = (trace.interpreter_source == "deepseek_api"
+    live_roles = sorted(role for role, source in trace.llm_sources.items()
+                        if source == "deepseek_api")
+    live_llm = (trace.interpreter_source == "deepseek_api" or bool(live_roles)
                 or any(source == "llm" for source in trace.code_sources.values()))
     if live_llm:
         header = [
@@ -160,6 +187,14 @@ def render_run_report(trace: RunTrace, reports: list[ValidationReport],
             "> （DeepSeek OpenAI 兼容接口，Interpreter / Planner / Coder / Repairer / Curator 实时调用）。",
             "> LLM 生成代码先过 AST 静态检查才采用；指标均为子进程沙箱在真实数据集上的实测，未造数值。",
         ]
+        # 实时与回放混用时不能笼统说「全链路」：按角色列清，谁是真的模型输出一目了然
+        others = {role: source for role, source in trace.llm_sources.items()
+                  if source != "deepseek_api"}
+        if others and live_roles:
+            header[1] = (
+                f"> 其中实时调用的角色：{'、'.join(live_roles)}；"
+                f"其余角色走 cassette 回放或规则模板（{', '.join(f'{r}={s}' for r, s in sorted(others.items()))}）。"
+            )
         if not text_mode:
             header.append("> T1 列名错误由 LLM 生成代码按直觉写成 `PAY_1`，"
                           "在子进程用真实数据集触发 `KeyError` 后定向修复。")
@@ -184,6 +219,7 @@ def render_run_report(trace: RunTrace, reports: list[ValidationReport],
         "",
         f"- 能力描述：{trace.spec}",
         f"- 能力理解来源：{trace.interpreter_source}",
+        f"- LLM 后端分布：{_render_llm_sources(trace.llm_sources)}",
         f"- 知识图谱：{trace.kg_mode}（图谱来源 {trace.graph_source}）",
         f"- 历史失败经验命中：{'是' if trace.used_historical_warnings else '否'}",
         f"- 七步流程：执行完成（{' → '.join(SEVEN_STEPS)} 均有产物）",
@@ -200,16 +236,24 @@ def render_run_report(trace: RunTrace, reports: list[ValidationReport],
         trace.retrieval_prompt,
         "```",
         "",
-        f"## 2. 候选方案比较（Beam Top-3，主指标 {metric_name}）",
+        f"## 2. 候选方案比较（主指标 {metric_name} 优先，成本损失收口）",
         "",
-        f"| 方案 | 模型族 | {metric_name} | 通过 | 代码来源 | 修复轮次 |",
-        "|---|---|---|---|---|---|",
+        "> 阈值列：配置写策略名（如 `cost_optimal`），实际取值是评估段解析出的数值；两者并列，避免把策略名当成本次生效的阈值。",
+        "",
+        f"| 方案 | 模型族 | {metric_name} | 阈值（配置 → 实际） | 通过 | 代码来源 | 修复轮次 |",
+        "|---|---|---|---|---|---|---|",
     ]
-    for item in sorted(trace.candidates, key=lambda c: -c.score):
+    for item in sorted(trace.candidates, key=lambda c: (
+            -c.score, -float(c.metrics.get("cost_weighted_loss") or 0.0))):
         value = item.metrics.get(metric_name)
         value_text = "N/A" if value is None else f"{value:.4f}"
         code_source = trace.code_sources.get(item.plan_id, "template")
+        configured = (f"{item.threshold:.2f}" if isinstance(item.threshold, (int, float))
+                      else str(item.threshold))
+        resolved = (f"{item.threshold_resolved:.3f}"
+                    if item.threshold_resolved is not None else "N/A")
         lines.append(f"| {item.plan_id} | {item.model_family} | {value_text} | "
+                     f"{configured} → {resolved} | "
                      f"{'PASS' if item.passed else 'FAIL'} | {code_source} | "
                      f"{item.repair_rounds} |")
     lines.extend([
@@ -238,7 +282,10 @@ def render_run_report(trace: RunTrace, reports: list[ValidationReport],
     if trace.repairs:
         for record in trace.repairs:
             lines.append(f"- 第 {record.round} 轮：`{record.error_signature}` → "
-                         f"{record.fix_strategy}（{record.outcome}）")
+                         f"{record.fix_strategy}（{record.outcome}；"
+                         f"补丁来源 {record.patch_source}）")
+            if record.llm_patch_note:
+                lines.append(f"  - LLM 补丁准入：{record.llm_patch_note}")
             # 双轨：确定性补丁改源码，LLM 推理只解释根因，不冒充补丁
             if record.llm_reasoning:
                 lines.append(f"  - LLM 根因推理：{record.llm_reasoning}")
@@ -327,7 +374,10 @@ class Workflow:
             task_config=task_config,
             graph_path=after_run,
         )
-        llm = build_llm(settings.llm, root)
+        # 观测每个角色实际用的后端（实时 / 回放 / 规则模板），报告据此如实标注；
+        # 包装器只记录 response.source，不改变请求与响应
+        self.llm_recorder = SourceRecorder(build_llm(settings.llm, root))
+        llm = self.llm_recorder
         self.task_type = task.task_type
         self.text_column = task.dataset.text_column
         self.sandbox_mode = ("text" if self.text_column
@@ -355,6 +405,8 @@ class Workflow:
         with data_path.open(encoding="utf-8") as handle:
             n_samples = sum(1 for _ in handle) - 1
         checker = StaticChecker(settings.runtime, task.dataset)
+        # 保存引用供 LLM 补丁复验使用：补丁与生成代码走同一套 AST 白名单
+        self.checker = checker
         self.interpreter = Interpreter(llm, settings.llm)
         self.retriever = Retriever(graph, settings.knowledge.top_k,
                                    settings.knowledge.weights,
@@ -394,17 +446,57 @@ class Workflow:
         frame = pd.read_csv(self.data_path, usecols=[self.group_column])
         return [int(value) for value in frame[self.group_column].iloc[start:end]]
 
-    @staticmethod
-    def _resolve_threshold(threshold: float | str) -> float:
-        """把候选阈值解析为数值；语义值（cost_optimal）暂回退默认 0.5。
+    def _resolve_threshold(self, threshold: float | str,
+                           context: dict[str, Any] | None = None) -> float:
+        """把候选阈值解析为数值。
 
-        ``cost_optimal`` 的「按成本比选最优阈值」语义未在本轮实现，回退时记
-        warning，不静默吞掉；数值阈值（0.30 / 0.50）直接生效。
+        数值阈值原样使用；``cost_optimal`` 用评估段实测分数按成本比扫最优阈值
+        （与 ``metrics.cost_weighted_loss`` 同一口径）。缺评估数据或策略未注册
+        时回退 0.5 并记 warning，不静默吞掉，也不伪造一个看起来精确的数字。
         """
         if isinstance(threshold, (int, float)):
             return float(threshold)
-        logger.warning("阈值 %r 语义未实现，回退默认 0.5", threshold)
+        name = str(threshold).strip()
+        if name in SUPPORTED_THRESHOLD_STRATEGIES and context:
+            return optimal_threshold(context.get("y_true"), context.get("y_score"),
+                                     self.task.cost_ratio_fn_fp)
+        logger.warning("阈值 %r 无法解析（缺评估段数据或策略未注册），回退 0.5", threshold)
         return 0.5
+
+    def _prepare_metrics_context(self, context: dict[str, Any],
+                                 threshold: float | str,
+                                 segment: str = "valid") -> float:
+        """算指标前统一口径：解析阈值、按阈值派生 y_pred、补齐成本比与分组。
+
+        沙箱返回的 ``y_pred`` 固定按 0.5 派生；若不在此重算，候选的 threshold
+        维度（0.30 / cost_optimal）对 F1 与成本加权损失完全不生效，搜索里的阈值
+        维度就只是摆设。传入数值阈值时原样使用，不会重选——终评据此锁定为
+        valid 段定下的阈值，避免用 test 段调参。
+        """
+        resolved = self._resolve_threshold(threshold, context)
+        context["threshold"] = resolved
+        context["cost_ratio"] = self.task.cost_ratio_fn_fp
+        context["groups"] = (self.groups if segment == "valid"
+                             else self._groups_for(segment))
+        if self.sandbox_mode == "tabular":
+            scores = context.get("y_score") or []
+            if scores:
+                context["y_pred"] = [int(value >= resolved) for value in scores]
+        return resolved
+
+    def _smoke_score(self, metrics: dict[str, float | None]) -> tuple[float, float]:
+        """粗评排序键：主指标优先，同分用成本加权损失（越小越好）做次级。
+
+        只有主指标排不出先后时次级键才生效；但同一模型族的不同阈值 / 采样器
+        变体，主指标（AUC）相同而成本损失不同，正是靠这里分出优劣。
+        """
+        value = metrics.get(self.metric_name)
+        if not isinstance(value, (int, float)):
+            return (float("-inf"), 0.0)
+        primary = float(value) if self.metric_direction != "minimize" else -float(value)
+        loss = metrics.get("cost_weighted_loss")
+        secondary = -float(loss) if isinstance(loss, (int, float)) else 0.0
+        return (primary, secondary)
 
     def _build_graph(self):
         builder = StateGraph(_GraphState)
@@ -508,35 +600,34 @@ class Workflow:
         粗评不降样本量、只降 determinism_repeat（smoke_determinism_repeat=1），
         避免类别不平衡下采样导致指标口径漂移；代码只用于排序，后续 generate 重新生成。
         """
-        scored: list[tuple[CandidatePlan, float]] = []
+        scored: list[tuple[CandidatePlan, tuple[float, float]]] = []
         for plan in state["plans"]:
             source = self.coder.generate(
                 plan, state["retrieval"], self.columns, False,
                 task_type=self.task_type, text_column=self.text_column,
             )
             result = self.sandbox.run(source, repeat=self.search.smoke_determinism_repeat)
-            score = -1.0
+            score = (float("-inf"), 0.0)
             if result.sandbox.passed:
-                result.context["groups"] = self.groups
-                result.context["cost_ratio"] = self.task.cost_ratio_fn_fp
-                result.context["threshold"] = self._resolve_threshold(plan.threshold)
-                metrics = self.verifier.validator.evaluate_metrics(result.context)
-                value = next((m.value for m in metrics if m.name == self.metric_name), None)
-                if isinstance(value, (int, float)):
-                    score = (float(value) if self.metric_direction != "minimize"
-                             else -float(value))
+                self._prepare_metrics_context(result.context, plan.threshold)
+                metrics = {item.name: item.value
+                           for item in self.verifier.validator.evaluate_metrics(result.context)}
+                score = self._smoke_score(metrics)
             scored.append((plan, score))
-        scored.sort(key=lambda item: -item[1])
-        # 按 family 去重：每组保留 score 最优的变体，避免同 family 的多个变体
-        # （sampler / threshold 当前不改变主指标）冗余进入完整评估、重复触发修复
-        best_by_family: dict[str, tuple[CandidatePlan, float]] = {}
+        scored.sort(key=lambda item: item[1], reverse=True)
+        # 按 family 去重：同族只保留粗评分最高的变体。变体差异是真实的——阈值与
+        # 采样器会改变成本加权损失，复合键因此能在同族内选出更合适的阈值档。
+        best_by_family: dict[str, tuple[CandidatePlan, tuple[float, float]]] = {}
         for plan, score in scored:
             if plan.model_family not in best_by_family:
                 best_by_family[plan.model_family] = (plan, score)
-        deduped = sorted(best_by_family.values(), key=lambda item: -item[1])
+        deduped = sorted(best_by_family.values(), key=lambda item: item[1], reverse=True)
         keep = max(1, min(len(deduped), self.planner.beam_width))
-        kept = [item[0] for item in deduped[:keep]]
-        logger.info("粗评淘汰：%d -> %d 候选（按 family 去重后保留 Top-%d）",
+        # 粗评后按最终排名重编号 plan.01…plan.0N：产物文件名与报告编号不随
+        # 扩展候选空间的规模漂移（否则调大 candidate_budget 就会让示例产物改名）
+        kept = [plan.model_copy(update={"plan_id": f"plan.{index:02d}"})
+                for index, (plan, _) in enumerate(deduped[:keep], start=1)]
+        logger.info("粗评淘汰：%d -> %d 候选（按 family 去重后保留 Top-%d，已重编号）",
                     len(scored), len(kept), self.planner.beam_width)
         return {"plans": kept}
 
@@ -563,6 +654,7 @@ class Workflow:
         return {
             "plan": plan, "source": source, "static": self.reviewer.review(source),
             "round_index": 0, "repair_rounds": 0, "last_repair_no_change": False,
+            "threshold_resolved": 0.5,
             # 评审意见已用于本次生成，清空；review_rounds 保持累计（由 review 节点管理）
             "review_comment": "",
             "trace": trace,
@@ -610,26 +702,41 @@ class Workflow:
     def _n_execute(self, state: _GraphState) -> dict:
         # repeat>=2 时子进程内二次 fit，产出 repeat_variance 供确定性检查
         run_result = self.sandbox.run(state["source"], repeat=self.determinism_repeat)
+        resolved = 0.5
         if run_result.sandbox.passed:
-            run_result.context["groups"] = self.groups
-            run_result.context["cost_ratio"] = self.task.cost_ratio_fn_fp
-            run_result.context["threshold"] = self._resolve_threshold(
-                state["plan"].threshold)
+            resolved = self._prepare_metrics_context(
+                run_result.context, state["plan"].threshold)
         report, _ = self.verifier.verify(
             state["run_id"], state["plan"].plan_id, state["static"], run_result
         )
         trace = state["trace"]
         trace.steps.append(SEVEN_STEPS[4])
-        return {"report": report, "trace": trace}
+        # 解析后的阈值随状态带到 finalize：终评锁定同一阈值，不在 test 段重选
+        return {"report": report, "trace": trace, "threshold_resolved": resolved}
 
     def _after_execute(self, state: _GraphState) -> str:
         if state["report"].passed or state["round_index"] >= self.max_rounds:
             return "finalize"
         return "repair"
 
+    def _verify_patch(self, source: str) -> tuple[bool, str]:
+        """LLM 补丁的准入门槛：静态检查 + 沙箱复验，两者都过才允许采用。
+
+        只验「能不能跑、有没有违反硬约束」，不验指标是否达标——指标达标由
+        下一轮正式 ``execute`` 判定，避免在修复环节用 test 段数据调参。
+        """
+        check = self.checker.check(source)
+        if not check.passed:
+            return False, "静态检查未通过：" + ",".join(check.failed_checks())
+        result = self.sandbox.run(source)
+        if not result.sandbox.passed:
+            return False, f"沙箱复验失败：{result.sandbox.error_signature}"
+        return True, f"静态检查与沙箱复验通过（{result.sandbox.duration_seconds:.1f}s）"
+
     def _n_repair(self, state: _GraphState) -> dict:
         source, record = self.repairer.repair(
-            state["source"], state["report"].error_signature, state["round_index"] + 1
+            state["source"], state["report"].error_signature,
+            state["round_index"] + 1, verify=self._verify_patch,
         )
         trace = state["trace"]
         trace.repairs.append(record)
@@ -661,6 +768,9 @@ class Workflow:
             metrics=report.metric_values,
             repair_rounds=state["repair_rounds"],
             threshold=plan.threshold,
+            # 语义值（cost_optimal）在这里落成实际数值，报告里两者都显示，
+            # 便于核对「配置写的策略」与「实际用的阈值」不是同一回事
+            threshold_resolved=state.get("threshold_resolved"),
         ))
         reports = [*state["reports"], report]
         # 候选结束：重置语义评审计数，下一个候选从 0 开始
@@ -680,7 +790,10 @@ class Workflow:
         """
         if not trace.candidates:
             return TestEvaluation(consumed=False, note="无可评估候选，test 段未消费")
-        best = max(trace.candidates, key=lambda item: (item.passed, item.score))
+        # 同分时用成本加权损失收口，与粗评层级保持一致的「主指标优先」口径
+        best = max(trace.candidates, key=lambda item: (
+            item.passed, item.score,
+            -float(item.metrics.get("cost_weighted_loss") or 0.0)))
         generated = (self.root / self.settings.paths.generated /
                      self.generated_subdir / f"candidate_{best.plan_id}.py")
         if not generated.is_file():
@@ -698,12 +811,14 @@ class Workflow:
                 plan_id=best.plan_id, consumed=True,
                 note=f"终评执行失败：{result.sandbox.error_signature}",
             )
-        context = dict(result.context)
-        context["groups"] = self._groups_for("test")
-        context["cost_ratio"] = self.task.cost_ratio_fn_fp
-        context["threshold"] = self._resolve_threshold(best.threshold)
-        metrics = self.verifier.validator.evaluate_metrics(context)
-        logger.info("终评（test 段，仅一次）：候选=%s", best.plan_id)
+        # 终评锁定 valid 段定下的阈值：传数值即不再重选，避免用 test 数据挑阈值
+        resolved = best.threshold_resolved
+        if resolved is None:
+            logger.warning("终评候选缺少已解析阈值，按 0.5 评估；不在 test 段重选阈值")
+            resolved = 0.5
+        self._prepare_metrics_context(result.context, resolved, "test")
+        metrics = self.verifier.validator.evaluate_metrics(result.context)
+        logger.info("终评（test 段，仅一次）：候选=%s 阈值=%.3f", best.plan_id, resolved)
         return TestEvaluation(
             plan_id=best.plan_id, consumed=True,
             metrics={item.name: item.value for item in metrics},
@@ -740,6 +855,8 @@ class Workflow:
             direction=self.metric_direction,
             threshold=self.task.metrics[0].threshold if self.task.metrics else None,
         )
+        # 报告渲染前最后一次落定后端分布：覆盖 Curator 在内的全部角色调用
+        trace.llm_sources = dict(self.llm_recorder.sources)
         trace.report_path = render_run_report(
             trace, state["reports"], rationale,
             report_path(self.root / self.settings.paths.reports, self.scope, trace.run_id),

@@ -661,6 +661,27 @@ class LiveReportHeaderTests(unittest.TestCase):
         self.assertIn("`MockLLM` 规则模板路径", text)
         self.assertNotIn("全链路接入真实 LLM", text)
 
+    def test_mixed_backends_are_listed_per_role(self) -> None:
+        """实时与回放混用时不能笼统说「全链路」：必须按角色列清来源。"""
+        trace = RunTrace(
+            run_id="mixed", spec="测试", interpreter_source="cassette",
+            llm_sources={"Interpreter": "cassette", "Planner": "deepseek_api",
+                         "Coder": "mock"},
+        )
+        text = self._render(trace)
+        self.assertIn("Planner", text)
+        self.assertIn("Interpreter=离线回放", text)
+        self.assertIn("Coder=规则模板", text)
+
+    def test_source_recorder_tracks_each_role(self) -> None:
+        from factory.llm import SourceRecorder
+
+        recorder = SourceRecorder(MockLLM())
+        recorder.complete(LLMRequest(role="Planner", system="s", user="u"))
+        recorder.complete(LLMRequest(role="Coder", system="s", user="u"))
+        self.assertEqual(recorder.sources,
+                         {"Planner": "mock", "Coder": "mock"})
+
 
 class ReviewCollaborationTests(unittest.TestCase):
     """B2：Reviewer 语义评审 + 反馈环 + 协作记录。"""

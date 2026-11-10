@@ -29,4 +29,22 @@ class RoutedLLM(BaseLLM):
         return response
 
 
-__all__ = ["RoutedLLM"]
+class SourceRecorder(BaseLLM):
+    """记录每个角色本次实际拿到的 ``LLMResponse.source``，供报告如实标注。
+
+    只做观测、不改请求与响应：``deepseek_api`` 表示实时调用，``cassette`` 表示
+    离线回放，``mock`` 表示规则模板。报告据此区分「谁是真的模型输出」，
+    避免把回放说成实时，也避免把实时调用说成 mock。
+    """
+
+    def __init__(self, inner: BaseLLM) -> None:
+        self.inner = inner
+        self.sources: dict[str, str] = {}
+
+    def complete(self, request: LLMRequest) -> LLMResponse:
+        response = self.inner.complete(request)
+        self.sources[request.role] = response.source
+        return response
+
+
+__all__ = ["RoutedLLM", "SourceRecorder"]

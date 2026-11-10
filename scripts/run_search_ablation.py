@@ -27,8 +27,10 @@ SPEC = "预测信用卡客户下月违约概率，时间外划分，按5:1成本
 
 
 def _summary(trace, seconds: float) -> dict:
-    best = max(trace.candidates,
-               key=lambda item: (item.passed, item.score), default=None)
+    # 与工作流同一口径：主指标优先，同分用成本加权损失收口
+    best = max(trace.candidates, default=None, key=lambda item: (
+        item.passed, item.score,
+        -float(item.metrics.get("cost_weighted_loss") or 0.0)))
     return {
         "passed": trace.passed,
         "candidates": len(trace.candidates),
@@ -54,15 +56,22 @@ def _render(off: dict, on: dict, path: Path) -> Path:
     pct = delta / base * 100
     off_score = off["top1_score"] or 0.0
     on_score = on["top1_score"] or 0.0
-    verdict = "不劣于" if on_score >= off_score else "低于"
+    if on_score > off_score:
+        verdict = f"高于基线（{on_score - off_score:+.6f}）"
+    elif on_score == off_score:
+        verdict = "与基线持平（本场景没有选出更优变体，如实记录）"
+    else:
+        verdict = f"低于基线（{on_score - off_score:+.6f}）"
     lines = [
-        "# 搜索消融对比（Successive Halving）",
+        "# 搜索消融对比（单轮粗评淘汰）",
         "",
         "> 同一 capability spec、同一数据集、同一离线规则模板（`provider=mock`，确定性），",
-        "> 唯一变量是是否开启 Successive Halving 搜索。",
+        "> 唯一变量是是否开启搜索（`search.halving_enabled`）。",
         "> 关闭：Planner 生成 3 候选后直接完整评估；",
-        ("> 开启：3 候选扩到 12（model_family × sampler × threshold 组合）→ 粗评 → "
-         "按 family 去重淘汰 → 3 候选完整评估。"),
+        ("> 开启：3 候选扩到 12（model_family × sampler × threshold 组合）→ 每个候选真跑一次"
+         "沙箱粗评 → 按「主指标 + 成本损失」复合键淘汰 → 3 候选完整评估。"),
+        "> 边界：这是**单轮粗评**，没有多轮资源递增，不是严格意义上的 Successive Halving；",
+        "> 报告按实际机制命名，不借用术语抬高实现。",
         "",
         "| 指标 | 关闭搜索 | 开启搜索 |",
         "|---|---|---|",
@@ -75,9 +84,8 @@ def _render(off: dict, on: dict, path: Path) -> Path:
         "",
         "## 结论",
         "",
-        (f"- Top-1 主指标{verdict}基线（{off['top1_score']} → {on['top1_score']}）："
-         "搜索在 12 个组合里按粗评淘汰，选出了比「3 候选直接评估」更适合的 family 变体，"
-         "未出现「多跑几次就把指标刷高」的虚高。"),
+        (f"- Top-1 主指标{verdict}：搜索在 12 个组合里按粗评淘汰，"
+         "两组 test 段都只消费一次，未出现「多跑几次就把指标刷高」的虚高。"),
         f"- 代价：run 总耗时增加 {delta:.1f}s（{pct:+.0f}%），来自粗评阶段的额外沙箱执行。",
         "- 两组 test 段均只消费一次（TestGate 硬保证），搜索不改变「test 只看一次」的纪律。",
         "",

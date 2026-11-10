@@ -11,7 +11,7 @@ from factory.llm.cassette import cassette_path, load_cassette
 from factory.llm.mock import MockLLM
 from factory.llm.openai_compat import MissingCredentialError, OpenAICompatLLM
 from factory.llm.recorded import CassetteMiss, RecordedLLM
-from factory.llm.routing import RoutedLLM
+from factory.llm.routing import RoutedLLM, SourceRecorder
 
 logger = logging.getLogger(__name__)
 
@@ -63,5 +63,6 @@ __all__ = [
     "OpenAICompatLLM",
     "RecordedLLM",
     "RoutedLLM",
+    "SourceRecorder",
     "build_llm",
 ]

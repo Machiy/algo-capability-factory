@@ -15,6 +15,7 @@ import ast
 import json
 import logging
 import re
+from collections.abc import Callable
 from pathlib import Path
 
 from factory.agents.templates import list_templates, render
@@ -32,6 +33,10 @@ from factory.runtime import StaticChecker
 from factory.validation import FourLayerValidator
 
 logger = logging.getLogger(__name__)
+
+# LLM 补丁的准入复验：入参是候选源码，返回 (是否可用, 原因)。
+# 由工作流注入（静态检查 + 沙箱复验），Agent 层不直接依赖运行时实现。
+VerifyPatch = Callable[[str], tuple[bool, str]]
 
 SYSTEM_PROMPTS = {
     "Interpreter": SYSTEM_PROMPT,
@@ -53,7 +58,13 @@ SYSTEM_PROMPTS = {
     ),
     "Reviewer": "对生成代码做 AST 静态评审。",
     "Verifier": "汇总沙箱与指标证据，输出四层 ValidationReport。",
-    "Repairer": "按错误签名查策略表做定向修复，不重写全量代码。",
+    "Repairer": (
+        "按错误签名做定向修复：给出失败根因，并输出修复后的**完整**源码。"
+        "只输出 JSON，不要解释文字："
+        '{"reasoning": "根因一句话", "code": "<修复后的完整 build_pipeline 源码>"}；'
+        "无法给出补丁时 code 留空字符串。补丁必须保留 build_pipeline 契约、"
+        "只 import 白名单内的库、不得引入 ID / 标签 / 敏感字段。"
+    ),
     "Curator": "把验证结果与失败经验回写能力图谱并给出设计依据。",
 }
 
@@ -663,11 +674,18 @@ class Verifier:
 
 
 class Repairer:
-    """f. 按错误签名定向修复，按策略表只改必要片段。
+    """f. 按错误签名定向修复：确定性补丁保底，LLM 补丁需复验才采用。
 
-    补丁是确定性的源码变换（不调用 LLM）：列名映射、剔除禁入模字段、
-    注入 random_state。``forbidden`` 来自任务配置派生，避免把字段名写死在
-    修复逻辑里；未提供时退化为不剔除（防御性，不误删）。
+    两轨分工明确、互不冒充：
+
+    * **确定性补丁**（AST 源码变换）是保底路径，不依赖模型、永远可复现：
+      列名映射、剔除禁入模字段、注入 random_state / n_jobs。
+    * **LLM 补丁**是增强路径，只在真实模型返回可解析代码、且通过调用方给的
+      ``verify``（静态检查 + 沙箱复验）时才采用；否则回退确定性补丁。
+
+    实际改动源码的那一轨记在 ``RepairRecord.patch_source``，报告的修复轨迹
+    据此区分 ``deterministic`` / ``llm``，不把「模型写了段话」说成补丁。
+    ``forbidden`` 与 ``column_aliases`` 均来自任务配置，不写死业务列名。
     """
 
     def __init__(self, llm: BaseLLM, forbidden: list[str] | None = None,
@@ -676,29 +694,60 @@ class Repairer:
         self.forbidden = set(forbidden or [])
         self.column_aliases = dict(column_aliases or {})
 
-    def repair(self, source: str, signature: str | None,
-               round_index: int) -> tuple[str, RepairRecord]:
+    def _deterministic_patch(self, source: str, key: str) -> str:
+        """按签名做确定性源码变换；无匹配策略时原样返回（即 no_change）。"""
+        if key.startswith("KeyError"):
+            return _repair_key_error(source, key, self.column_aliases)
+        if key in ("ForbiddenFeature", "LeakageDetected"):
+            return _repair_forbidden_feature(source, self.forbidden)
+        if key == "Nondeterminism":
+            return _repair_nondeterminism(source)
+        if key == "MemoryLimitExceeded":
+            return _repair_memory(source)
+        return source
+
+    def repair(self, source: str, signature: str | None, round_index: int,
+               verify: VerifyPatch | None = None) -> tuple[str, RepairRecord]:
+        """返回修复后的源码与留证记录。
+
+        ``verify`` 为 ``None`` 时只走确定性补丁（默认路径，行为与旧版一致）；
+        传入时对 LLM 补丁做准入复验，未通过则回退确定性补丁并写明原因。
+        """
         key = signature or "Unknown"
         # KeyError: <列名> 这类带参数的签名归一到策略表的键（KeyError）
         strategy_key = key.split(":", 1)[0].strip() if ":" in key else key
         strategy = REPAIR_STRATEGIES.get(strategy_key,
                                          "无匹配策略，保留失败记录供人工分析")
-        fixed = source
-        if key.startswith("KeyError"):
-            fixed = _repair_key_error(source, key, self.column_aliases)
-        elif key in ("ForbiddenFeature", "LeakageDetected"):
-            fixed = _repair_forbidden_feature(source, self.forbidden)
-        elif key == "Nondeterminism":
-            fixed = _repair_nondeterminism(source)
-        elif key == "MemoryLimitExceeded":
-            fixed = _repair_memory(source)
-        request = LLMRequest(role="Repairer", system=SYSTEM_PROMPTS["Repairer"],
-                             user=f"错误签名：{key}\n策略：{strategy}")
+        fixed = self._deterministic_patch(source, key)
+        patch_source = "deterministic" if fixed != source else "none"
+        request = LLMRequest(
+            role="Repairer", system=SYSTEM_PROMPTS["Repairer"],
+            user=(f"错误签名：{key}\n策略：{strategy}\n"
+                  f"当前源码：\n```python\n{source}\n```"),
+        )
         response = self.llm.complete(request)
-        record = RepairRecord(round=round_index, error_signature=key,
-                              fix_strategy=strategy,
-                              outcome="repaired" if fixed != source else "no_change",
-                              llm_reasoning=_summarize_repair_reasoning(response))
+        note = ""
+        # MockLLM 的输出只作契约示例，不当作补丁；没有 verify 就无法准入
+        if verify is not None and response.source != "mock":
+            candidate = _extract_code(response)
+            if not candidate:
+                note = "LLM 未返回可解析补丁，保留确定性补丁"
+            elif candidate.strip() == source.strip():
+                note = "LLM 补丁与原文一致，未采用"
+            else:
+                ok, reason = verify(candidate)
+                if ok:
+                    fixed, patch_source = candidate, "llm"
+                    note = f"LLM 补丁通过复验：{reason}"
+                else:
+                    note = f"LLM 补丁未通过复验（{reason}），回退确定性补丁"
+        record = RepairRecord(
+            round=round_index, error_signature=key, fix_strategy=strategy,
+            outcome="repaired" if fixed != source else "no_change",
+            llm_reasoning=_summarize_repair_reasoning(response),
+            patch_source=patch_source if fixed != source else "none",
+            llm_patch_note=note,
+        )
         return fixed, record
 
 

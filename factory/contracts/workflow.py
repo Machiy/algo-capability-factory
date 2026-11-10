@@ -28,6 +28,10 @@ class RepairRecord(_StrictModel):
     outcome: str = "repaired"
     # LLM 对失败根因的推理摘要（双轨：确定性补丁保底 + LLM 推理进报告，不冒充补丁）
     llm_reasoning: str = ""
+    # 实际改动源码的那一轨：deterministic（AST 变换，保底）/ llm（通过复验）/ none
+    patch_source: str = "deterministic"
+    # LLM 补丁的采纳 / 拒收说明，含复验结论；空串表示本轮未尝试 LLM 补丁
+    llm_patch_note: str = ""
 
 
 class CandidateEvaluation(_StrictModel):
@@ -40,6 +44,9 @@ class CandidateEvaluation(_StrictModel):
     # 与 CandidatePlan.threshold 同型：数值阈值或 cost_optimal 等语义值，
     # 语义值由 pipeline 的 _resolve_threshold 在消费时转成数值
     threshold: float | str = 0.5
+    # 实际生效的阈值：cost_optimal 会落在评估段某个样本分数上。与 threshold
+    # 分开保留，报告里能同时看到「配置策略」与「实际取值」，终评也据此锁定
+    threshold_resolved: float | None = None
 
 
 class TestEvaluation(_StrictModel):
@@ -97,6 +104,9 @@ class RunTrace(_StrictModel):
     report_path: str = ""
     passed: bool = False
     interpreter_source: str = "mock"
+    # 每个角色本次实际用的后端：deepseek_api（实时）/ cassette（回放）/ mock（规则模板）。
+    # 报告据此标注「谁是真的模型输出」，避免把回放说成实时、也避免把实时说成回放
+    llm_sources: dict[str, str] = Field(default_factory=dict)
     kg_mode: str = "with_kg"
     graph_source: str = "sources"
     used_historical_warnings: bool = False
