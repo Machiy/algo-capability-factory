@@ -9,7 +9,9 @@ PyYAML>=6.0,<7
 # ---- 数据处理与算法 ----
 numpy>=1.26,<3
 pandas>=2.2,<3
-scikit-learn>=1.5,<2
+# 上限 <1.7：imbalanced-learn 0.13 依赖 sklearn 的 _is_pandas_df / _safe_tags
+# 私有接口，sklearn 1.7 起移除，故不能放宽到 <2
+scikit-learn>=1.5,<1.7
 imbalanced-learn>=0.12,<0.14
 
 # ---- 知识图谱与检索 ----

@@ -80,6 +80,18 @@ class TemplateExecutionTests(unittest.TestCase):
                 self.assertTrue(result.sandbox.passed, result.sandbox.stderr)
                 self.assertTrue(result.context["y_score"])
 
+    def test_sampler_renders_and_runs(self) -> None:
+        """sampler=smote 渲染 SMOTE 采样步骤，代码能通过静态检查 + 真实沙箱。"""
+        source_none = render("logistic_regression", COLUMNS, {"C": 1.0})
+        source_smote = render("logistic_regression", COLUMNS,
+                              {"C": 1.0, "sampler": "smote"})
+        self.assertNotIn("SMOTE", source_none)
+        self.assertIn("from imblearn.over_sampling import SMOTE", source_smote)
+        check = self.checker.check(source_smote)
+        self.assertTrue(check.passed, check.violations)
+        result = self.sandbox.run(source_smote)
+        self.assertTrue(result.sandbox.passed, result.sandbox.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

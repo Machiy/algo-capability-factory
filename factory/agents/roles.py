@@ -484,6 +484,10 @@ class Coder:
         hyperparams = dict(plan.hyperparams)
         if text_column:
             hyperparams["text_column"] = text_column
+        # sampler 维度渲染：smote → SMOTE 采样步骤，class_weight → 模型参数，
+        # none 不渲染（模板据此决定是否插入采样 / 类别权重）
+        if plan.sampler and plan.sampler != "none":
+            hyperparams["sampler"] = plan.sampler
         template = render(plan.model_family, rendered, hyperparams, task_type)
         self.last_source = "template"
         self.last_reject_reason = ""

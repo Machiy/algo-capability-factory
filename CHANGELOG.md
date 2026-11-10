@@ -3,6 +3,29 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循
 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本对应一个 annotated tag 与 GitHub Release。
 
+## [1.7.0] - 2026-11-10
+
+方案 A2 核心落地：sampler 维度真正渲染生效，让 Successive Halving 搜索从「只按
+model_family 区分」变成「按 family × sampler × threshold 组合区分」。
+
+### 新增
+
+- **sampler 维度渲染**：表格分类模板支持 sampler——smote 在缩放之后插入 SMOTE 采样
+  步骤（`imblearn.pipeline.Pipeline`），class_weight 在 model 追加
+  `class_weight="balanced"`，none 不渲染。`Coder.generate` 把 `plan.sampler` 传入渲染，
+  同 family 不同 sampler 的候选生成不同代码，A1 的 smoke 淘汰开始真正按维度选优
+  （实测 HGB 最优变体 AUC 0.7843 → 0.7881）。
+
+### 修复
+
+- **scikit-learn 依赖冲突**：`requirements.txt` 的 `scikit-learn<2` 曾允许安装 1.9.1，
+  与 imbalanced-learn 0.13 依赖的 `_is_pandas_df` / `_safe_tags` 私有接口不兼容。
+  收紧为 `<1.7` 并实测 1.6.1 + imblearn 0.13 全绿。
+
+### 测试
+
+- 新增 sampler 渲染用例（smote 通过静态检查 + 真实沙箱）。全量 223 用例通过、ruff 全绿。
+
 ## [1.6.0] - 2026-11-10
 
 方案 A1 + A3 落地：搜索升级为 Successive Halving，检索邻域升级为多跳 BFS + 路径解释。

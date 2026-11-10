@@ -54,11 +54,43 @@ def list_templates() -> list[str]:
     return sorted(_REGISTRY)
 
 
+def _pipeline_import(sampler: str) -> str:
+    """smote 采样器实现的是 fit_resample，需 imblearn 的 Pipeline；其余用 sklearn。"""
+    if sampler == "smote":
+        return "from imblearn.pipeline import Pipeline"
+    return "from sklearn.pipeline import Pipeline"
+
+
+def _sampler_import(sampler: str) -> str:
+    """sampler 渲染：smote 需要 imblearn 的 SMOTE 导入，其余为空。"""
+    if sampler == "smote":
+        return "from imblearn.over_sampling import SMOTE"
+    return ""
+
+
+def _sampler_step(sampler: str) -> str:
+    """sampler 渲染：smote 在缩放之后、模型之前插入采样步骤，其余为空。
+
+    SMOTE 必须置于 Pipeline 内且在训练集 fit，满足「fit 仅 on train」约束。
+    """
+    if sampler == "smote":
+        return '        ("sampler", SMOTE(random_state=42)),\n'
+    return ""
+
+
+def _class_weight_param(sampler: str) -> str:
+    """class_weight 是模型参数而非采样器：在 model 步骤追加 balanced。"""
+    if sampler == "class_weight":
+        return ', class_weight="balanced"'
+    return ""
+
+
 LOGISTIC_REGRESSION_TEMPLATE = '''\
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import Pipeline
+{pipeline_import}
 from sklearn.preprocessing import StandardScaler
+{sampler_import}
 
 FEATURE_COLUMNS = {columns}
 
@@ -66,29 +98,35 @@ def build_pipeline(config):
     return Pipeline([
         ("imputer", SimpleImputer(strategy="median")),
         ("scaler", StandardScaler()),
-        ("model", LogisticRegression(C={c_value}, max_iter={max_iter}, random_state=42)),
+{sampler_step}        ("model", LogisticRegression(C={c_value}, max_iter={max_iter}, random_state=42{class_weight})),
     ])
 '''
 
 
 @register("logistic_regression")
 def _logistic_regression(columns: list[str], hyperparams: dict[str, Any]) -> str:
+    sampler = str(hyperparams.get("sampler", "none"))
     return LOGISTIC_REGRESSION_TEMPLATE.format(
         columns=json.dumps(columns, ensure_ascii=False),
         c_value=hyperparams.get("C", 1.0),
         max_iter=hyperparams.get("max_iter", 1000),
+        pipeline_import=_pipeline_import(sampler),
+        sampler_import=_sampler_import(sampler),
+        sampler_step=_sampler_step(sampler),
+        class_weight=_class_weight_param(sampler),
     )
 
 
 GRADIENT_BOOSTING_TEMPLATE = '''\
 from sklearn.ensemble import HistGradientBoostingClassifier
-from sklearn.pipeline import Pipeline
+{pipeline_import}
+{sampler_import}
 
 FEATURE_COLUMNS = {columns}
 
 def build_pipeline(config):
     return Pipeline([
-        ("model", HistGradientBoostingClassifier(
+{sampler_step}        ("model", HistGradientBoostingClassifier(
             max_iter={max_iter}, learning_rate={learning_rate}, random_state=42)),
     ])
 '''
@@ -96,36 +134,46 @@ def build_pipeline(config):
 
 @register("hist_gradient_boosting")
 def _hist_gradient_boosting(columns: list[str], hyperparams: dict[str, Any]) -> str:
+    sampler = str(hyperparams.get("sampler", "none"))
     return GRADIENT_BOOSTING_TEMPLATE.format(
         columns=json.dumps(columns, ensure_ascii=False),
         max_iter=hyperparams.get("max_iter", 200),
         learning_rate=hyperparams.get("learning_rate", 0.1),
+        pipeline_import=_pipeline_import(sampler),
+        sampler_import=_sampler_import(sampler),
+        sampler_step=_sampler_step(sampler),
     )
 
 
 RANDOM_FOREST_TEMPLATE = '''\
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
-from sklearn.pipeline import Pipeline
+{pipeline_import}
+{sampler_import}
 
 FEATURE_COLUMNS = {columns}
 
 def build_pipeline(config):
     return Pipeline([
         ("imputer", SimpleImputer(strategy="median")),
-        ("model", RandomForestClassifier(
+{sampler_step}        ("model", RandomForestClassifier(
             n_estimators={n_estimators}, max_depth={max_depth},
-            random_state=42, n_jobs=1)),
+            random_state=42, n_jobs=1{class_weight})),
     ])
 '''
 
 
 @register("random_forest")
 def _random_forest(columns: list[str], hyperparams: dict[str, Any]) -> str:
+    sampler = str(hyperparams.get("sampler", "none"))
     return RANDOM_FOREST_TEMPLATE.format(
         columns=json.dumps(columns, ensure_ascii=False),
         n_estimators=hyperparams.get("n_estimators", 200),
         max_depth=hyperparams.get("max_depth", 8),
+        pipeline_import=_pipeline_import(sampler),
+        sampler_import=_sampler_import(sampler),
+        sampler_step=_sampler_step(sampler),
+        class_weight=_class_weight_param(sampler),
     )
 
 
