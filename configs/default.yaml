@@ -1,7 +1,7 @@
 ﻿# 全局默认配置；任务级配置见 verify_*.yaml
 project:
   name: algocap-factory
-  version: 1.5.0
+  version: 1.6.0
   seed: 42
   log_level: INFO
 
@@ -78,6 +78,14 @@ workflow:
     - Verifier
     - Repairer
     - Curator
+
+# 方案 A1：Successive Halving 搜索。关闭时保持「一次生成 beam_width 个候选」；
+# 开启时按 candidate_budget 扩候选空间（model_family × sampler × threshold），
+# 先粗评淘汰（粗评不降样本量、只降 determinism_repeat）再完整评估存活候选。
+search:
+  halving_enabled: true
+  candidate_budget: 12
+  smoke_determinism_repeat: 1
 
 # 入口输入引导：用户描述不清楚时先追问/给示例，不把「瞎说」带进七步闭环。
 # 判定全部是字符串匹配，不调用 LLM，断网可复现；场景级关键词与示例在 verify_*.yaml。

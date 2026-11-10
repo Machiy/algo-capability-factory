@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 import re
+from collections import defaultdict
 from typing import ClassVar
 
 from rank_bm25 import BM25Okapi
@@ -121,14 +122,33 @@ class HybridRetriever:
                                      score=round(score, 6), reasons=reasons,
                                      evidence=evidence))
         hits.sort(key=lambda hit: (-hit.score, hit.node_id))
-        # 图邻域扩展：Top-K 的一跳邻居按边类型折扣加分，弥补 BM25 只认词面
-        # 的局限（例如命中「阈值」节点后可连带召回 EVALUATED_BY 的指标节点）
-        neighbors = self._neighbors({hit.node_id for hit in hits[:limit]})
+        # 图邻域扩展：受限多跳 BFS（深度≤2）从 Top-K 种子召回 BM25 没直接
+        # 命中的节点，并记录显式路径，弥补 BM25 只认词面的局限（如命中「阈值」
+        # 节点后连带召回 EVALUATED_BY 的指标节点）。
+        expansion = self._expand({hit.node_id for hit in hits[:limit]})
+        node_by_id = {node.node_id: node for node in self.graph.nodes}
+        hit_ids = {hit.node_id for hit in hits}
         for hit in hits:
-            weight = neighbors.get(hit.node_id)
-            if weight:
+            found = expansion.get(hit.node_id)
+            if found:
+                weight, paths = found
                 hit.reasons["graph_neighbor"] = weight
                 hit.score = round(hit.score + self._NEIGHBOR_BONUS * weight, 6)
+                hit.paths = paths
+        # 召回的新节点（不在原 BM25 命中里）作为低分命中追加；证据与运行日志
+        # 仍被排除，不因图邻域召回而重新进入 prompt
+        for node_id, (weight, paths) in expansion.items():
+            if node_id in hit_ids:
+                continue
+            node = node_by_id.get(node_id)
+            if node is None or node.node_type is NodeType.EVIDENCE or _is_runtime_log(node):
+                continue
+            hits.append(RetrievalHit(
+                node_id=node_id, name=node.name,
+                score=round(self._NEIGHBOR_BONUS * weight, 6),
+                reasons={"graph_neighbor": weight},
+                evidence=list(node.evidence[:2]), paths=paths,
+            ))
         hits.sort(key=lambda hit: (-hit.score, hit.node_id))
         result = RetrievalResult(
             query=query,
@@ -161,23 +181,46 @@ class HybridRetriever:
         EdgeType.EVIDENCED_BY: 0.0,
     }
 
-    def _neighbors(self, node_ids: set[str]) -> dict[str, float]:
-        """一跳邻域：返回邻居节点 id 与其最高边权重。"""
-        weights: dict[str, float] = {}
+    # 多跳扩展的深度衰减：一跳满权重，二跳折半
+    _DEPTH_DECAY: ClassVar[float] = 0.5
+
+    def _expand(self, seeds: set[str],
+                max_depth: int = 2) -> dict[str, tuple[float, list[str]]]:
+        """受限多跳 BFS：从种子节点按边类型衰减召回可达节点并记录显式路径。
+
+        返回 ``{node_id: (weight, paths)}``；``weight`` 是「路径边权连乘 × 深度
+        衰减」的最大值，``paths`` 是对应的「源 --EDGE--> 目标」链。图结构加分因此
+        可回溯到具体边，而非只有一个不可解释的数值；种子节点本身不返回。
+        """
+        adjacency: dict[str, list[tuple[str, EdgeType, float]]] = defaultdict(list)
         for edge in self.graph.edges:
-            score = self._EDGE_WEIGHTS.get(edge.edge_type, 0.0)
-            if score <= 0:
+            edge_weight = self._EDGE_WEIGHTS.get(edge.edge_type, 0.0)
+            if edge_weight <= 0:
                 continue
-            if edge.source in node_ids:
-                candidate = edge.target
-            elif edge.target in node_ids:
-                candidate = edge.source
-            else:
-                continue
-            if candidate in node_ids:
-                continue
-            weights[candidate] = max(weights.get(candidate, 0.0), score)
-        return weights
+            adjacency[edge.source].append((edge.target, edge.edge_type, edge_weight))
+            adjacency[edge.target].append((edge.source, edge.edge_type, edge_weight))
+
+        result: dict[str, tuple[float, list[str]]] = {}
+        frontier: dict[str, tuple[float, list[str]]] = {
+            node_id: (1.0, []) for node_id in seeds
+        }
+        visited: set[str] = set(seeds)
+        for depth in range(1, max_depth + 1):
+            next_frontier: dict[str, tuple[float, list[str]]] = {}
+            for current, (acc_weight, path) in frontier.items():
+                for neighbor, edge_type, edge_weight in adjacency.get(current, []):
+                    if neighbor in visited:
+                        continue
+                    weight = acc_weight * edge_weight * self._DEPTH_DECAY ** (depth - 1)
+                    new_path = [*path, f"{current} --{edge_type.value}--> {neighbor}"]
+                    if (neighbor not in next_frontier
+                            or weight > next_frontier[neighbor][0]):
+                        next_frontier[neighbor] = (weight, new_path)
+            for node_id, (weight, path) in next_frontier.items():
+                visited.add(node_id)
+                result[node_id] = (weight, path)
+            frontier = next_frontier
+        return result
 
     def _constraints(self, limit: int) -> list[str]:
         """汇总适用条件，供 Planner 生成候选方案时遵守。"""

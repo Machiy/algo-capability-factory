@@ -195,13 +195,18 @@ class KnowledgeGraph(_StrictModel):
 
 
 class RetrievalHit(_StrictModel):
-    """单个命中项，``reasons`` 保留打分分项以便解释排序。"""
+    """单个命中项，``reasons`` 保留打分分项以便解释排序。
+
+    ``paths`` 承载图邻域召回的显式路径（如「命中 A --EVALUATED_BY--> B」），
+    让图结构加分可回溯到具体边，而非只有一个不可解释的数值。
+    """
 
     node_id: str
     name: str
     score: float
     reasons: dict[str, float] = Field(default_factory=dict)
     evidence: list[Evidence] = Field(default_factory=list)
+    paths: list[str] = Field(default_factory=list)
 
 
 class RetrievalResult(_StrictModel):

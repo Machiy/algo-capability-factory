@@ -517,6 +517,31 @@ class WorkflowConfigTests(unittest.TestCase):
         self.assertEqual(task.candidates.thresholds, [0.30, 0.50, "cost_optimal"])
         self.assertEqual(task.candidates.binnings, ["none", "woe"])
 
+    def test_search_expand_composes_dimensions(self) -> None:
+        """A1：候选扩展组合 model_family × sampler × threshold，受预算限制。"""
+        from factory.workflow import Workflow
+
+        workflow = Workflow(load_settings(CONFIG), load_task_settings(TASK_CONFIG), ROOT)
+        base = [CandidatePlan(plan_id="plan.01", spec_id="s",
+                              model_family="logistic_regression")]
+        workflow.search = workflow.search.model_copy(update={
+            "halving_enabled": True, "candidate_budget": 6})
+        expanded = workflow._expand_candidates(base)
+        self.assertEqual(len(expanded), 6)  # 1×3×3=9 截断到 6
+        self.assertEqual([p.plan_id for p in expanded],
+                         [f"plan.{i:02d}" for i in range(1, 7)])
+        self.assertEqual(expanded[0].sampler, "none")
+        self.assertEqual(expanded[0].threshold, 0.30)
+
+    def test_after_plan_routes_by_halving_flag(self) -> None:
+        """A1：开启时 plan 后走 smoke，关闭时直接 generate。"""
+        from factory.workflow import Workflow
+
+        workflow = Workflow(load_settings(CONFIG), load_task_settings(TASK_CONFIG), ROOT)
+        self.assertEqual(workflow._after_plan({}), "smoke")  # 默认开启
+        workflow.search = workflow.search.model_copy(update={"halving_enabled": False})
+        self.assertEqual(workflow._after_plan({}), "generate")
+
     def test_test_gate_wired_into_workflow(self) -> None:
         """test 段一次性纪律由 TestGate 硬保证：重复消费被拒且不再跑 test 段。"""
         from factory.contracts.workflow import CandidateEvaluation

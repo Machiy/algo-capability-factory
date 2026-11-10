@@ -17,7 +17,7 @@ import networkx as nx
 from pydantic import ValidationError
 
 from factory.config import load_settings, load_task_settings
-from factory.contracts.knowledge import EdgeType, KGNode, NodeType
+from factory.contracts.knowledge import EdgeType, KGEdge, KGNode, KnowledgeGraph, NodeType
 from factory.knowledge import (
     HybridRetriever,
     KnowledgeGraphStore,
@@ -176,6 +176,39 @@ class KnowledgeLayerTests(unittest.TestCase):
         self.assertTrue(weights)
         self.assertIn("constraint_match", weights)
         self.assertAlmostEqual(sum(weights.values()), 1.0)
+
+
+class GraphExpandTests(unittest.TestCase):
+    """A3：受限多跳 BFS 召回二跳节点并记录显式路径。"""
+
+    @staticmethod
+    def _graph() -> KnowledgeGraph:
+        return KnowledgeGraph(
+            nodes=[
+                KGNode(node_id="cap.a", node_type=NodeType.CAPABILITY, name="能力A"),
+                KGNode(node_id="alg.b", node_type=NodeType.ALGORITHM, name="算法B"),
+                KGNode(node_id="metric.c", node_type=NodeType.METRIC, name="指标C"),
+            ],
+            edges=[
+                KGEdge(source="cap.a", target="alg.b", edge_type=EdgeType.USES),
+                KGEdge(source="alg.b", target="metric.c",
+                       edge_type=EdgeType.EVALUATED_BY),
+            ],
+        )
+
+    def test_expand_recalls_two_hop_with_paths(self) -> None:
+        expansion = HybridRetriever(self._graph(), top_k=5)._expand({"cap.a"})
+        self.assertIn("alg.b", expansion)
+        self.assertIn("metric.c", expansion)
+        # 一跳路径显式可回溯
+        self.assertIn("cap.a --USES--> alg.b", expansion["alg.b"][1])
+        # 二跳路径含两段边
+        self.assertTrue(any("--EVALUATED_BY--> metric.c" in path
+                            for path in expansion["metric.c"][1]))
+
+    def test_expand_excludes_seeds(self) -> None:
+        expansion = HybridRetriever(self._graph(), top_k=5)._expand({"cap.a"})
+        self.assertNotIn("cap.a", expansion)  # 种子节点本身不返回
 
 
 if __name__ == "__main__":

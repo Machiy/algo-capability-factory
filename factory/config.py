@@ -283,6 +283,20 @@ class WorkflowSettings(_ConfigModel):
     roles: list[str] = Field(default_factory=list)
 
 
+class SearchSettings(_ConfigModel):
+    """``configs/default.yaml`` 的 search 段：方案 A1 的 Successive Halving 参数。
+
+    关闭时（``halving_enabled=False``）保持既有「一次生成 beam_width 个候选」行为；
+    开启时按候选预算扩空间（model_family × sampler × threshold），先粗评淘汰、
+    再对存活候选完整评估。粗评不降样本量、只降 ``determinism_repeat``，避免
+    类别不平衡下采样导致指标口径漂移。
+    """
+
+    halving_enabled: bool = False
+    candidate_budget: int = Field(default=12, ge=2, le=64)
+    smoke_determinism_repeat: int = Field(default=1, ge=1, le=3)
+
+
 class Settings(_ConfigModel):
     """配置契约的总入口。"""
 
@@ -292,6 +306,7 @@ class Settings(_ConfigModel):
     llm: LLMSettings = Field(default_factory=LLMSettings)
     workflow: WorkflowSettings = Field(default_factory=WorkflowSettings)
     intake: IntakeSettings = Field(default_factory=IntakeSettings)
+    search: SearchSettings = Field(default_factory=SearchSettings)
 
 
 def _read_mapping(path: Path) -> dict:
@@ -333,6 +348,7 @@ def load_settings(config_path: str | Path, apply_env: bool = False) -> Settings:
         llm=LLMSettings(**llm_payload),
         workflow=WorkflowSettings(**payload.get("workflow", {})),
         intake=IntakeSettings(**payload.get("intake", {})),
+        search=SearchSettings(**payload.get("search", {})),
     )
 
 
@@ -353,6 +369,7 @@ __all__ = [
     "PathsSettings",
     "RetrievalSettings",
     "RuntimeSettings",
+    "SearchSettings",
     "Settings",
     "TaskIntakeSettings",
     "TaskSettings",

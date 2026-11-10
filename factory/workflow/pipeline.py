@@ -319,6 +319,8 @@ class Workflow:
         # 搜索维度：sampler / threshold 来自 candidates.*，不再硬编码 0.5 / "none"
         self.samplers = list(task.candidates.samplers)
         self.thresholds = list(task.candidates.thresholds)
+        # 方案 A1：Successive Halving 搜索开关与预算
+        self.search = settings.search
         excluded = set(task.dataset.forbidden_features)
         excluded.update(task.sensitive_features)
         excluded.update({task.dataset.target, task.dataset.id_column})
@@ -388,6 +390,7 @@ class Workflow:
             ("parse", self._n_parse),
             ("retrieve", self._n_retrieve),
             ("plan_step", self._n_plan),
+            ("smoke", self._n_smoke),
             ("generate", self._n_generate),
             ("execute", self._n_execute),
             ("repair", self._n_repair),
@@ -398,7 +401,10 @@ class Workflow:
         builder.set_entry_point("parse")
         builder.add_edge("parse", "retrieve")
         builder.add_edge("retrieve", "plan_step")
-        builder.add_edge("plan_step", "generate")
+        # A1 开启时 plan 后先粗评淘汰，否则直接进入生成
+        builder.add_conditional_edges("plan_step", self._after_plan,
+                                      {"smoke": "smoke", "generate": "generate"})
+        builder.add_edge("smoke", "generate")
         builder.add_edge("generate", "execute")
         builder.add_conditional_edges("execute", self._after_execute,
                                       {"repair": "repair", "finalize": "finalize"})
@@ -435,9 +441,78 @@ class Workflow:
         plans = self.planner.plan(state["spec"], state["retrieval"],
                                   families=self.families, task_type=self.task_type,
                                   samplers=self.samplers, thresholds=self.thresholds)
+        # A1：开启 Successive Halving 时扩候选空间（model_family × sampler × threshold）
+        if self.search.halving_enabled:
+            plans = self._expand_candidates(plans)
         trace = state["trace"]
         trace.steps.append(SEVEN_STEPS[2])
         return {"plans": plans, "candidate_index": 0, "reports": [], "trace": trace}
+
+    def _after_plan(self, state: _GraphState) -> str:
+        """A1 开启时 plan 后先粗评淘汰，否则直接进入生成。"""
+        return "smoke" if self.search.halving_enabled else "generate"
+
+    def _expand_candidates(self, base_plans: list[CandidatePlan]) -> list[CandidatePlan]:
+        """组合 model_family × sampler × threshold，受 candidate_budget 限制。
+
+        按 (sampler, threshold) 轮询 family，避免嵌套循环让第一个 family 填满预算、
+        把后面的 family 挤出候选空间；每个组合得到连续编号的 plan_id（plan.01 …），
+        保持产物命名与报告口径不变。
+        """
+        samplers = self.samplers or ["none"]
+        thresholds = self.thresholds or [0.5]
+        combos = [(plan, sampler, threshold)
+                  for sampler in samplers
+                  for threshold in thresholds
+                  for plan in base_plans]
+        expanded: list[CandidatePlan] = []
+        for index, (plan, sampler, threshold) in enumerate(combos, start=1):
+            expanded.append(plan.model_copy(update={
+                "plan_id": f"plan.{index:02d}",
+                "sampler": sampler,
+                "threshold": threshold,
+            }))
+            if len(expanded) >= self.search.candidate_budget:
+                return expanded
+        return expanded
+
+    def _n_smoke(self, state: _GraphState) -> dict:
+        """粗评淘汰：对扩展候选逐个生成代码 + 快速验证，按主指标保留 Top-N。
+
+        粗评不降样本量、只降 determinism_repeat（smoke_determinism_repeat=1），
+        避免类别不平衡下采样导致指标口径漂移；代码只用于排序，后续 generate 重新生成。
+        """
+        scored: list[tuple[CandidatePlan, float]] = []
+        for plan in state["plans"]:
+            source = self.coder.generate(
+                plan, state["retrieval"], self.columns, False,
+                task_type=self.task_type, text_column=self.text_column,
+            )
+            result = self.sandbox.run(source, repeat=self.search.smoke_determinism_repeat)
+            score = -1.0
+            if result.sandbox.passed:
+                result.context["groups"] = self.groups
+                result.context["cost_ratio"] = self.task.cost_ratio_fn_fp
+                result.context["threshold"] = self._resolve_threshold(plan.threshold)
+                metrics = self.verifier.validator.evaluate_metrics(result.context)
+                value = next((m.value for m in metrics if m.name == self.metric_name), None)
+                if isinstance(value, (int, float)):
+                    score = (float(value) if self.metric_direction != "minimize"
+                             else -float(value))
+            scored.append((plan, score))
+        scored.sort(key=lambda item: -item[1])
+        # 按 family 去重：每组保留 score 最优的变体，避免同 family 的多个变体
+        # （sampler / threshold 当前不改变主指标）冗余进入完整评估、重复触发修复
+        best_by_family: dict[str, tuple[CandidatePlan, float]] = {}
+        for plan, score in scored:
+            if plan.model_family not in best_by_family:
+                best_by_family[plan.model_family] = (plan, score)
+        deduped = sorted(best_by_family.values(), key=lambda item: -item[1])
+        keep = max(1, min(len(deduped), self.planner.beam_width))
+        kept = [item[0] for item in deduped[:keep]]
+        logger.info("粗评淘汰：%d -> %d 候选（按 family 去重后保留 Top-%d）",
+                    len(scored), len(kept), self.planner.beam_width)
+        return {"plans": kept}
 
     def _n_generate(self, state: _GraphState) -> dict:
         index = state["candidate_index"]

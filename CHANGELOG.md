@@ -3,6 +3,28 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循
 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本对应一个 annotated tag 与 GitHub Release。
 
+## [1.6.0] - 2026-11-10
+
+方案 A1 + A3 落地：搜索升级为 Successive Halving，检索邻域升级为多跳 BFS + 路径解释。
+对应本地规划 `OPTIMIZATION_PLAN.md`（不入库）。
+
+### 新增
+
+- **Successive Halving 搜索**（A1）：新增 `search` 配置段（`halving_enabled` /
+  `candidate_budget` / `smoke_determinism_repeat`）。开启后 Planner 把候选扩到
+  model_family × sampler × threshold 组合空间（受 `candidate_budget` 限制，轮询
+  family 避免单一族填满预算），新增 smoke 节点粗评（`determinism_repeat=1`、不降
+  样本量避免类别不平衡口径漂移），按 family 去重 + beam_width 淘汰后完整评估存活
+  候选。test 段仍只消费一次。
+- **多跳 BFS 检索**（A3）：`HybridRetriever._neighbors` 升级为 `_expand`——受限多跳
+  BFS（深度≤2，边权连乘 × 深度衰减），召回 BM25 未直接命中的二跳节点，并在
+  `RetrievalHit.paths` 记录显式路径（「源 --EDGE--> 目标」），图结构加分可回溯到边。
+
+### 测试
+
+- 新增 4 个用例：候选组合扩展、halving 路由、多跳召回 + 路径、种子排除。
+  全量 222 个用例通过，`ruff` 全绿。
+
 ## [1.5.0] - 2026-11-10
 
 方案 0「前置工作」落地：为搜索升级（A1/A2）与多智能体（B1）铺地基，同时加固两处
